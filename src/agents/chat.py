@@ -1,18 +1,129 @@
-                self.deepseek_handler = create_deepseek_handler(self.config, sync=True)
-            
-            if "api_key" in config:
-                self.deepseek_handler.update_config(**config)
-                self.active_ai = "deepseek"
-                self.logger.info("DeepSeek configuration updated")
+#!/usr/bin/env python3
+"""
+Chat Agent Module
+Handles conversational AI interactions
+"""
+
+import logging
+from typing import Dict, Any, Optional
+from core.config import Config
+from core.supervisor import Supervisor
+
+
+class ChatAgent:
+    """
+    Chat agent for conversational AI interactions
+    """
+    
+    def __init__(self, supervisor: Supervisor, config: Config):
+        """
+        Initialize chat agent
         
-        elif ai_type == "llama":
-            if not self.llama_handler:
-                self.llama_handler = create_llama_handler(self.config)
+        Args:
+            supervisor: Supervisor instance
+            config: Configuration object
+        """
+        self.supervisor = supervisor
+        self.config = config
+        self.logger = logging.getLogger(__name__)
+        
+        # AI handlers
+        self.deepseek_handler = None
+        self.llama_handler = None
+        self.active_ai = None
+        
+        self.logger.info("Chat agent initialized")
+    
+    def start(self) -> bool:
+        """
+        Start the chat agent
+        
+        Returns:
+            True if started successfully
+        """
+        try:
+            self.logger.info("Starting chat agent...")
             
-            if "model_path" in config:
-                self.llama_handler.update_config(**config)
+            # Initialize AI handlers based on configuration
+            ai_type = self.config.get("ai.type", "deepseek")
+            
+            if ai_type == "deepseek":
+                self.deepseek_handler = self._create_deepseek_handler()
+                self.active_ai = "deepseek"
+                self.logger.info("DeepSeek AI initialized")
+            
+            elif ai_type == "llama":
+                self.llama_handler = self._create_llama_handler()
                 self.active_ai = "llama"
-                self.logger.info("Llama configuration updated")
+                self.logger.info("Llama AI initialized")
+            
+            else:
+                self.logger.error(f"Unknown AI type: {ai_type}")
+                return False
+            
+            self.logger.info("Chat agent started successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to start chat agent: {e}")
+            return False
+    
+    def process_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> str:
+        """
+        Process a chat message
+        
+        Args:
+            message: User message
+            context: Optional context dictionary
+            
+        Returns:
+            AI response
+        """
+        try:
+            if self.active_ai == "deepseek" and self.deepseek_handler:
+                return self.deepseek_handler.process(message, context)
+            
+            elif self.active_ai == "llama" and self.llama_handler:
+                return self.llama_handler.process(message, context)
+            
+            else:
+                return "Error: No AI handler available"
+                
+        except Exception as e:
+            self.logger.error(f"Error processing message: {e}")
+            return f"Error: {str(e)}"
+    
+    def _create_deepseek_handler(self):
+        """Create DeepSeek handler"""
+        # Placeholder - implement actual DeepSeek integration
+        class DeepSeekHandler:
+            def __init__(self, config):
+                self.config = config
+            
+            def process(self, message, context):
+                return f"DeepSeek response to: {message}"
+        
+        return DeepSeekHandler(self.config)
+    
+    def _create_llama_handler(self):
+        """Create Llama handler"""
+        # Placeholder - implement actual Llama integration
+        class LlamaHandler:
+            def __init__(self, config):
+                self.config = config
+            
+            def process(self, message, context):
+                return f"Llama response to: {message}"
+        
+        return LlamaHandler(self.config)
+    
+    def stop(self):
+        """Stop the chat agent"""
+        self.logger.info("Stopping chat agent...")
+        self.deepseek_handler = None
+        self.llama_handler = None
+        self.active_ai = None
+        self.logger.info("Chat agent stopped")
 
 
 # Factory function
@@ -47,39 +158,16 @@ def example_usage():
         print("✅ Chat agent started")
         
         # Example task
-        task = {
-            "task_id": "test_123",
-            "type": "process_message",
-            "data": {
-                "platform": "telegram",
-                "sender": "user123",
-                "text": "Hello, can you help me with a task?",
-                "message_id": "msg_001"
-            }
-        }
-        
-        agent.queue_task(task)
-        print("📨 Task queued for processing")
-        
-        # Wait a bit
-        import time
-        time.sleep(2)
-        
-        # Get stats
-        stats = agent.get_stats()
-        print(f"\n📊 Chat Agent Stats:")
-        print(f"  Messages processed: {stats['messages_processed']}")
-        print(f"  Active conversations: {stats['active_conversations']}")
-        print(f"  AI handler: {stats['ai_handler'] or 'None'}")
+        task = {"message": "Hello, how are you?"}
+        response = agent.process_message(task["message"])
+        print(f"Response: {response}")
         
         # Stop agent
         agent.stop()
-        print("\n🛑 Chat agent stopped")
-    
+        print("✅ Chat agent stopped")
     else:
         print("❌ Failed to start chat agent")
 
 
 if __name__ == "__main__":
-    import sys
     example_usage()

@@ -512,3 +512,11 @@ def main():
     uvicorn.run(
         "server:app",
         host="0.0.0.0",  # Listen on all interfaces
+        port=config.DASHBOARD_PORT,
+        reload=config.DEBUG,
+        log_level="info" if config.DEBUG else "warning"
+    )
+
+
+if __name__ == "__main__":
+    main()
