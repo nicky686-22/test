@@ -1,6 +1,6 @@
 #!/bin/bash
 # SwarmIA Installation Script - Versión Mejorada
-# Soluciona problemas de GitHub raw 404 y asegura instalación completa
+# Soluciona problemas de instalación existente
 
 set -e
 
@@ -19,13 +19,12 @@ DATA_DIR="/var/lib/swarmia"
 PORT="3000"
 REPO_URL="https://github.com/nicky686-22/test.git"
 
-# Banner
+# Banner simplificado (sin clear)
 print_banner() {
-    clear
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                    SwarmIA Installation                      ║"
-    echo "║                    Version 2.0 - Enhanced                    ║"
+    echo "║                    Version 2.1 - Fixed                       ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
@@ -55,14 +54,133 @@ detect_system() {
     echo -e "${GREEN}[✓] Detected: $OS $VER${NC}"
 }
 
+# Verificar instalación existente
+check_existing_installation() {
+    if [ -d "$SWARMIA_DIR" ]; then
+        echo -e "${YELLOW}[!] SwarmIA is already installed at $SWARMIA_DIR${NC}"
+        echo ""
+        echo "What would you like to do?"
+        echo "  1) Update existing installation"
+        echo "  2) Clean reinstall (keep configs)"
+        echo "  3) Complete uninstall"
+        echo "  4) Exit"
+        echo ""
+        
+        read -p "Select option [1-4]: " choice
+        
+        case $choice in
+            1)
+                echo -e "${BLUE}[*] Updating existing installation...${NC}"
+                update_installation
+                ;;
+            2)
+                echo -e "${BLUE}[*] Performing clean reinstall...${NC}"
+                clean_reinstall
+                ;;
+            3)
+                echo -e "${BLUE}[*] Uninstalling SwarmIA...${NC}"
+                uninstall_swarmia
+                ;;
+            4)
+                echo -e "${YELLOW}[*] Exiting...${NC}"
+                exit 0
+                ;;
+            *)
+                echo -e "${RED}[!] Invalid option. Exiting...${NC}"
+                exit 1
+                ;;
+        esac
+    fi
+}
+
+# Actualizar instalación existente
+update_installation() {
+    cd "$SWARMIA_DIR"
+    
+    if [ -d ".git" ]; then
+        echo -e "${BLUE}[*] Updating from Git repository...${NC}"
+        git pull origin main
+    else
+        echo -e "${YELLOW}[*] No Git repository found, downloading fresh...${NC}"
+        rm -rf "$SWARMIA_DIR"/*
+        git clone "$REPO_URL" "$SWARMIA_DIR"
+    fi
+    
+    echo -e "${GREEN}[✓] Installation updated${NC}"
+    show_access_info
+}
+
+# Reinstalación limpia
+clean_reinstall() {
+    echo -e "${YELLOW}[*] Backing up configuration...${NC}"
+    
+    # Backup configs if they exist
+    if [ -f "$CONFIG_DIR/config.yaml" ]; then
+        cp "$CONFIG_DIR/config.yaml" "/tmp/swarmia_config_backup.yaml"
+        echo -e "${GREEN}[✓] Configuration backed up${NC}"
+    fi
+    
+    echo -e "${BLUE}[*] Removing existing installation...${NC}"
+    systemctl stop swarmia 2>/dev/null || true
+    rm -rf "$SWARMIA_DIR"
+    
+    # Install fresh
+    install_fresh
+    
+    # Restore config if it exists
+    if [ -f "/tmp/swarmia_config_backup.yaml" ]; then
+        cp "/tmp/swarmia_config_backup.yaml" "$CONFIG_DIR/config.yaml"
+        echo -e "${GREEN}[✓] Configuration restored${NC}"
+    fi
+}
+
+# Desinstalar completamente
+uninstall_swarmia() {
+    echo -e "${RED}[!] WARNING: This will completely remove SwarmIA${NC}"
+    read -p "Are you sure? (y/N): " confirm
+    
+    if [[ $confirm != "y" && $confirm != "Y" ]]; then
+        echo -e "${YELLOW}[*] Uninstall cancelled${NC}"
+        exit 0
+    fi
+    
+    echo -e "${BLUE}[*] Stopping service...${NC}"
+    systemctl stop swarmia 2>/dev/null || true
+    systemctl disable swarmia 2>/dev/null || true
+    
+    echo -e "${BLUE}[*] Removing files...${NC}"
+    rm -rf "$SWARMIA_DIR"
+    rm -rf "$CONFIG_DIR"
+    rm -rf "$LOGS_DIR"
+    rm -rf "$DATA_DIR"
+    
+    echo -e "${BLUE}[*] Removing systemd service...${NC}"
+    rm -f /etc/systemd/system/swarmia.service
+    
+    echo -e "${GREEN}[✓] SwarmIA completely uninstalled${NC}"
+}
+
+# Instalación fresca
+install_fresh() {
+    install_dependencies
+    create_directories
+    download_swarmia
+    setup_python_environment
+    create_systemd_service
+    start_service
+    show_access_info
+}
+
 # Instalar dependencias
 install_dependencies() {
     echo -e "${BLUE}[*] Installing dependencies...${NC}"
     
+    apt-get update
+    
     # Python y pip
     if ! command -v python3 &> /dev/null; then
         echo -e "${YELLOW}[*] Installing Python3...${NC}"
-        apt-get update && apt-get install -y python3 python3-pip python3-venv
+        apt-get install -y python3 python3-pip python3-venv
     fi
     
     # Git
@@ -91,124 +209,45 @@ create_directories() {
     echo -e "${GREEN}[✓] Directories created${NC}"
 }
 
-# Descargar SwarmIA desde GitHub
+# Descargar SwarmIA
 download_swarmia() {
-    echo -e "${BLUE}[*] Downloading SwarmIA from GitHub...${NC}"
+    echo -e "${BLUE}[*] Downloading SwarmIA...${NC}"
     
     cd "$SWARMIA_DIR"
     
-    # Método 1: Git clone (preferido)
-    echo -e "${YELLOW}[*] Attempting git clone...${NC}"
     if git clone "$REPO_URL" . 2>/dev/null; then
-        echo -e "${GREEN}[✓] Git clone successful${NC}"
-        return 0
-    fi
-    
-    # Método 2: Descargar archivos individuales via API
-    echo -e "${YELLOW}[*] Git failed, downloading files individually...${NC}"
-    
-    # Lista de archivos esenciales
-    ESSENTIAL_FILES=(
-        "README.md"
-        "requirements.txt"
-        "src/core/main.py"
-        "src/core/config.py"
-        "src/core/supervisor.py"
-        "src/core/updater.py"
-        "scripts/install.sh"
-        "scripts/verify_installation.py"
-    )
-    
-    for file in "${ESSENTIAL_FILES[@]}"; do
-        echo -e "  📥 Downloading: $file"
-        
-        # Crear directorios si no existen
-        dir=$(dirname "$file")
-        mkdir -p "$dir"
-        
-        # Intentar descargar
-        curl -s -L "https://raw.githubusercontent.com/nicky686-22/SwarmIA/main/$file" \
-             -o "$file" 2>/dev/null || true
-        
-        # Verificar que el archivo no esté vacío
-        if [ -s "$file" ]; then
-            echo -e "    ${GREEN}✓ Downloaded${NC}"
-        else
-            echo -e "    ${RED}✗ Failed to download${NC}"
-        fi
-    done
-    
-    # Verificar que tenemos los archivos mínimos
-    if [ -f "requirements.txt" ] && [ -f "src/core/main.py" ]; then
-        echo -e "${GREEN}[✓] Essential files downloaded${NC}"
-        return 0
+        echo -e "${GREEN}[✓] Repository cloned successfully${NC}"
     else
-        echo -e "${RED}[!] Failed to download essential files${NC}"
-        return 1
+        echo -e "${RED}[!] Git clone failed, trying wget...${NC}"
+        rm -rf "$SWARMIA_DIR"/*
+        wget -qO- "$REPO_URL/archive/main.tar.gz" | tar -xz --strip-components=1
+        echo -e "${GREEN}[✓] Downloaded via wget${NC}"
     fi
 }
 
 # Configurar entorno Python
-setup_python_env() {
+setup_python_environment() {
     echo -e "${BLUE}[*] Setting up Python environment...${NC}"
     
     cd "$SWARMIA_DIR"
     
-    # Actualizar pip
-    python3 -m pip install --upgrade pip
-    
-    # Instalar dependencias
+    # Instalar requirements
     if [ -f "requirements.txt" ]; then
-        echo -e "${YELLOW}[*] Installing Python dependencies...${NC}"
-        python3 -m pip install -r requirements.txt
+        pip3 install -r requirements.txt
         echo -e "${GREEN}[✓] Python dependencies installed${NC}"
     else
-        echo -e "${YELLOW}[*] requirements.txt not found, installing common packages...${NC}"
-        python3 -m pip install fastapi uvicorn python-multipart requests
-        echo -e "${GREEN}[✓] Common packages installed${NC}"
+        echo -e "${YELLOW}[!] No requirements.txt found${NC}"
     fi
 }
 
-# Crear configuración
-create_config() {
-    echo -e "${BLUE}[*] Creating configuration...${NC}"
-    
-    cat > "$CONFIG_DIR/config.yaml" << EOF
-# SwarmIA Configuration
-web:
-  host: "0.0.0.0"
-  port: 3000
-  debug: false
-
-database:
-  path: "$DATA_DIR/swarmia.db"
-
-ai:
-  default_provider: "deepseek"
-  deepseek_api_key: ""
-  llama_endpoint: "http://localhost:11434"
-
-security:
-  admin_password: "admin"
-  require_password_change: true
-
-updates:
-  check_interval_hours: 6
-  github_repo: "nicky686-22/SwarmIA"
-EOF
-    
-    echo -e "${GREEN}[✓] Configuration created at $CONFIG_DIR/config.yaml${NC}"
-}
-
 # Crear servicio systemd
-setup_systemd_service() {
+create_systemd_service() {
     echo -e "${BLUE}[*] Creating systemd service...${NC}"
     
-    cat > /etc/systemd/system/swarmia.service << EOF
+    cat > /etc/systemd/system/swarmia.service << SERVICE_EOF
 [Unit]
 Description=SwarmIA AI System
 After=network.target
-Requires=network.target
 
 [Service]
 Type=simple
@@ -216,142 +255,49 @@ User=root
 WorkingDirectory=$SWARMIA_DIR
 Environment="PYTHONPATH=$SWARMIA_DIR"
 ExecStart=/usr/bin/python3 $SWARMIA_DIR/src/core/main.py
-Restart=always
-RestartSec=10
-StandardOutput=journal
-StandardError=journal
-
-# Security
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ReadWritePaths=$LOGS_DIR $DATA_DIR $CONFIG_DIR
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:$LOGS_DIR/swarmia.log
+StandardError=append:$LOGS_DIR/swarmia-error.log
 
 [Install]
 WantedBy=multi-user.target
-EOF
+SERVICE_EOF
     
     systemctl daemon-reload
-    systemctl enable swarmia
-    
-    echo -e "${GREEN}[✓] Systemd service created and enabled${NC}"
+    echo -e "${GREEN}[✓] Systemd service created${NC}"
 }
 
-# Configurar firewall
-setup_firewall() {
-    echo -e "${BLUE}[*] Configuring firewall...${NC}"
-    
-    # Verificar si ufw está instalado
-    if command -v ufw &> /dev/null; then
-        if ufw status | grep -q "active"; then
-            echo -e "${YELLOW}[*] Opening port $PORT in firewall...${NC}"
-            ufw allow $PORT/tcp
-            echo -e "${GREEN}[✓] Firewall configured${NC}"
-        fi
-    fi
-    
-    # Verificar si firewalld está instalado
-    if command -v firewall-cmd &> /dev/null; then
-        if systemctl is-active --quiet firewalld; then
-            echo -e "${YELLOW}[*] Opening port $PORT in firewalld...${NC}"
-            firewall-cmd --permanent --add-port=$PORT/tcp
-            firewall-cmd --reload
-            echo -e "${GREEN}[✓] Firewalld configured${NC}"
-        fi
-    fi
-}
-
-# Obtener información de red
-get_network_info() {
-    echo -e "${BLUE}[*] Gathering network information...${NC}"
-    
-    LOCAL_IP=$(hostname -I | awk '{print $1}')
-    PUBLIC_IP=$(curl -s ifconfig.me || echo "Unknown")
-    
-    echo -e "${GREEN}[✓] Network info gathered${NC}"
-}
-
-# Crear archivo de información de acceso
-create_access_info() {
-    echo -e "${BLUE}[*] Creating access information file...${NC}"
-    
-    LOCAL_IP=$(hostname -I | awk '{print $1}')
-    
-    cat > "$SWARMIA_DIR/ACCESS_INFO.txt" << EOF
-===========================================
-         SwarmIA Access Information
-===========================================
-
-INSTALLATION COMPLETE!
-
-Access URLs:
-- Local:      http://$LOCAL_IP:$PORT
-- Dashboard:  http://$LOCAL_IP:$PORT/dashboard
-- Health:     http://$LOCAL_IP:$PORT/health
-
-Default Credentials:
-- Username: admin
-- Password: admin
-⚠️  CHANGE PASSWORD ON FIRST LOGIN!
-
-Installation Directories:
-- Main:      $SWARMIA_DIR
-- Config:    $CONFIG_DIR
-- Logs:      $LOGS_DIR
-- Data:      $DATA_DIR
-
-Management Commands:
-- Start:     sudo systemctl start swarmia
-- Stop:      sudo systemctl stop swarmia
-- Status:    sudo systemctl status swarmia
-- Restart:   sudo systemctl restart swarmia
-- Logs:      sudo journalctl -u swarmia -f
-
-Troubleshooting:
-1. Check service status: sudo systemctl status swarmia
-2. View logs: sudo journalctl -u swarmia -f
-3. Verify port: ss -tlnp | grep :$PORT
-4. Test health: curl http://$LOCAL_IP:$PORT/health
-
-Next Steps:
-1. Open dashboard in browser
-2. Login with admin/admin
-3. Change password immediately
-4. Configure AI provider (DeepSeek or Llama)
-5. Setup WhatsApp/Telegram if desired
-
-Generated: $(date)
-EOF
-    
-    echo -e "${GREEN}[✓] Access information saved to: $SWARMIA_DIR/ACCESS_INFO.txt${NC}"
-}
-
-# Iniciar servicio SwarmIA
-start_swarmia() {
+# Iniciar servicio
+start_service() {
     echo -e "${BLUE}[*] Starting SwarmIA service...${NC}"
     
+    systemctl enable swarmia
     systemctl start swarmia
     
-    # Esperar y verificar
-    echo -e "${YELLOW}[*] Waiting for service to start...${NC}"
-    sleep 5
+    sleep 2
     
     if systemctl is-active --quiet swarmia; then
-        echo -e "${GREEN}[✓] SwarmIA service started successfully${NC}"
-        
-        # Verificar salud
-        echo -e "${YELLOW}[*] Verifying health check...${NC}"
-        sleep 2
-        
-        if curl -s http://localhost:$PORT/health > /dev/null 2>&1; then
-            echo -e "${GREEN}[✓] Health check passed${NC}"
-        else
-            echo -e "${YELLOW}[!] Health check failed (service may still be starting)${NC}"
-        fi
+        echo -e "${GREEN}[✓] SwarmIA service is running${NC}"
     else
-        echo -e "${RED}[!] Failed to start SwarmIA service${NC}"
-        echo -e "${YELLOW}Check logs: journalctl -u swarmia -f${NC}"
+        echo -e "${RED}[!] Failed to start service${NC}"
+        journalctl -u swarmia --no-pager -n 10
     fi
+}
+
+# Mostrar información de acceso
+show_access_info() {
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}                    INSTALLATION COMPLETE                     ${NC}"
+    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo -e "  Dashboard:    http://$(hostname -I | awk '{print $1}'):$PORT"
+    echo -e "  Health check: http://$(hostname -I | awk '{print $1}'):$PORT/health"
+    echo -e "  Service:      systemctl status swarmia"
+    echo -e "  Logs:         journalctl -u swarmia -f"
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
 }
 
 # Función principal
@@ -363,48 +309,12 @@ main() {
     echo -e "${YELLOW}This will install SwarmIA to $SWARMIA_DIR${NC}"
     echo -e "${YELLOW}Repository: $REPO_URL${NC}"
     echo ""
-    read -p "Continue? (Y/n): " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z "$REPLY" ]]; then
-        echo -e "${YELLOW}Installation cancelled.${NC}"
-        exit 0
-    fi
     
-    # Pasos de instalación
-    install_dependencies
-    create_directories
-    download_swarmia
-    setup_python_env
-    create_config
-    setup_systemd_service
-    setup_firewall
-    get_network_info
-    create_access_info
-    start_swarmia
+    check_existing_installation
     
-    # Mostrar resumen
-    LOCAL_IP=$(hostname -I | awk '{print $1}')
-    
-    echo -e "\n${GREEN}══════════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}            🎊 SwarmIA Installation Complete!                  ${NC}"
-    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
-    echo -e ""
-    echo -e "${BLUE}📋 Quick Start:${NC}"
-    echo -e "  1. Open your browser to: http://$LOCAL_IP:$PORT"
-    echo -e "  2. Login with admin/admin"
-    echo -e "  3. Change password immediately"
-    echo -e "  4. Configure your AI provider"
-    echo -e ""
-    echo -e "${BLUE}📊 Service Status:${NC}"
-    echo -e "  Status:  sudo systemctl status swarmia"
-    echo -e "  Logs:    sudo journalctl -u swarmia -f"
-    echo -e "  Restart: sudo systemctl restart swarmia"
-    echo -e ""
-    echo -e "${BLUE}🔗 Access Information:${NC}"
-    echo -e "  Full details: $SWARMIA_DIR/ACCESS_INFO.txt"
-    echo -e ""
-    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
+    # Si no hay instalación existente, instalar fresco
+    install_fresh
 }
 
-# Ejecutar función principal
-main "$@"
+# Ejecutar
+main
