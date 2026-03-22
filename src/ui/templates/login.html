@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmIA - Login</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary-color: #10b981;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        
+        .logo p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 24px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .input-with-icon i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+        
+        .input-with-icon input {
+            width: 100%;
+            padding: 14px 16px 14px 48px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .input-with-icon input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        .input-with-icon input::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-btn i {
+            font-size: 1.1rem;
+        }
+        
+        .alert {
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid var(--warning-color);
+            color: #fbbf24;
+        }
+        
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger-color);
+            color: #f87171;
+        }
+        
+        .alert i {
+            margin-right: 8px;
+        }
+        
+        .system-info {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+        
+        .system-info p {
+            margin-bottom: 5px;
+        }
+        
+        .system-info .version {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+        
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 30px 20px;
+            }
+            
+            .logo h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1><i class="fas fa-robot"></i> SwarmIA</h1>
+                <p>The Enhanced OpenClaw - Brutal in Every Sense</p>
+            </div>
+            
+            <div id="alertDefaultPassword" class="alert alert-warning" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Default Password Detected:</strong> You must change the password on first login
+            </div>
+            
+            <div id="alertError" class="alert alert-danger" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorMessage">Login failed. Please check your credentials.</span>
+            </div>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" placeholder="Enter username" value="admin" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-with-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" placeholder="Enter password" value="admin" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn pulse">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Login to Dashboard
+                </button>
+            </form>
+            
+            <div class="system-info">
+                <p><i class="fas fa-server"></i> SwarmIA v1.0.0</p>
+                <p><i class="fas fa-network-wired"></i> <span id="localIP">Detecting local IP...</span></p>
+                <p><i class="fas fa-shield-alt"></i> Default credentials: admin/admin</p>
+                <p class="version"><i class="fas fa-exclamation-circle"></i> Password change required on first login</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Get local IP for display
+        async function getLocalIP() {
+            try {
+                const response = await fetch('/api/network/info');
+                const data = await response.json();
+                document.getElementById('localIP').textContent = `Local: ${data.local_ip}:${data.port}`;
+            } catch (error) {
+                document.getElementById('localIP').textContent = 'Local: 127.0.0.1:3000';
+            }
+        }
+        
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Hide any existing alerts
+            document.getElementById('alertError').style.display = 'none';
+            document.getElementById('alertDefaultPassword').style.display = 'none';
+            
+            // Create basic auth header
+            const credentials = btoa(`${username}:${password}`);
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.status === 307) {
+                    // Password change required
+                    window.location.href = '/change-password';
+                    return;
+                }
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    // Store session info
+                    localStorage.setItem('swarmia_username', data.username);
+                    
+                    // Redirect to dashboard
+                    window.location.href = '/';
+                } else {
+                    // Show error
+                    document.getElementById('errorMessage').textContent = 'Invalid username or password';
+                    document.getElementById('alertError').style.display = 'block';
+                    
+                    // Shake animation
+                    const loginCard = document.querySelector('.login-card');
+                    loginCard.style.animation = 'shake 0.5s';
+                    setTimeout(() => {
+                        loginCard.style.animation = '';
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
+                document.getElementById('alertError').style.display = 'block';
+            }
+        });
+        
+        // Check if using default password
+        document.getElementById('password').addEventListener('input', function() {
+            if (this.value === 'admin' && document.getElementById('username').value === 'admin') {
+                document.getElementById('alertDefaultPassword').style.display = 'block';
+            } else {
+                document.getElementById('alertDefaultPassword').style.display = 'none';
+            }
+        });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Initialize
+        getLocalIP();
+        
+        // Auto-focus password field if username is admin
+        if (document.getElementById('username').value === 'admin') {
+            document.getElementById('password').focus();
+            document.getElementById('alertDefaultPassword').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

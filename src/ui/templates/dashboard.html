@@ -1,0 +1,481 @@
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="onlineAgents">0</div>
+                        <div class="stat-label">Online Agents</div>
+                    </div>
+                    <div class="stat-icon agents">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                </div>
+                <div class="stat-change positive" id="agentChange">
+                    <i class="fas fa-check-circle"></i> All systems operational
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="messagesToday">0</div>
+                        <div class="stat-label">Messages Today</div>
+                    </div>
+                    <div class="stat-icon messages">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                </div>
+                <div class="stat-change positive" id="messageChange">
+                    <i class="fas fa-arrow-up"></i> 0% from yesterday
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value" id="systemLoad">0.0</div>
+                        <div class="stat-label">System Load</div>
+                    </div>
+                    <div class="stat-icon load">
+                        <i class="fas fa-server"></i>
+                    </div>
+                </div>
+                <div class="stat-change" id="loadStatus">
+                    <i class="fas fa-check"></i> Optimal
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Task Completion Rate</h3>
+                    <select id="timeRange" onchange="updateChart()">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                    </select>
+                </div>
+                <div class="chart-container">
+                    <canvas id="taskChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Agent Distribution</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="agentChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Tasks -->
+        <div class="recent-tasks">
+            <div class="tasks-header">
+                <h3>Recent Tasks</h3>
+                <a href="/tasks" class="btn btn-secondary" style="padding: 8px 16px;">
+                    <i class="fas fa-list"></i>
+                    View All
+                </a>
+            </div>
+            
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th>Task ID</th>
+                        <th>Description</th>
+                        <th>Agent</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="recentTasksBody">
+                    {% for task in recent_tasks %}
+                    <tr>
+                        <td><code>{{ task.id[:8] }}...</code></td>
+                        <td>{{ task.description[:50] }}{% if task.description|length > 50 %}...{% endif %}</td>
+                        <td>{{ task.agent_type }}</td>
+                        <td>
+                            <span class="task-priority priority-{{ task.priority|lower }}">
+                                {{ task.priority }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="task-status status-{{ task.status|lower }}">
+                                {{ task.status }}
+                            </span>
+                        </td>
+                        <td>{{ task.duration }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <div class="action-btn" onclick="window.location.href='/config'">
+                <i class="fas fa-cog"></i>
+                <span>System Configuration</span>
+            </div>
+            <div class="action-btn" onclick="restartSystem()">
+                <i class="fas fa-redo"></i>
+                <span>Restart System</span>
+            </div>
+            <div class="action-btn" onclick="showNetworkInfo()">
+                <i class="fas fa-network-wired"></i>
+                <span>Network Info</span>
+            </div>
+            <div class="action-btn" onclick="window.location.href='/logs'">
+                <i class="fas fa-clipboard-list"></i>
+                <span>View Logs</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        // Global variables
+        let taskChart, agentChart;
+        let refreshInterval;
+        
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+            initializeCharts();
+            
+            // Start auto-refresh every 10 seconds
+            refreshInterval = setInterval(loadDashboardData, 10000);
+            
+            // Update uptime counter every second
+            setInterval(updateUptime, 1000);
+        });
+        
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const [statsResponse, tasksResponse, agentsResponse] = await Promise.all([
+                    fetch('/api/system/stats'),
+                    fetch('/api/tasks/recent?limit=10'),
+                    fetch('/api/agents/status')
+                ]);
+                
+                if (!statsResponse.ok || !tasksResponse.ok || !agentsResponse.ok) {
+                    throw new Error('Failed to fetch dashboard data');
+                }
+                
+                const stats = await statsResponse.json();
+                const tasks = await tasksResponse.json();
+                const agents = await agentsResponse.json();
+                
+                // Update stats
+                updateStats(stats, agents);
+                
+                // Update recent tasks
+                updateRecentTasks(tasks.tasks);
+                
+                // Update agent count
+                updateAgentCount(agents.agents);
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+        
+        // Update statistics
+        function updateStats(stats, agents) {
+            // Active tasks
+            const activeTasks = stats.supervisor_stats?.active_tasks || 0;
+            document.getElementById('activeTasks').textContent = activeTasks;
+            document.getElementById('taskCount').textContent = activeTasks;
+            
+            // Online agents
+            const onlineAgents = agents.agents?.filter(a => a.status === 'online').length || 0;
+            document.getElementById('onlineAgents').textContent = onlineAgents;
+            document.getElementById('agentCount').textContent = onlineAgents;
+            
+            // Messages today
+            const messagesToday = stats.dashboard_stats?.messages_processed || 0;
+            document.getElementById('messagesToday').textContent = messagesToday.toLocaleString();
+            
+            // System load
+            const systemLoad = stats.dashboard_stats?.system_load || 0.0;
+            document.getElementById('systemLoad').textContent = systemLoad.toFixed(2);
+            
+            // Update load status
+            const loadStatus = document.getElementById('loadStatus');
+            if (systemLoad > 2.0) {
+                loadStatus.className = 'stat-change negative';
+                loadStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> High Load';
+            } else if (systemLoad > 1.0) {
+                loadStatus.className = 'stat-change warning';
+                loadStatus.innerHTML = '<i class="fas fa-info-circle"></i> Moderate';
+            } else {
+                loadStatus.className = 'stat-change positive';
+                loadStatus.innerHTML = '<i class="fas fa-check"></i> Optimal';
+            }
+        }
+        
+        // Update recent tasks table
+        function updateRecentTasks(tasks) {
+            const tbody = document.getElementById('recentTasksBody');
+            tbody.innerHTML = '';
+            
+            tasks.forEach(task => {
+                const row = document.createElement('tr');
+                
+                // Format duration
+                let duration = 'N/A';
+                if (task.duration) {
+                    if (typeof task.duration === 'number') {
+                        duration = `${task.duration}s`;
+                    } else {
+                        duration = task.duration;
+                    }
+                }
+                
+                // Priority class
+                const priorityClass = `priority-${task.priority?.toLowerCase() || 'normal'}`;
+                
+                // Status class
+                const statusClass = `status-${task.status?.toLowerCase() || 'pending'}`;
+                
+                row.innerHTML = `
+                    <td><code>${task.id?.substring(0, 8) || 'N/A'}...</code></td>
+                    <td>${task.description?.substring(0, 50) || 'No description'}${task.description?.length > 50 ? '...' : ''}</td>
+                    <td>${task.agent_type || 'N/A'}</td>
+                    <td>
+                        <span class="task-priority ${priorityClass}">
+                            ${task.priority || 'NORMAL'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="task-status ${statusClass}">
+                            ${task.status || 'PENDING'}
+                        </span>
+                    </td>
+                    <td>${duration}</td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Update agent count
+        function updateAgentCount(agents) {
+            const onlineCount = agents.filter(a => a.status === 'online').length;
+            const totalCount = agents.length;
+            
+            document.getElementById('agentCount').textContent = onlineCount;
+            
+            // Update agent change status
+            const agentChange = document.getElementById('agentChange');
+            if (onlineCount === totalCount) {
+                agentChange.className = 'stat-change positive';
+                agentChange.innerHTML = '<i class="fas fa-check-circle"></i> All systems operational';
+            } else if (onlineCount === 0) {
+                agentChange.className = 'stat-change negative';
+                agentChange.innerHTML = '<i class="fas fa-exclamation-circle"></i> No agents online';
+            } else {
+                agentChange.className = 'stat-change warning';
+                agentChange.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${totalCount - onlineCount} agents offline`;
+            }
+        }
+        
+        // Initialize charts
+        function initializeCharts() {
+            const taskCtx = document.getElementById('taskChart').getContext('2d');
+            const agentCtx = document.getElementById('agentChart').getContext('2d');
+            
+            // Task completion chart
+            taskChart = new Chart(taskCtx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: [12, 19, 8, 15, 22, 18],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Agent distribution chart
+            agentChart = new Chart(agentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chat', 'File', 'Web', 'System'],
+                    datasets: [{
+                        data: [35, 25, 20, 20],
+                        backgroundColor: [
+                            '#6366f1',
+                            '#10b981',
+                            '#3b82f6',
+                            '#f59e0b'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#94a3b8',
+                                padding: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update chart based on time range
+        function updateChart() {
+            const timeRange = document.getElementById('timeRange').value;
+            // In a real implementation, this would fetch new data based on time range
+            console.log('Updating chart for time range:', timeRange);
+        }
+        
+        // Update system uptime
+        function updateUptime() {
+            const uptimeElement = document.getElementById('systemUptime');
+            const currentTime = uptimeElement.textContent;
+            
+            if (currentTime === '00:00:00') {
+                // Initial load, set from server if available
+                uptimeElement.textContent = '{{ stats.uptime }}';
+            } else {
+                // Increment by 1 second
+                const parts = currentTime.split(':');
+                let hours = parseInt(parts[0]);
+                let minutes = parseInt(parts[1]);
+                let seconds = parseInt(parts[2]);
+                
+                seconds++;
+                if (seconds >= 60) {
+                    seconds = 0;
+                    minutes++;
+                    if (minutes >= 60) {
+                        minutes = 0;
+                        hours++;
+                    }
+                }
+                
+                uptimeElement.textContent = 
+                    `${hours.toString().padStart(2, '0')}:` +
+                    `${minutes.toString().padStart(2, '0')}:` +
+                    `${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Refresh dashboard
+        function refreshDashboard() {
+            loadDashboardData();
+            
+            // Show refresh animation
+            const refreshBtn = document.querySelector('.btn-secondary');
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            setTimeout(() => {
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+            }, 1000);
+        }
+        
+        // Show quick task modal
+        function showQuickTask() {
+            alert('Quick task functionality would open a modal here.\n\nIn the full implementation, this would allow creating new tasks directly from the dashboard.');
+        }
+        
+        // Restart system
+        async function restartSystem() {
+            if (!confirm('Are you sure you want to restart the SwarmIA system?\n\nThis will temporarily interrupt all services.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/system/restart', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('System restart initiated. Services will restart momentarily.');
+                } else {
+                    throw new Error('Failed to restart system');
+                }
+            } catch (error) {
+                alert('Error restarting system: ' + error.message);
+            }
+        }
+        
+        // Show network information
+        async function showNetworkInfo() {
+            try {
+                const response = await fetch('/api/network/info');
+                const data = await response.json();
+                
+                const message = `
+Network Information:
+• Local IP: ${data.local_ip}
+• Dashboard Port: ${data.port}
+• Dashboard URL: ${data.dashboard_url}
+• API URL: ${data.api_url}
+
+For external access:
+1. Ensure port ${data.port} is open in your firewall
+2. Access via: http://YOUR_EXTERNAL_IP:${data.port}
+3. Default credentials: admin/admin (change required)
+                `;
+                
+                alert(message);
+            } catch (error) {
+                alert('Error fetching network information');
+            }
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

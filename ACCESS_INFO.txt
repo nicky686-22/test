@@ -1,0 +1,23 @@
+SwarmIA Installation Complete
+============================
+Date: dom 22 mar 2026 22:48:16 UTC
+Install Dir: /opt/swarmia
+Log Dir: /var/log/swarmia
+
+ACCESS URLs:
+- Dashboard: http://192.168.1.90:3000
+- Health:    http://localhost:3000/health
+- Local:     http://localhost:3000
+
+MANAGEMENT:
+- Check status: systemctl status swarmia
+- View logs:    journalctl -u swarmia -f
+- Restart:      systemctl restart swarmia
+- Stop:         systemctl stop swarmia
+
+TROUBLESHOOTING:
+1. If Chrome blocks access, use Firefox/Edge
+2. Or access via: http://localhost:3000
+3. Check service: systemctl status swarmia
+4. View logs:     journalctl -u swarmia -f
+
