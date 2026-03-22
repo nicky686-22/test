@@ -17,7 +17,7 @@ CONFIG_DIR="/etc/swarmia"
 LOGS_DIR="/var/log/swarmia"
 DATA_DIR="/var/lib/swarmia"
 PORT="3000"
-REPO_URL="https://github.com/nicky686-22/SwarmIA.git"
+REPO_URL="https://github.com/nicky686-22/test.git"
 
 # Banner
 print_banner() {
