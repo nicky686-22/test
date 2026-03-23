@@ -1,5 +1,7 @@
+
 #!/bin/bash
-# Enhance SwarmIA Dashboard with Advanced Features
+# SwarmIA - Enhance Dashboard with Advanced Features
+# Añade: historial de chat, temas, notificaciones, comandos de voz
 
 set -e
 
@@ -8,42 +10,57 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+NC='\033[0m'
 
 # Banner
-echo -e "${GREEN}"
+echo -e "${CYAN}"
 echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║           Enhancing SwarmIA Dashboard                        ║"
-echo "║           Adding Advanced Features                           ║"
+echo "║           SwarmIA Dashboard Enhancer                         ║"
+echo "║           Advanced Features Installation                     ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
 # Verificar root
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}[!] This script must be run as root${NC}"
+    echo -e "${RED}[!] Este script debe ejecutarse como root${NC}"
+    echo -e "${YELLOW}Usa: sudo bash scripts/enhance_dashboard.sh${NC}"
     exit 1
 fi
 
+# Configuración
 SWARMIA_DIR="/opt/swarmia"
+STATIC_DIR="$SWARMIA_DIR/static/js"
+TEMPLATES_DIR="$SWARMIA_DIR/templates"
 
-# Verificar si SwarmIA está instalado
+# Verificar instalación
 if [ ! -d "$SWARMIA_DIR" ]; then
-    echo -e "${RED}[!] SwarmIA not found at $SWARMIA_DIR${NC}"
+    echo -e "${RED}[!] SwarmIA no encontrado en $SWARMIA_DIR${NC}"
+    echo -e "${YELLOW}[!] Ejecuta primero el instalador principal${NC}"
     exit 1
 fi
 
-echo -e "${BLUE}[*] Stopping SwarmIA service...${NC}"
+# Crear directorios si no existen
+mkdir -p "$STATIC_DIR"
+mkdir -p "$TEMPLATES_DIR"
+
+echo -e "${BLUE}[*] Deteniendo servicio SwarmIA...${NC}"
 systemctl stop swarmia 2>/dev/null || true
 
-echo -e "${BLUE}[*] Enhancing dashboard with advanced features...${NC}"
+echo -e "${BLUE}[*] Instalando funcionalidades avanzadas...${NC}"
 
-# 1. Agregar funcionalidad de historial de chat
-cat > "$SWARMIA_DIR/static/js/chat_history.js" << 'JS_EOF'
-// Chat History Management
+# ============================================================
+# 1. Chat History Manager
+# ============================================================
+cat > "$STATIC_DIR/chat_history.js" << 'JS_EOF'
+/**
+ * SwarmIA - Chat History Manager
+ * Guarda, carga y exporta el historial de conversaciones
+ */
 class ChatHistory {
     constructor() {
         this.storageKey = 'swarmia_chat_history';
-        this.maxHistory = 50;
+        this.maxHistory = 100;
         this.history = this.loadHistory();
     }
     
@@ -51,8 +68,8 @@ class ChatHistory {
         try {
             const saved = localStorage.getItem(this.storageKey);
             return saved ? JSON.parse(saved) : [];
-        } catch (error) {
-            console.error('Error loading chat history:', error);
+        } catch (e) {
+            console.error('Error loading history:', e);
             return [];
         }
     }
@@ -60,29 +77,23 @@ class ChatHistory {
     saveHistory() {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(this.history));
-        } catch (error) {
-            console.error('Error saving chat history:', error);
+        } catch (e) {
+            console.error('Error saving history:', e);
         }
     }
     
     addMessage(role, content, timestamp = Date.now()) {
         this.history.push({
-            role,
-            content,
-            timestamp,
-            id: Date.now() + Math.random().toString(36).substr(2, 9)
+            id: `${timestamp}-${Math.random().toString(36).substr(2, 6)}`,
+            role: role,
+            content: content,
+            timestamp: timestamp,
+            date: new Date(timestamp).toLocaleString()
         });
         
-        // Mantener solo los últimos mensajes
         if (this.history.length > this.maxHistory) {
             this.history = this.history.slice(-this.maxHistory);
         }
-        
-        this.saveHistory();
-    }
-    
-    clearHistory() {
-        this.history = [];
         this.saveHistory();
     }
     
@@ -90,61 +101,110 @@ class ChatHistory {
         return [...this.history];
     }
     
+    clearHistory() {
+        this.history = [];
+        this.saveHistory();
+    }
+    
     exportHistory() {
-        return JSON.stringify(this.history, null, 2);
+        const data = {
+            exportDate: new Date().toISOString(),
+            version: '1.0',
+            totalMessages: this.history.length,
+            history: this.history
+        };
+        return JSON.stringify(data, null, 2);
+    }
+    
+    importHistory(jsonData) {
+        try {
+            const data = JSON.parse(jsonData);
+            if (data.history && Array.isArray(data.history)) {
+                this.history = data.history;
+                this.saveHistory();
+                return true;
+            }
+            return false;
+        } catch (e) {
+            console.error('Import error:', e);
+            return false;
+        }
     }
 }
 
-// Exportar para uso global
 window.ChatHistory = ChatHistory;
 JS_EOF
 
-# 2. Agregar funcionalidad de temas (light/dark mode)
-cat > "$SWARMIA_DIR/static/js/theme_manager.js" << 'JS_EOF'
-// Theme Manager
+# ============================================================
+# 2. Theme Manager (Dark/Light/Blue)
+# ============================================================
+cat > "$STATIC_DIR/theme_manager.js" << 'JS_EOF'
+/**
+ * SwarmIA - Theme Manager
+ * Gestión de temas: dark, light, blue
+ */
 class ThemeManager {
     constructor() {
         this.storageKey = 'swarmia_theme';
         this.themes = {
             'dark': {
-                '--primary-color': '#4f46e5',
-                '--secondary-color': '#7c3aed',
-                '--dark-bg': '#0f172a',
-                '--card-bg': '#1e293b',
-                '--text-color': '#f1f5f9',
-                '--border-color': '#334155'
+                name: 'Dark',
+                icon: '🌙',
+                colors: {
+                    '--primary': '#4f46e5',
+                    '--primary-dark': '#4338ca',
+                    '--bg-primary': '#0f172a',
+                    '--bg-secondary': '#1e293b',
+                    '--text-primary': '#f1f5f9',
+                    '--text-secondary': '#94a3b8',
+                    '--border': '#334155',
+                    '--success': '#10b981',
+                    '--error': '#ef4444',
+                    '--warning': '#f59e0b'
+                }
             },
             'light': {
-                '--primary-color': '#4f46e5',
-                '--secondary-color': '#7c3aed',
-                '--dark-bg': '#f8fafc',
-                '--card-bg': '#ffffff',
-                '--text-color': '#1e293b',
-                '--border-color': '#e2e8f0'
+                name: 'Light',
+                icon: '☀️',
+                colors: {
+                    '--primary': '#4f46e5',
+                    '--primary-dark': '#4338ca',
+                    '--bg-primary': '#f8fafc',
+                    '--bg-secondary': '#ffffff',
+                    '--text-primary': '#1e293b',
+                    '--text-secondary': '#64748b',
+                    '--border': '#e2e8f0',
+                    '--success': '#10b981',
+                    '--error': '#ef4444',
+                    '--warning': '#f59e0b'
+                }
             },
             'blue': {
-                '--primary-color': '#3b82f6',
-                '--secondary-color': '#1d4ed8',
-                '--dark-bg': '#0c4a6e',
-                '--card-bg': '#0369a1',
-                '--text-color': '#f0f9ff',
-                '--border-color': '#0ea5e9'
+                name: 'Blue',
+                icon: '🔵',
+                colors: {
+                    '--primary': '#3b82f6',
+                    '--primary-dark': '#2563eb',
+                    '--bg-primary': '#0c4a6e',
+                    '--bg-secondary': '#075985',
+                    '--text-primary': '#f0f9ff',
+                    '--text-secondary': '#bae6fd',
+                    '--border': '#0ea5e9',
+                    '--success': '#10b981',
+                    '--error': '#ef4444',
+                    '--warning': '#f59e0b'
+                }
             }
         };
         
         this.currentTheme = this.getSavedTheme() || 'dark';
-        this.init();
-    }
-    
-    init() {
         this.applyTheme(this.currentTheme);
-        this.createThemeSelector();
     }
     
     getSavedTheme() {
         try {
             return localStorage.getItem(this.storageKey);
-        } catch (error) {
+        } catch (e) {
             return null;
         }
     }
@@ -152,9 +212,7 @@ class ThemeManager {
     saveTheme(theme) {
         try {
             localStorage.setItem(this.storageKey, theme);
-        } catch (error) {
-            console.error('Error saving theme:', error);
-        }
+        } catch (e) {}
     }
     
     applyTheme(themeName) {
@@ -162,120 +220,106 @@ class ThemeManager {
         if (!theme) return;
         
         const root = document.documentElement;
-        Object.entries(theme).forEach(([property, value]) => {
-            root.style.setProperty(property, value);
+        Object.entries(theme.colors).forEach(([prop, value]) => {
+            root.style.setProperty(prop, value);
         });
         
         this.currentTheme = themeName;
         this.saveTheme(themeName);
         
-        // Actualizar selector si existe
-        const selector = document.getElementById('themeSelector');
-        if (selector) {
-            selector.value = themeName;
+        // Actualizar meta theme-color para móviles
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+            meta.setAttribute('content', theme.colors['--bg-primary']);
         }
+        
+        this.dispatchThemeChange();
     }
     
-    createThemeSelector() {
-        // Crear selector de temas en el header
-        const header = document.querySelector('.header');
-        if (!header) return;
-        
-        const themeContainer = document.createElement('div');
-        themeContainer.className = 'theme-selector-container';
-        themeContainer.innerHTML = `
-            <select id="themeSelector" class="theme-selector">
-                <option value="dark">🌙 Dark</option>
-                <option value="light">☀️ Light</option>
-                <option value="blue">🔵 Blue</option>
-            </select>
-        `;
-        
-        header.appendChild(themeContainer);
-        
-        const selector = document.getElementById('themeSelector');
-        selector.value = this.currentTheme;
-        
-        selector.addEventListener('change', (e) => {
-            this.applyTheme(e.target.value);
-        });
+    dispatchThemeChange() {
+        const event = new CustomEvent('themeChanged', { detail: { theme: this.currentTheme } });
+        document.dispatchEvent(event);
+    }
+    
+    getCurrentTheme() {
+        return this.currentTheme;
+    }
+    
+    getAvailableThemes() {
+        return Object.keys(this.themes).map(key => ({
+            id: key,
+            name: this.themes[key].name,
+            icon: this.themes[key].icon
+        }));
     }
     
     cycleTheme() {
-        const themeNames = Object.keys(this.themes);
-        const currentIndex = themeNames.indexOf(this.currentTheme);
-        const nextIndex = (currentIndex + 1) % themeNames.length;
-        this.applyTheme(themeNames[nextIndex]);
+        const themes = Object.keys(this.themes);
+        const currentIndex = themes.indexOf(this.currentTheme);
+        const nextIndex = (currentIndex + 1) % themes.length;
+        this.applyTheme(themes[nextIndex]);
     }
 }
 
-// Exportar para uso global
 window.ThemeManager = ThemeManager;
 JS_EOF
 
-# 3. Agregar funcionalidad de notificaciones
-cat > "$SWARMIA_DIR/static/js/notifications.js" << 'JS_EOF'
-// Notification System
+# ============================================================
+# 3. Notification System
+# ============================================================
+cat > "$STATIC_DIR/notifications.js" << 'JS_EOF'
+/**
+ * SwarmIA - Notification System
+ * Notificaciones en tiempo real con diferentes tipos
+ */
 class NotificationSystem {
     constructor() {
         this.container = null;
-        this.notifications = [];
+        this.defaultDuration = 5000;
         this.init();
     }
     
     init() {
         this.createContainer();
-        this.setupStyles();
+        this.injectStyles();
     }
     
     createContainer() {
         this.container = document.createElement('div');
-        this.container.id = 'notification-container';
+        this.container.id = 'swarmia-notifications';
         this.container.className = 'notification-container';
         document.body.appendChild(this.container);
     }
     
-    setupStyles() {
+    injectStyles() {
         const style = document.createElement('style');
         style.textContent = `
             .notification-container {
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                z-index: 1000;
+                z-index: 10000;
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
-                max-width: 350px;
+                gap: 12px;
+                max-width: 380px;
             }
             
             .notification {
-                background: var(--card-bg);
-                border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 15px;
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                animation: slideIn 0.3s ease-out;
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 12px;
+                padding: 14px 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                animation: slideInRight 0.3s ease;
                 display: flex;
-                justify-content: space-between;
                 align-items: flex-start;
-                gap: 10px;
+                gap: 12px;
             }
             
-            .notification.success {
-                border-left: 4px solid #10b981;
-            }
-            
-            .notification.error {
-                border-left: 4px solid #ef4444;
-            }
-            
-            .notification.warning {
-                border-left: 4px solid #f59e0b;
-            }
-            
-            .notification.info {
-                border-left: 4px solid #3b82f6;
+            .notification-icon {
+                font-size: 20px;
+                flex-shrink: 0;
             }
             
             .notification-content {
@@ -285,37 +329,38 @@ class NotificationSystem {
             .notification-title {
                 font-weight: 600;
                 margin-bottom: 4px;
-                font-size: 14px;
+                color: var(--text-primary);
             }
             
             .notification-message {
                 font-size: 13px;
-                opacity: 0.9;
+                color: var(--text-secondary);
                 line-height: 1.4;
             }
             
             .notification-close {
                 background: none;
                 border: none;
-                color: var(--text-color);
-                opacity: 0.5;
+                color: var(--text-secondary);
                 cursor: pointer;
-                font-size: 18px;
-                padding: 0;
-                width: 24px;
-                height: 24px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
+                font-size: 16px;
+                padding: 4px;
                 border-radius: 4px;
+                line-height: 1;
+                flex-shrink: 0;
             }
             
             .notification-close:hover {
-                opacity: 1;
-                background: rgba(255, 255, 255, 0.1);
+                background: rgba(255,255,255,0.1);
+                color: var(--text-primary);
             }
             
-            @keyframes slideIn {
+            .notification.success { border-left: 3px solid #10b981; }
+            .notification.error { border-left: 3px solid #ef4444; }
+            .notification.warning { border-left: 3px solid #f59e0b; }
+            .notification.info { border-left: 3px solid #3b82f6; }
+            
+            @keyframes slideInRight {
                 from {
                     transform: translateX(100%);
                     opacity: 0;
@@ -326,7 +371,7 @@ class NotificationSystem {
                 }
             }
             
-            @keyframes slideOut {
+            @keyframes slideOutRight {
                 from {
                     transform: translateX(0);
                     opacity: 1;
@@ -340,71 +385,62 @@ class NotificationSystem {
         document.head.appendChild(style);
     }
     
-    show(title, message, type = 'info', duration = 5000) {
+    show(title, message, type = 'info', duration = null) {
+        const id = `notif-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+        const durationMs = duration !== null ? duration : this.defaultDuration;
+        
+        const icons = {
+            success: '✓',
+            error: '✗',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+        
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        
-        const id = Date.now() + Math.random().toString(36).substr(2, 9);
-        notification.dataset.id = id;
-        
+        notification.id = id;
         notification.innerHTML = `
+            <div class="notification-icon">${icons[type] || icons.info}</div>
             <div class="notification-content">
                 <div class="notification-title">${this.escapeHtml(title)}</div>
                 <div class="notification-message">${this.escapeHtml(message)}</div>
             </div>
-            <button class="notification-close" onclick="window.notificationSystem.remove('${id}')">×</button>
+            <button class="notification-close" onclick="window.notificationSystem?.remove('${id}')">×</button>
         `;
         
         this.container.appendChild(notification);
-        this.notifications.push({ id, element: notification });
         
-        if (duration > 0) {
-            setTimeout(() => {
-                this.remove(id);
-            }, duration);
+        if (durationMs > 0) {
+            setTimeout(() => this.remove(id), durationMs);
         }
         
         return id;
     }
     
-    success(title, message, duration = 5000) {
+    success(title, message, duration = null) {
         return this.show(title, message, 'success', duration);
     }
     
-    error(title, message, duration = 5000) {
+    error(title, message, duration = null) {
         return this.show(title, message, 'error', duration);
     }
     
-    warning(title, message, duration = 5000) {
+    warning(title, message, duration = null) {
         return this.show(title, message, 'warning', duration);
     }
     
-    info(title, message, duration = 5000) {
+    info(title, message, duration = null) {
         return this.show(title, message, 'info', duration);
     }
     
     remove(id) {
-        const index = this.notifications.findIndex(n => n.id === id);
-        if (index === -1) return;
+        const element = document.getElementById(id);
+        if (!element) return;
         
-        const { element } = this.notifications[index];
-        element.style.animation = 'slideOut 0.3s ease-out forwards';
-        
+        element.style.animation = 'slideOutRight 0.3s ease forwards';
         setTimeout(() => {
-            if (element.parentNode) {
-                element.parentNode.removeChild(element);
-            }
-            this.notifications.splice(index, 1);
+            if (element.parentNode) element.remove();
         }, 300);
-    }
-    
-    clearAll() {
-        this.notifications.forEach(notification => {
-            if (notification.element.parentNode) {
-                notification.element.parentNode.removeChild(notification.element);
-            }
-        });
-        this.notifications = [];
     }
     
     escapeHtml(text) {
@@ -414,28 +450,37 @@ class NotificationSystem {
     }
 }
 
-// Exportar para uso global
 window.NotificationSystem = NotificationSystem;
 JS_EOF
 
-# 4. Agregar funcionalidad de comandos de voz
-cat > "$SWARMIA_DIR/static/js/voice_commands.js" << 'JS_EOF'
-// Voice Command System
+# ============================================================
+# 4. Voice Commands
+# ============================================================
+cat > "$STATIC_DIR/voice_commands.js" << 'JS_EOF'
+/**
+ * SwarmIA - Voice Command System
+ * Reconocimiento de voz para comandos
+ */
 class VoiceCommandSystem {
     constructor() {
         this.recognition = null;
         this.isListening = false;
         this.commands = new Map();
+        this.supported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
         this.init();
     }
     
     init() {
-        this.setupCommands();
+        if (!this.supported) {
+            console.warn('Voice recognition not supported');
+            return;
+        }
+        
+        this.setupDefaultCommands();
         this.createVoiceButton();
     }
     
-    setupCommands() {
-        // Comandos básicos
+    setupDefaultCommands() {
         this.registerCommand('hola', () => {
             window.dashboard?.addSystemMessage('¡Hola! ¿En qué puedo ayudarte?');
         });
@@ -446,8 +491,10 @@ class VoiceCommandSystem {
             window.dashboard?.addSystemMessage(`La hora actual es: ${time}`);
         });
         
-        this.registerCommand('temperatura', () => {
-            window.dashboard?.addSystemMessage('La temperatura del sistema es normal.');
+        this.registerCommand('fecha', () => {
+            const now = new Date();
+            const date = now.toLocaleDateString();
+            window.dashboard?.addSystemMessage(`Hoy es: ${date}`);
         });
         
         this.registerCommand('estado', () => {
@@ -458,58 +505,55 @@ class VoiceCommandSystem {
             const commands = Array.from(this.commands.keys()).join(', ');
             window.dashboard?.addSystemMessage(`Comandos disponibles: ${commands}`);
         });
+        
+        this.registerCommand('limpiar', () => {
+            window.dashboard?.clearChat();
+        });
     }
     
-    registerCommand(command, callback) {
-        this.commands.set(command.toLowerCase(), callback);
+    registerCommand(phrase, callback) {
+        this.commands.set(phrase.toLowerCase(), callback);
     }
     
     createVoiceButton() {
-        const chatInputContainer = document.querySelector('.chat-input-container');
-        if (!chatInputContainer) return;
-        
-        const voiceButton = document.createElement('button');
-        voiceButton.id = 'voiceButton';
-        voiceButton.className = 'voice-button';
-        voiceButton.innerHTML = '🎤';
-        voiceButton.title = 'Activar comandos de voz';
-        
-        voiceButton.addEventListener('click', () => {
-            this.toggleListening();
-        });
-        
-        chatInputContainer.insertBefore(voiceButton, chatInputContainer.firstChild);
-        
-        // Agregar estilos
         const style = document.createElement('style');
         style.textContent = `
             .voice-button {
-                padding: 12px;
-                background: rgba(79, 70, 229, 0.2);
-                border: 1px solid rgba(79, 70, 229, 0.3);
+                padding: 8px 12px;
+                background: var(--primary);
+                border: none;
                 border-radius: 8px;
-                color: var(--text-color);
+                color: white;
                 cursor: pointer;
-                font-size: 16px;
+                font-size: 18px;
                 transition: all 0.2s;
+                margin-right: 8px;
             }
-            
-            .voice-button:hover {
-                background: rgba(79, 70, 229, 0.3);
-            }
-            
+            .voice-button:hover { opacity: 0.9; transform: scale(1.02); }
             .voice-button.listening {
                 background: #ef4444;
-                animation: pulse 1.5s infinite;
+                animation: pulse 1s infinite;
             }
-            
             @keyframes pulse {
                 0% { opacity: 1; }
-                50% { opacity: 0.7; }
+                50% { opacity: 0.6; }
                 100% { opacity: 1; }
             }
         `;
         document.head.appendChild(style);
+        
+        const voiceBtn = document.createElement('button');
+        voiceBtn.id = 'voiceCommandBtn';
+        voiceBtn.className = 'voice-button';
+        voiceBtn.innerHTML = '🎤';
+        voiceBtn.title = 'Comandos de voz (Ctrl+Shift+V)';
+        
+        voiceBtn.addEventListener('click', () => this.toggleListening());
+        
+        const inputContainer = document.querySelector('.chat-input-container');
+        if (inputContainer) {
+            inputContainer.insertBefore(voiceBtn, inputContainer.firstChild);
+        }
     }
     
     toggleListening() {
@@ -521,22 +565,21 @@ class VoiceCommandSystem {
     }
     
     startListening() {
-        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            window.notificationSystem?.error('Error', 'Tu navegador no soporta reconocimiento de voz.');
+        if (!this.supported) {
+            window.notificationSystem?.error('No soportado', 'Tu navegador no soporta reconocimiento de voz.');
             return;
         }
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
         this.recognition.lang = 'es-ES';
-        this.recognition.continuous = false;
         this.recognition.interimResults = false;
         
         this.recognition.onstart = () => {
             this.isListening = true;
-            const button = document.getElementById('voiceButton');
-            if (button) button.classList.add('listening');
-            window.notificationSystem?.info('Escuchando', 'Habla ahora...');
+            const btn = document.getElementById('voiceCommandBtn');
+            if (btn) btn.classList.add('listening');
+            window.notificationSystem?.info('🎤 Escuchando', 'Di un comando...');
         };
         
         this.recognition.onresult = (event) => {
@@ -545,14 +588,14 @@ class VoiceCommandSystem {
         };
         
         this.recognition.onerror = (event) => {
-            console.error('Error en reconocimiento de voz:', event.error);
+            console.error('Voice error:', event.error);
             window.notificationSystem?.error('Error', 'No se pudo reconocer el comando.');
         };
         
         this.recognition.onend = () => {
             this.isListening = false;
-            const button = document.getElementById('voiceButton');
-            if (button) button.classList.remove('listening');
+            const btn = document.getElementById('voiceCommandBtn');
+            if (btn) btn.classList.remove('listening');
         };
         
         this.recognition.start();
@@ -562,15 +605,9 @@ class VoiceCommandSystem {
         if (this.recognition) {
             this.recognition.stop();
         }
-        this.isListening = false;
-        const button = document.getElementById('voiceButton');
-        if (button) button.classList.remove('listening');
     }
     
     processCommand(transcript) {
-        window.notificationSystem?.info('Comando', `Reconocido: "${transcript}"`);
-        
-        // Buscar comando que coincida
         for (const [command, callback] of this.commands) {
             if (transcript.includes(command)) {
                 callback();
@@ -578,190 +615,89 @@ class VoiceCommandSystem {
             }
         }
         
-        // Si no hay comando específico, enviar como mensaje de chat
-        const chatInput = document.getElementById('chatInput');
-        if (chatInput) {
-            chatInput.value = transcript;
+        // Si no es comando, enviar como mensaje
+        const input = document.getElementById('chatInput');
+        if (input) {
+            input.value = transcript;
             window.dashboard?.sendMessage();
         }
     }
 }
 
-// Exportar para uso global
 window.VoiceCommandSystem = VoiceCommandSystem;
 JS_EOF
 
-# 5. Actualizar dashboard.js principal para integrar todas las funcionalidades
-cat > "$SWARMIA_DIR/static/js/dashboard_enhanced.js" << 'JS_EOF'
-// Swarm
-IA Enhanced Dashboard JavaScript
-
+# ============================================================
+# 5. Dashboard Principal Mejorado
+# ============================================================
+cat > "$STATIC_DIR/dashboard_enhanced.js" << 'JS_EOF'
+/**
+ * SwarmIA - Enhanced Dashboard
+ * Dashboard principal con todas las funcionalidades avanzadas
+ */
 class SwarmIAEnhancedDashboard {
     constructor() {
-        this.apiBase = window.location.origin;
+        // Elementos DOM
         this.chatMessages = document.getElementById('chatMessages');
         this.chatInput = document.getElementById('chatInput');
-        this.sendButton = document.getElementById('sendButton');
-        this.systemStatus = document.getElementById('systemStatus');
-        this.uptimeValue = document.getElementById('uptimeValue');
-        this.chatCount = document.getElementById('chatCount');
-        this.responseTime = document.getElementById('responseTime');
+        this.sendBtn = document.getElementById('sendButton');
         
-        this.messageCount = 0;
+        // Estadísticas
         this.startTime = Date.now();
+        this.messageCount = 0;
         
-        // Sistemas avanzados
+        // Sistemas
         this.chatHistory = null;
         this.themeManager = null;
         this.notificationSystem = null;
-        this.voiceCommandSystem = null;
+        this.voiceCommands = null;
         
         this.init();
     }
     
     async init() {
-        this.updateStats();
         this.setupEventListeners();
         await this.loadInitialData();
-        
-        // Inicializar sistemas avanzados
         this.initAdvancedSystems();
+        this.startStatsUpdater();
+        this.addExportButton();
+        this.addThemeSelector();
         
-        // Actualizar estadísticas cada 30 segundos
-        setInterval(() => this.updateStats(), 30000);
-        
-        // Actualizar tiempo de actividad
-        setInterval(() => this.updateUptime(), 1000);
-        
-        // Mostrar notificación de bienvenida
-        setTimeout(() => {
-            if (this.notificationSystem) {
-                this.notificationSystem.success(
-                    'Dashboard Mejorado',
-                    'Funcionalidades avanzadas activadas: historial, temas, notificaciones y comandos de voz.'
-                );
-            }
-        }, 1000);
+        window.notificationSystem?.success('Dashboard Mejorado', 'Todas las funcionalidades están activas');
     }
     
     initAdvancedSystems() {
-        // Historial de chat
         if (window.ChatHistory) {
             this.chatHistory = new window.ChatHistory();
-            console.log('Chat History system initialized');
         }
-        
-        // Gestor de temas
         if (window.ThemeManager) {
             this.themeManager = new window.ThemeManager();
-            console.log('Theme Manager initialized');
         }
-        
-        // Sistema de notificaciones
         if (window.NotificationSystem) {
             this.notificationSystem = new window.NotificationSystem();
-            window.notificationSystem = this.notificationSystem; // Global access
-            console.log('Notification System initialized');
+            window.notificationSystem = this.notificationSystem;
         }
-        
-        // Comandos de voz
         if (window.VoiceCommandSystem) {
-            this.voiceCommandSystem = new window.VoiceCommandSystem();
-            console.log('Voice Command System initialized');
+            this.voiceCommands = new window.VoiceCommandSystem();
         }
-        
-        // Agregar botón de exportar historial
-        this.addHistoryExportButton();
-    }
-    
-    addHistoryExportButton() {
-        const chatSection = document.querySelector('.chat-section .section-title');
-        if (!chatSection) return;
-        
-        const exportButton = document.createElement('button');
-        exportButton.className = 'export-history-button';
-        exportButton.innerHTML = '📥 Exportar';
-        exportButton.title = 'Exportar historial de chat';
-        
-        exportButton.addEventListener('click', () => {
-            this.exportChatHistory();
-        });
-        
-        chatSection.appendChild(exportButton);
-        
-        // Agregar estilos
-        const style = document.createElement('style');
-        style.textContent = `
-            .export-history-button {
-                margin-left: auto;
-                padding: 6px 12px;
-                background: rgba(79, 70, 229, 0.2);
-                border: 1px solid rgba(79, 70, 229, 0.3);
-                border-radius: 6px;
-                color: var(--text-color);
-                cursor: pointer;
-                font-size: 12px;
-                transition: all 0.2s;
-            }
-            
-            .export-history-button:hover {
-                background: rgba(79, 70, 229, 0.3);
-            }
-            
-            .theme-selector-container {
-                margin-left: 15px;
-            }
-            
-            .theme-selector {
-                padding: 6px 10px;
-                background: rgba(79, 70, 229, 0.2);
-                border: 1px solid rgba(79, 70, 229, 0.3);
-                border-radius: 6px;
-                color: var(--text-color);
-                font-size: 12px;
-                cursor: pointer;
-            }
-            
-            .theme-selector option {
-                background: var(--card-bg);
-                color: var(--text-color);
-            }
-        `;
-        document.head.appendChild(style);
     }
     
     setupEventListeners() {
-        this.sendButton.addEventListener('click', () => this.sendMessage());
-        this.chatInput.addEventListener('keypress', (e) => {
+        this.sendBtn?.addEventListener('click', () => this.sendMessage());
+        this.chatInput?.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 this.sendMessage();
             }
         });
         
-        // Atajo de teclado para cambiar tema (Ctrl+Shift+T)
+        // Atajos de teclado
         document.addEventListener('keydown', (e) => {
-            if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-                e.preventDefault();
-                if (this.themeManager) {
-                    this.themeManager.cycleTheme();
-                    if (this.notificationSystem) {
-                        this.notificationSystem.info('Tema cambiado', `Tema actual: ${this.themeManager.currentTheme}`);
-                    }
-                }
-            }
-            
-            // Atajo para exportar historial (Ctrl+Shift+E)
-            if (e.ctrlKey && e.shiftKey && e.key === 'E') {
-                e.preventDefault();
-                this.exportChatHistory();
-            }
-            
-            // Atajo para comandos de voz (Ctrl+Shift+V)
-            if (e.ctrlKey && e.shiftKey && e.key === 'V') {
-                e.preventDefault();
-                if (this.voiceCommandSystem) {
-                    this.voiceCommandSystem.toggleListening();
+            if (e.ctrlKey && e.shiftKey) {
+                switch(e.key) {
+                    case 'T': e.preventDefault(); this.themeManager?.cycleTheme(); break;
+                    case 'E': e.preventDefault(); this.exportHistory(); break;
+                    case 'V': e.preventDefault(); this.voiceCommands?.toggleListening(); break;
                 }
             }
         });
@@ -769,40 +705,159 @@ class SwarmIAEnhancedDashboard {
     
     async loadInitialData() {
         try {
-            const response = await fetch(`${this.apiBase}/health`);
-            const data = await response.json();
-            
-            if (data.status === 'healthy') {
-                this.systemStatus.textContent = 'Online';
-                this.systemStatus.className = 'status-badge';
-                this.addSystemMessage('System is online and ready.');
-                
-                if (this.notificationSystem) {
-                    this.notificationSystem.success('Conectado', 'SwarmIA está en línea y funcionando.');
-                }
+            const response = await fetch('/health');
+            if (response.ok) {
+                this.addSystemMessage('✅ Sistema conectado correctamente');
+            } else {
+                this.addSystemMessage('⚠️ Error al conectar con el servidor');
             }
         } catch (error) {
-            this.systemStatus.textContent = 'Offline';
-            this.systemStatus.style.background = '#ef4444';
-            this.addSystemMessage('Unable to connect to SwarmIA API.');
-            
-            if (this.notificationSystem) {
-                this.notificationSystem.error('Error', 'No se pudo conectar con la API de SwarmIA.');
-            }
+            this.addSystemMessage('❌ No se pudo conectar con SwarmIA');
         }
     }
     
-    async updateStats() {
+    async sendMessage() {
+        const message = this.chatInput?.value.trim();
+        if (!message) return;
+        
+        this.setSendingState(true);
+        this.chatHistory?.addMessage('user', message);
+        this.addMessage('user', 'Tú', message);
+        this.chatInput.value = '';
+        
         try {
-            const start = Date.now();
-            const response = await fetch(`${this.apiBase}/health`);
-            const data = await response.json();
-            const end = Date.now();
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message })
+            });
             
-            this.responseTime.textContent = `${end - start}ms`;
+            const data = await response.json();
+            this.addMessage('ai', 'SwarmIA', data.response);
+            this.chatHistory?.addMessage('ai', data.response);
+            this.messageCount++;
+            
+            this.updateStatsDisplay();
+            
         } catch (error) {
-            this.responseTime.textContent = 'N/A';
+            this.addSystemMessage('Error al enviar mensaje');
+            this.notificationSystem?.error('Error', 'No se pudo enviar el mensaje');
+        } finally {
+            this.setSendingState(false);
+            this.chatInput?.focus();
         }
+    }
+    
+    addMessage(type, sender, content) {
+        if (!this.chatMessages) return;
+        
+        const div = document.createElement('div');
+        div.className = `message ${type}`;
+        div.innerHTML = `
+            <div class="message-header">
+                <strong>${this.escapeHtml(sender)}</strong>
+                <span class="message-time">${new Date().toLocaleTimeString()}</span>
+            </div>
+            <div class="message-content">${this.escapeHtml(content)}</div>
+        `;
+        
+        this.chatMessages.appendChild(div);
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+    
+    addSystemMessage(content) {
+        this.addMessage('system', 'Sistema', content);
+    }
+    
+    clearChat() {
+        if (this.chatMessages) {
+            this.chatMessages.innerHTML = '';
+        }
+        this.addSystemMessage('Chat limpiado');
+    }
+    
+    exportHistory() {
+        if (!this.chatHistory) {
+            this.notificationSystem?.warning('No disponible', 'Historial no inicializado');
+            return;
+        }
+        
+        const data = this.chatHistory.exportHistory();
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `swarmia_chat_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        this.notificationSystem?.success('Exportado', 'Historial descargado correctamente');
+    }
+    
+    addExportButton() {
+        const header = document.querySelector('.chat-header');
+        if (!header) return;
+        
+        const btn = document.createElement('button');
+        btn.className = 'export-btn';
+        btn.innerHTML = '📥 Exportar';
+        btn.title = 'Exportar historial (Ctrl+Shift+E)';
+        btn.addEventListener('click', () => this.exportHistory());
+        header.appendChild(btn);
+    }
+    
+    addThemeSelector() {
+        const header = document.querySelector('.main-header');
+        if (!header || !this.themeManager) return;
+        
+        const select = document.createElement('select');
+        select.className = 'theme-selector';
+        select.title = 'Cambiar tema (Ctrl+Shift+T)';
+        
+        this.themeManager.getAvailableThemes().forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme.id;
+            option.textContent = `${theme.icon} ${theme.name}`;
+            if (theme.id === this.themeManager.getCurrentTheme()) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+        
+        select.addEventListener('change', (e) => {
+            this.themeManager.applyTheme(e.target.value);
+        });
+        
+        header.appendChild(select);
+    }
+    
+    setSendingState(sending) {
+        if (this.sendBtn) {
+            this.sendBtn.disabled = sending;
+            this.sendBtn.textContent = sending ? 'Enviando...' : 'Enviar';
+        }
+        if (this.chatInput) {
+            this.chatInput.disabled = sending;
+        }
+    }
+    
+    startStatsUpdater() {
+        setInterval(() => this.updateStatsDisplay(), 30000);
+        setInterval(() => this.updateUptime(), 1000);
+    }
+    
+    async updateStatsDisplay() {
+        try {
+            const response = await fetch('/api/stats');
+            const stats = await response.json();
+            
+            const uptimeEl = document.getElementById('uptimeValue');
+            const msgsEl = document.getElementById('messageCount');
+            
+            if (uptimeEl) uptimeEl.textContent = stats.uptime || '00:00:00';
+            if (msgsEl) msgsEl.textContent = this.messageCount;
+            
+        } catch (e) {}
     }
     
     updateUptime() {
@@ -811,124 +866,9 @@ class SwarmIAEnhancedDashboard {
         const minutes = Math.floor((uptimeMs % 3600000) / 60000);
         const seconds = Math.floor((uptimeMs % 60000) / 1000);
         
-        this.uptimeValue.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-    
-    async sendMessage() {
-        const message = this.chatInput.value.trim();
-        if (!message) return;
-        
-        // Deshabilitar entrada mientras se procesa
-        this.chatInput.disabled = true;
-        this.sendButton.disabled = true;
-        this.sendButton.textContent = 'Sending...';
-        
-        // Guardar en historial
-        if (this.chatHistory) {
-            this.chatHistory.addMessage('user', message);
-        }
-        
-        // Mostrar mensaje del usuario
-        this.addMessage('user', 'You', message);
-        this.chatInput.value = '';
-        
-        try {
-            const response = await fetch(`${this.apiBase}/api/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message })
-            });
-            
-            const data = await response.json();
-            
-            // Mostrar respuesta de la IA
-            this.addMessage('ai', 'SwarmIA', data.response);
-            this.messageCount++;
-            this.chatCount.textContent = this.messageCount;
-            
-            // Guardar respuesta en historial
-            if (this.chatHistory) {
-                this.chatHistory.addMessage('ai', data.response);
-            }
-            
-            // Notificación de éxito
-            if (this.notificationSystem) {
-                this.notificationSystem.success('Mensaje enviado', 'Respuesta recibida correctamente.');
-            }
-            
-        } catch (error) {
-            this.addSystemMessage('Error: Unable to send message to SwarmIA.');
-            
-            if (this.notificationSystem) {
-                this.notificationSystem.error('Error', 'No se pudo enviar el mensaje.');
-            }
-        } finally {
-            // Rehabilitar entrada
-            this.chatInput.disabled = false;
-            this.sendButton.disabled = false;
-            this.sendButton.textContent = 'Send';
-            this.chatInput.focus();
-        }
-    }
-    
-    addMessage(type, sender, content) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        
-        const now = new Date();
-        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        messageDiv.innerHTML = `
-            <div class="message-header">
-                <span class="message-sender">${sender}</span>
-                <span class="message-time">${timeString}</span>
-            </div>
-            <div class="message-content">${this.escapeHtml(content)}</div>
-        `;
-        
-        this.chatMessages.appendChild(messageDiv);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
-    
-    addSystemMessage(content) {
-        const systemDiv = document.createElement('div');
-        systemDiv.className = 'message system';
-        systemDiv.innerHTML = `
-            <div class="message-header">
-                <span class="message-sender">System</span>
-                <span class="message-time">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-            <div class="message-content">${this.escapeHtml(content)}</div>
-        `;
-        
-        this.chatMessages.appendChild(systemDiv);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
-    
-    exportChatHistory() {
-        if (!this.chatHistory) {
-            if (this.notificationSystem) {
-                this.notificationSystem.warning('Historial no disponible', 'El sistema de historial no está inicializado.');
-            }
-            return;
-        }
-        
-        const history = this.chatHistory.exportHistory();
-        const blob = new Blob([history], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `swarmia_chat_history_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        
-        if (this.notificationSystem) {
-            this.notificationSystem.success('Historial exportado', 'El historial de chat se ha descargado correctamente.');
+        const uptimeEl = document.getElementById('uptimeValue');
+        if (uptimeEl && !uptimeEl.textContent?.includes(':')) {
+            uptimeEl.textContent = `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
         }
     }
     
@@ -939,167 +879,146 @@ class SwarmIAEnhancedDashboard {
     }
 }
 
-// Inicializar dashboard mejorado cuando el DOM esté listo
+// Inicialización
 document.addEventListener('DOMContentLoaded', () => {
-    // Cargar scripts avanzados primero
-    const loadScript = (src) => {
-        return new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = src;
-            script.onload = resolve;
-            script.onerror = reject;
-            document.head.appendChild(script);
-        });
-    };
-    
-    // Cargar todos los scripts avanzados
-    Promise.all([
-        loadScript('/static/js/chat_history.js'),
-        loadScript('/static/js/theme_manager.js'),
-        loadScript('/static/js/notifications.js'),
-        loadScript('/static/js/voice_commands.js')
-    ]).then(() => {
-        // Inicializar dashboard mejorado
-        window.dashboard = new SwarmIAEnhancedDashboard();
-        console.log('Enhanced dashboard initialized with all features');
-    }).catch(error => {
-        console.error('Error loading advanced features:', error);
-        // Fallback al dashboard básico
-        window.dashboard = new SwarmIADashboard();
-    });
+    window.dashboard = new SwarmIAEnhancedDashboard();
 });
 JS_EOF
 
-# 6. Actualizar main.py para soportar nuevas funcionalidades
-echo -e "${BLUE}[*] Updating main.py with enhanced features...${NC}"
+# ============================================================
+# 6. Actualizar main.py
+# ============================================================
+echo -e "${BLUE}[*] Actualizando main.py...${NC}"
+
 cat > "$SWARMIA_DIR/src/core/main.py" << 'PYTHON_EOF'
 #!/usr/bin/env python3
 """
-SwarmIA - AI System with Enhanced Dashboard
+SwarmIA - Sistema de Agentes Distribuidos
+Dashboard mejorado con historial, temas, notificaciones y comandos de voz
 """
 
-from flask import Flask, jsonify, request, render_template, send_from_directory
 import os
 import json
 import time
 import threading
+from datetime import datetime
+from flask import Flask, jsonify, request, render_template, send_from_directory
 
 app = Flask(__name__, 
             static_folder='../../static',
             template_folder='../../templates')
 
-# Cargar configuración
-config_path = os.getenv('SWARMIA_CONFIG', '/etc/swarmia/config.yaml')
-config = {
-    'server': {'host': '0.0.0.0', 'port': 3000, 'debug': False},
-    'ai': {'backend': 'deepseek'},
-    'messaging': {'platform': 'none'}
-}
+# Configuración básica
+HOST = os.getenv('SWARMIA_HOST', '0.0.0.0')
+PORT = int(os.getenv('SWARMIA_PORT', '8080'))
+DEBUG = os.getenv('SWARMIA_DEBUG', 'false').lower() == 'true'
 
-# Variables para estadísticas
+# Estado del sistema
 start_time = time.time()
 message_count = 0
-active_users = set()
+active_sessions = set()
 chat_history = []
-
-# Lock para thread safety
 history_lock = threading.Lock()
+
+# ============================================================
+# Rutas principales
+# ============================================================
 
 @app.route('/')
 def index():
-    """Serve the enhanced dashboard"""
-    return render_template('index.html', api_url=request.host_url)
+    """Dashboard principal"""
+    return render_template('index.html')
 
 @app.route('/health')
 def health():
-    """Health check endpoint"""
+    """Health check"""
     return jsonify({
-        'status': 'healthy', 
-        'version': '1.0.0',
-        'features': ['dashboard', 'chat', 'history', 'themes', 'notifications', 'voice']
+        'status': 'healthy',
+        'version': '2.0.0',
+        'features': ['chat', 'history', 'themes', 'notifications', 'voice'],
+        'timestamp': time.time()
     })
 
 @app.route('/api/stats')
 def stats():
-    """Get system statistics"""
+    """Estadísticas del sistema"""
     uptime = time.time() - start_time
     hours = int(uptime // 3600)
     minutes = int((uptime % 3600) // 60)
     seconds = int(uptime % 60)
     
     with history_lock:
-        history_size = len(chat_history)
+        history_count = len(chat_history)
     
     return jsonify({
         'uptime': f'{hours:02d}:{minutes:02d}:{seconds:02d}',
         'message_count': message_count,
-        'active_users': len(active_users),
-        'history_size': history_size,
+        'active_sessions': len(active_sessions),
+        'history_size': history_count,
         'status': 'running',
-        'version': '1.0.0',
-        'features_enabled': True
+        'version': '2.0.0'
     })
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
-    """Chat endpoint with history"""
+    """Endpoint de chat con historial"""
     global message_count
+    
     data = request.get_json()
     message = data.get('message', '')
-    user_id = request.remote_addr
+    session_id = request.remote_addr
     
-    # Registrar usuario activo
-    active_users.add(user_id)
-    
+    active_sessions.add(session_id)
     message_count += 1
     
-    # Guardar en historial
+    # Guardar mensaje del usuario
     with history_lock:
         chat_history.append({
             'id': message_count,
-            'user': user_id,
-            'message': message,
+            'role': 'user',
+            'content': message,
             'timestamp': time.time(),
-            'type': 'user'
+            'datetime': datetime.now().isoformat(),
+            'session': session_id
         })
     
-    # Simular procesamiento de IA mejorado
-    response_text = f"I received your message: '{message}'. This is a response from the {config['ai']['backend']} backend."
+    # Procesar respuesta (simulación - reemplazar con IA real)
+    response_text = f"Recibí: '{message}'. Soy SwarmIA v2.0 con dashboard mejorado."
     
-    # Agregar respuesta al historial
+    # Guardar respuesta
     with history_lock:
         chat_history.append({
-            'id': message_count + 0.5,  # ID fraccionario para respuestas
-            'user': 'swarmia',
-            'message': response_text,
+            'id': message_count + 0.5,
+            'role': 'ai',
+            'content': response_text,
             'timestamp': time.time(),
-            'type': 'ai'
+            'datetime': datetime.now().isoformat(),
+            'session': 'swarmia'
         })
     
     return jsonify({
         'response': response_text,
-        'ai_backend': config['ai']['backend'],
         'message_id': message_count,
-        'timestamp': time.time(),
-        'features': ['history', 'themes', 'notifications']
+        'timestamp': time.time()
     })
 
 @app.route('/api/history', methods=['GET'])
 def get_history():
-    """Get chat history (last 50 messages)"""
+    """Obtener historial de chat"""
+    limit = request.args.get('limit', default=50, type=int)
+    
     with history_lock:
-        # Devolver últimos 50 mensajes
-        recent_history = chat_history[-50:] if len(chat_history) > 50 else chat_history.copy()
+        history = chat_history[-limit:] if len(chat_history) > limit else chat_history.copy()
     
     return jsonify({
-        'history': recent_history,
-        'total_messages': len(chat_history),
-        'count': len(recent_history)
+        'history': history,
+        'total': len(chat_history),
+        'limit': limit
     })
 
 @app.route('/api/features')
-def get_features():
-    """Get available features"""
+def features():
+    """Lista de características disponibles"""
     return jsonify({
         'features': {
             'chat': True,
@@ -1107,78 +1026,101 @@ def get_features():
             'themes': True,
             'notifications': True,
             'voice_commands': True,
-            'export': True
+            'export_history': True,
+            'stats': True
         },
-        'version': '1.1.0',
+        'version': '2.0.0',
         'status': 'enhanced'
     })
 
 @app.route('/static/<path:path>')
 def serve_static(path):
-    """Serve static files"""
+    """Servir archivos estáticos"""
     return send_from_directory(app.static_folder, path)
 
+# ============================================================
+# Inicialización
+# ============================================================
+
 if __name__ == '__main__':
-    host = config['server']['host']
-    port = config['server']['port']
-    debug = config['server']['debug']
-    
-    print(f"SwarmIA Enhanced starting on http://{host}:{port}")
-    print(f"Enhanced Dashboard available at: http://{host}:{port}/")
-    print(f"Features: Chat History, Themes, Notifications, Voice Commands")
-    app.run(host=host, port=port, debug=debug)
+    print(f"""
+╔══════════════════════════════════════════════════════════════╗
+║                    SwarmIA v2.0 Enhanced                     ║
+║                   Sistema de Agentes Distribuidos             ║
+╚══════════════════════════════════════════════════════════════╝
+
+🚀 Servidor iniciado en: http://{HOST}:{PORT}
+📊 Dashboard: http://{HOST}:{PORT}/
+🔧 API Features: http://{HOST}:{PORT}/api/features
+
+✨ Características activas:
+   • Chat con historial
+   • Temas (Dark/Light/Blue)
+   • Notificaciones en tiempo real
+   • Comandos de voz
+   • Exportación de historial
+
+💡 Atajos de teclado:
+   Ctrl+Shift+T - Cambiar tema
+   Ctrl+Shift+E - Exportar historial
+   Ctrl+Shift+V - Comandos de voz
+""")
+    app.run(host=HOST, port=PORT, debug=DEBUG)
 PYTHON_EOF
 
-# 7. Actualizar index.html para cargar el dashboard mejorado
-echo -e "${BLUE}[*] Updating index.html to
- load enhanced dashboard...${NC}"
-sed -i 's|/static/js/dashboard.js|/static/js/dashboard_enhanced.js|g' "$SWARMIA_DIR/templates/index.html"
+# ============================================================
+# 7. Actualizar index.html
+# ============================================================
+echo -e "${BLUE}[*] Actualizando index.html...${NC}"
 
-# Agregar información de características en el footer
-sed -i 's|AI Assistant System|AI Assistant System with Advanced Features|g' "$SWARMIA_DIR/templates/index.html"
+if [ -f "$TEMPLATES_DIR/index.html" ]; then
+    # Crear respaldo
+    cp "$TEMPLATES_DIR/index.html" "$TEMPLATES_DIR/index.html.bak"
+    
+    # Actualizar para cargar scripts mejorados
+    sed -i 's|dashboard.js|dashboard_enhanced.js|g' "$TEMPLATES_DIR/index.html" 2>/dev/null || true
+    sed -i 's|AI Assistant|SwarmIA Enhanced|g' "$TEMPLATES_DIR/index.html" 2>/dev/null || true
+fi
 
-echo -e "${GREEN}[✓] Dashboard enhanced with advanced features${NC}"
+# ============================================================
+# 8. Crear archivo de versión
+# ============================================================
+echo "2.0.0" > "$SWARMIA_DIR/VERSION"
+echo "enhanced" > "$SWARMIA_DIR/FEATURES"
 
-# Reiniciar servicio
-echo -e "${BLUE}[*] Restarting SwarmIA service...${NC}"
-systemctl daemon-reload
-systemctl restart swarmia
+# ============================================================
+# 9. Reiniciar servicio
+# ============================================================
+echo -e "${BLUE}[*] Reiniciando SwarmIA...${NC}"
+
+systemctl daemon-reload 2>/dev/null || true
+systemctl restart swarmia 2>/dev/null || true
 
 sleep 2
 
-if systemctl is-active --quiet swarmia; then
-    echo -e "${GREEN}[✓] SwarmIA restarted successfully${NC}"
+if systemctl is-active --quiet swarmia 2>/dev/null; then
+    echo -e "${GREEN}[✓] Servicio reiniciado correctamente${NC}"
 else
-    echo -e "${YELLOW}[*] Trying manual start...${NC}"
+    echo -e "${YELLOW}[!] Iniciando manualmente...${NC}"
     cd "$SWARMIA_DIR"
-    nohup python3 src/core/main.py > /var/log/swarmia/swarmia.log 2>&1 &
+    nohup python3 src/core/main.py > /var/log/swarmia.log 2>&1 &
     sleep 2
-    if ps aux | grep -v grep | grep -q "python3.*main.py"; then
-        echo -e "${GREEN}[✓] SwarmIA started manually${NC}"
+    if pgrep -f "python3.*main.py" > /dev/null; then
+        echo -e "${GREEN}[✓] SwarmIA iniciado manualmente${NC}"
     else
-        echo -e "${RED}[!] Failed to start${NC}"
+        echo -e "${RED}[!] Error al iniciar SwarmIA${NC}"
     fi
 fi
 
-# Mostrar información
-IP=$(hostname -I | awk '{print $1}')
+# ============================================================
+# 10. Mostrar información final
+# ============================================================
+IP=$(hostname -I | awk '{print $1}' 2>/dev/null || echo "localhost")
+
 echo ""
-echo -e "${GREEN}✅ Dashboard enhanced successfully!${NC}"
+echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║              DASHBOARD MEJORADO INSTALADO                     ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${CYAN}New Features Added:${NC}"
-echo -e "  📝 ${GREEN}Chat History${NC} - Guarda y exporta conversaciones"
-echo -e "  🎨 ${GREEN}Theme Manager${NC} - Temas dark/light/blue"
-echo -e "  🔔 ${GREEN}Notification System${NC} - Notificaciones en tiempo real"
-echo -e "  🎤 ${GREEN}Voice Commands${NC} - Comandos de voz (hola, hora, ayuda)"
-echo -e "  📊 ${GREEN}Enhanced Stats${NC} - Usuarios activos, tamaño de historial"
-echo ""
-echo -e "${CYAN}Keyboard Shortcuts:${NC}"
-echo -e "  ${YELLOW}Ctrl+Shift+T${NC} - Cambiar tema"
-echo -e "  ${YELLOW}Ctrl+Shift+E${NC} - Exportar historial"
-echo -e "  ${YELLOW}Ctrl+Shift+V${NC} - Comandos de voz"
-echo ""
-echo -e "${CYAN}Dashboard URL:${NC} http://$IP:3000/"
-echo -e "${CYAN}API Features:${NC} http://$IP:3000/api/features"
-echo -e "${CYAN}API History:${NC} http://$IP:3000/api/history"
-echo ""
-echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
+echo -e "${CYAN}✨ Nuevas características:${NC}"
+echo
