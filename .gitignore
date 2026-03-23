@@ -1,0 +1,253 @@
+# ============================================================
+# SwarmIA .gitignore
+# Archivos que NO deben subirse al repositorio
+# ============================================================
+
+# ============================================================
+# Configuración sensible (¡NUNCA SUBIR!)
+# ============================================================
+.env
+.env.local
+.env.*.local
+config/config.yaml
+config/local.yaml
+config/*.local.yaml
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+*.secret
+
+# ============================================================
+# Archivos de log
+# ============================================================
+*.log
+logs/
+*.log.*
+swarmia.log
+gateway.log
+supervisor.log
+agents.log
+*.pid
+
+# ============================================================
+# Bases de datos
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+data/
+*.db-shm
+*.db-wal
+
+# ============================================================
+# Archivos de sesión de WhatsApp/Telegram
+# ============================================================
+*_session.json
+*_session/
+whatsapp_*.json
+telegram_*.session
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+pip-wheel-metadata/
+share/python-wheels/
+
+# ============================================================
+# Virtual Environment
+# ============================================================
+venv/
+env/
+ENV/
+.venv/
+.envrc
+venv.bak/
+env.bak/
+
+# ============================================================
+# IDE y Editores
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ============================================================
+# Sistemas operativos
+# ============================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ============================================================
+# Archivos de prueba y cobertura
+# ============================================================
+.coverage
+.coverage.*
+.htmlcov/
+.pytest_cache/
+.tox/
+*.cover
+*.py,cover
+.hypothesis/
+coverage.xml
+*.coveragerc
+nosetests.xml
+
+# ============================================================
+# Archivos temporales
+# ============================================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.cache
+*.swp
+*.swo
+*~
+tmp/
+temp/
+*.part
+
+# ============================================================
+# Archivos de dependencias (no necesarios en repo)
+# ============================================================
+package-lock.json
+yarn.lock
+node_modules/
+bower_components/
+jspm_packages/
+
+# ============================================================
+# Archivos de documentación compilada
+# ============================================================
+docs/_build/
+docs/api/
+site/
+
+# ============================================================
+# Archivos de datos generados
+# ============================================================
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.feather
+*.arrow
+*.npz
+*.h5
+*.hdf5
+
+# ============================================================
+# Archivos de modelos (son grandes, no subir)
+# ============================================================
+*.gguf
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.onnx
+*.tflite
+models/*.bin
+models/*.gguf
+
+# ============================================================
+# Wordlists y diccionarios (si se usan en pentesting)
+# ============================================================
+wordlists/
+*.dict
+*.wordlist
+rockyou.txt
+
+# ============================================================
+# Archivos de respaldo del sistema
+# ============================================================
+*.tar
+*.gz
+*.zip
+*.rar
+*.7z
+*.bz2
+
+# ============================================================
+# Archivos de configuración de CI/CD
+# ============================================================
+.env.production
+.env.staging
+.gitlab-ci.yml.local
+
+# ============================================================
+# Archivos específicos de SwarmIA
+# ============================================================
+# Archivos de sesión
+whatsapp_session.json
+telegram_session.json
+
+# Datos de agentes
+agent_data/
+agent_cache/
+
+# Archivos de subida temporal
+uploads/
+temp_uploads/
+
+# Reportes generados
+reports/
+scan_results/
+*.html
+
+# Archivos de escaneo agresivo
+aggressive_scan_*.json
+vulnerability_export_*.csv
+exploit_results_*.json
+
+# ============================================================
+# Archivos de debug
+# ============================================================
+debug.log
+debug/
+*.dump
+core.*
