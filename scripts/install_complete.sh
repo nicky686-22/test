@@ -33,9 +33,12 @@ LOGS_DIR="/var/log/swarmia"
 DATA_DIR="/var/lib/swarmia"
 PORT="3000"
 
-# Crear directorios
+# Crear directorios COMPLETOS
+echo -e "${BLUE}[*] Creating directories...${NC}"
 mkdir -p "$SWARMIA_DIR" "$CONFIG_DIR" "$LOGS_DIR" "$DATA_DIR"
 mkdir -p "$SWARMIA_DIR/static/css" "$SWARMIA_DIR/static/js" "$SWARMIA_DIR/static/images" "$SWARMIA_DIR/templates"
+mkdir -p "$SWARMIA_DIR/src/core"
+echo -e "${GREEN}[✓] Directories created${NC}"
 
 # Limpiar instalación anterior
 echo -e "${BLUE}[*] Cleaning previous installation...${NC}"
@@ -52,7 +55,6 @@ echo -e "${GREEN}[✓] Dependencies installed${NC}"
 echo -e "${BLUE}[*] Creating SwarmIA with dashboard...${NC}"
 
 # Crear main.py con dashboard
-mkdir -p "$SWARMIA_DIR/src/core"
 cat > "$SWARMIA_DIR/src/core/main.py" << 'PYTHON_EOF'
 #!/usr/bin/env python3
 """
@@ -573,11 +575,11 @@ document.addEventListener('DOMContentLoaded', () => {
 JS_EOF
 
 # Crear archivo HTML del dashboard
-cat > "$SWARMIA_DIR/templates/index.html" << 'HTML_EOF'
+cat > "$SWARMIA_DIR/t
+emplates/index.html" << 'HTML_EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SwarmIA Dashboard</title>
