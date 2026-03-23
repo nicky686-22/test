@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwarmIA Universal Installer - Complete with Dashboard
+# SwarmIA Universal Installer - Simple with Dashboard
 
 set -e
 
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                 SwarmIA Universal Installer                  ║"
-echo "║                 Complete with Dashboard                      ║"
+echo "║                 Simple with Dashboard                        ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -24,11 +24,11 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Descargar y ejecutar el instalador completo
-echo -e "${BLUE}[*] Downloading complete installer...${NC}"
-TEMP_SCRIPT="/tmp/swarmia_complete_$(date +%s).sh"
+# Descargar y ejecutar el instalador simple
+echo -e "${BLUE}[*] Downloading simple installer...${NC}"
+TEMP_SCRIPT="/tmp/swarmia_simple_$(date +%s).sh"
 
-curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install_complete.sh -o "$TEMP_SCRIPT"
+curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install_simple.sh -o "$TEMP_SCRIPT"
 chmod +x "$TEMP_SCRIPT"
 
 echo -e "${GREEN}[✓] Installer ready${NC}"
