@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmIA - Configuration</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+        
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .logo span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+        
+        /* Page Header */
+        .page-header {
+            margin-bottom: 32px;
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .page-header p {
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Cards */
+        .config-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        
+        .config-card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .config-card h2 i {
+            color: var(--primary);
+        }
+        
+        .config-card .description {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        /* Form Groups */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        
+        .form-group input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border);
+            transition: 0.3s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success);
+            color: #34d399;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error);
+            color: #f87171;
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid var(--warning);
+            color: #fbbf24;
+        }
+        
+        .alert i {
+            margin-right: 8px;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-badge.active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+        
+        .status-badge.inactive {
+            background: rgba(148, 163, 184, 0.2);
+            color: var(--text-secondary);
+        }
+        
+        /* Two columns */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .container {
+                padding: 20px 16px;
+            }
+            .tabs {
+                flex-wrap: wrap;
+            }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .api-key-masked {
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <h1>SwarmIA <span>v2.0</span></h1>
+        </div>
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="page-header">
+            <h1><i class="fas fa-cog"></i> System Configuration</h1>
+            <p>Configure AI providers, communication channels, and system settings</p>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="ai">🤖 AI Configuration</button>
+            <button class="tab-btn" data-tab="communication">📱 Communication</button>
+            <button class="tab-btn" data-tab="system">⚙️ System Settings</button>
+        </div>
+        
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+        
+        <!-- Tab: AI Configuration -->
+        <div id="tab-ai" class="tab-content active">
+            <div class="config-card">
+                <h2><i class="fas fa-brain"></i> AI Provider</h2>
+                <div class="description">Select and configure your AI model provider</div>
+                
+                <div class="form-group">
+                    <label for="aiProvider">Default Provider</label>
+                    <select id="aiProvider">
+                        <option value="deepseek">DeepSeek API (Cloud)</option>
+                        <option value="llama">Llama CPP (Local)</option>
+                        <option value="mock">Mock Mode (Development)</option>
+                    </select>
+                </div>
+                
+                <div id="deepseekConfig" class="provider-config">
+                    <div class="form-group">
+                        <label for="deepseekApiKey">DeepSeek API Key</label>
+                        <input type="password" id="deepseekApiKey" placeholder="sk-...">
+                        <small style="color: var(--text-secondary); font-size: 12px; display: block; margin-top: 6px;">
+                            <i class="fas fa-info-circle"></i> Get your API key from <a href="https://platform.deepseek.com/" target="_blank" style="color: var(--primary);">platform.deepseek.com</a>
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deepseekModel">Model</label>
+                        <select id="deepseekModel">
+                            <option value="deepseek-chat">deepseek-chat</option>
+                            <option value="deepseek-coder">deepseek-coder</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deepseekMaxTokens">Max Tokens</label>
+                        <input type="number" id="deepseekMaxTokens" value="4096" min="1" max="8192">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="deepseekTemperature">Temperature (0-1)</label>
+                        <input type="range" id="deepseekTemperature" min="0" max="1" step="0.1" value="0.7">
+                        <span id="tempValue" style="margin-left: 8px;">0.7</span>
+                    </div>
+                </div>
+                
+                <div id="llamaConfig" class="provider-config" style="display: none;">
+                    <div class="form-group">
+                        <label for="llamaModelPath">Model Path (GGUF file)</label>
+                        <input type="text" id="llamaModelPath" placeholder="/path/to/model.gguf">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="llamaContextSize">Context Size</label>
+                        <input type="number" id="llamaContextSize" value="4096" min="512" max="32768">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="llamaThreads">CPU Threads</label>
+                        <input type="number" id="llamaThreads" value="4" min="1" max="32">
+                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn-primary" onclick="saveAIConfig()">
+                        <i class="fas fa-save"></i> Save AI Configuration
+                    </button>
+                    <button class="btn-secondary" onclick="testAIConnection()">
+                        <i class="fas fa-vial"></i> Test Connection
+                    </button>
+                </div>
+            </div>
+            
+            <div class="config-card">
+                <h2><i class="fas fa-chart-line"></i> AI Behavior</h2>
+                <div class="description">Fine-tune the AI assistant behavior</div>
+                
+                <div class="form-group">
+                    <label for="assistantName">Assistant Name</label>
+                    <input type="text" id="assistantName" placeholder="SwarmIA" value="SwarmIA">
+                </div>
+                
+                <div class="form-group">
+                    <label for="systemPrompt">System Prompt (Personality)</label>
+                    <textarea id="systemPrompt" rows="4" style="width: 100%; padding: 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px; color: var(--text-primary);" placeholder="You are a helpful AI assistant...">You are SwarmIA, an enhanced AI assistant. You are helpful, concise, and efficient. Always complete tasks fully and provide clear responses.</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: Communication -->
+        <div id="tab-communication" class="tab-content" style="display: none;">
+            <div class="two-columns">
+                <div class="config-card">
+                    <h2><i class="fab fa-whatsapp"></i> WhatsApp</h2>
+                    <div class="description">Configure WhatsApp integration</div>
+                    
+                    <div class="form-group toggle-label">
+                        <span>Enable WhatsApp Gateway</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="whatsappEnabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="whatsappConfig" style="display: none;">
+                        <div class="form-group">
+                            <label for="whatsappSession">Session File</label>
+                            <input type="text" id="whatsappSession" value="whatsapp_session.json">
+                        </div>
+                        <div class="alert alert-warning" style="display: block; margin-top: 12px;">
+                            <i class="fas fa-qrcode"></i> WhatsApp requires QR code authentication. After saving, restart the service to scan the QR code.
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="saveWhatsAppConfig()">
+                            <i class="fas fa-save"></i> Save WhatsApp Config
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h2><i class="fab fa-telegram"></i> Telegram</h2>
+                    <div class="description">Configure Telegram bot integration</div>
+                    
+                    <div class="form-group toggle-label">
+                        <span>Enable Telegram Bot</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="telegramEnabled">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="telegramConfig" style="display: none;">
+                        <div class="form-group">
+                            <label for="telegramBotToken">Bot Token</label>
+                            <input type="password" id="telegramBotToken" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                            <small style="color: var(--text-secondary); font-size: 12px; display: block; margin-top: 6px;">
+                                <i class="fas fa-info-circle"></i> Get your bot token from <a href="https://t.me/botfather" target="_blank" style="color: var(--primary);">@BotFather</a>
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="telegramAllowedUsers">Allowed Users (comma-separated)</label>
+                            <input type="text" id="telegramAllowedUsers" placeholder="123456789,987654321">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="saveTelegramConfig()">
+                            <i class="fas fa-save"></i> Save Telegram Config
+                        </button>
+                        <button class="btn-secondary" onclick="testTelegramBot()">
+                            <i class="fas fa-paper-plane"></i> Test Bot
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab: System Settings -->
+        <div id="tab-system" class="tab-content" style="display: none;">
+            <div class="two-columns">
+                <div class="config-card">
+                    <h2><i class="fas fa-server"></i> Server Settings</h2>
+                    <div class="description">Configure web server and network settings</div>
+                    
+                    <div class="form-group">
+                        <label for="serverHost">Server Host</label>
+                        <input type="text" id="serverHost" value="0.0.0.0" placeholder="0.0.0.0">
+                        <small>Use 0.0.0.0 to listen on all interfaces</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="serverPort">Server Port</label>
+                        <input type="number" id="serverPort" value="8080" min="1024" max="65535">
+                    </div>
+                    
+                    <div class="form-group toggle-label">
+                        <span>Debug Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="debugMode">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h2><i class="fas fa-database"></i> Storage & Logs</h2>
+                    <div class="description">Configure data storage and logging</div>
+                    
+                    <div class="form-group">
+                        <label for="logLevel">Log Level</label>
+                        <select id="logLevel">
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO" selected>INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxLogSize">Max Log Size (MB)</label>
+                        <input type="number" id="maxLogSize" value="100" min="10" max="1000">
+                    </div>
+                    
+                    <div class="form-group toggle-label">
+                        <span>Keep Logs for 30 Days</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoCleanup" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-card">
+                <h2><i class="fas fa-shield-alt"></i> Security</h2>
+                <div class="description">Security and authentication settings</div>
+                
+                <div class="form-group">
+                    <label for="sessionTimeout">Session Timeout (hours)</label>
+                    <input type="number" id="sessionTimeout" value="24" min="1" max="168">
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxLoginAttempts">Max Login Attempts</label>
+                    <input type="number" id="maxLoginAttempts" value="5" min="3" max="10">
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn-primary" onclick="saveSystemConfig()">
+                        <i class="fas fa-save"></i> Save System Settings
+                    </button>
+                    <button class="btn-secondary btn-danger" onclick="resetToDefaults()">
+                        <i class="fas fa-undo"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Current configuration state
+        let currentConfig = {
+            ai: { provider: 'deepseek', deepseek: {}, llama: {} },
+            communication: { whatsapp: { enabled: false }, telegram: { enabled: false } },
+            system: { server: {}, storage: {}, security: {} }
+        };
+        
+        // Load configuration from server
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const data = await response.json();
+                    currentConfig = data;
+                    applyConfigToUI();
+                }
+            } catch (error) {
+                console.error('Error loading config:', error);
+            }
+        }
+        
+        // Apply config to UI elements
+        function applyConfigToUI() {
+            // AI Provider
+            const provider = currentConfig.ai?.provider || 'deepseek';
+            document.getElementById('aiProvider').value = provider;
+            toggleProviderConfig(provider);
+            
+            // DeepSeek
+            if (currentConfig.ai?.deepseek) {
+                document.getElementById('deepseekApiKey').value = currentConfig.ai.deepseek.api_key || '';
+                document.getElementById('deepseekModel').value = currentConfig.ai.deepseek.model || 'deepseek-chat';
+                document.getElementById('deepseekMaxTokens').value = currentConfig.ai.deepseek.max_tokens || 4096;
+                document.getElementById('deepseekTemperature').value = currentConfig.ai.deepseek.temperature || 0.7;
+                document.getElementById('tempValue').textContent = currentConfig.ai.deepseek.temperature || 0.7;
+            }
+            
+            // Llama
+            if (currentConfig.ai?.llama) {
+                document.getElementById('llamaModelPath').value = currentConfig.ai.llama.model_path || '';
+                document.getElementById('llamaContextSize').value = currentConfig.ai.llama.context_size || 4096;
+                document.getElementById('llamaThreads').value = currentConfig.ai.llama.threads || 4;
+            }
+            
+            // Assistant settings
+            document.getElementById('assistantName').value = currentConfig.ai?.assistant_name || 'SwarmIA';
+            document.getElementById('systemPrompt').value = currentConfig.ai?.system_prompt || '';
+            
+            // Communication
+            if (currentConfig.communication?.whatsapp) {
+                document.getElementById('whatsappEnabled').checked = currentConfig.communication.whatsapp.enabled;
+                document.getElementById('whatsappSession').value = currentConfig.communication.whatsapp.session_file || 'whatsapp_session.json';
+                toggleWhatsAppConfig(currentConfig.communication.whatsapp.enabled);
+            }
+            
+            if (currentConfig.communication?.telegram) {
+                document.getElementById('telegramEnabled').checked = currentConfig.communication.telegram.enabled;
+                document.getElementById('telegramBotToken').value = currentConfig.communication.telegram.bot_token || '';
+                document.getElementById('telegramAllowedUsers').value = currentConfig.communication.telegram.allowed_users || '';
+                toggleTelegramConfig(currentConfig.communication.telegram.enabled);
+            }
+            
+            // System
+            if (currentConfig.system?.server) {
+                document.getElementById('serverHost').value = currentConfig.system.server.host || '0.0.0.0';
+                document.getElementById('serverPort').value = currentConfig.system.server.port || 8080;
+                document.getElementById('debugMode').checked = currentConfig.system.server.debug || false;
+            }
+            
+            if (currentConfig.system?.storage) {
+                document.getElementById('logLevel').value = currentConfig.system.storage.log_level || 'INFO';
+                document.getElementById('maxLogSize').value = currentConfig.system.storage.max_log_size || 100;
+                document.getElementById('autoCleanup').checked = currentConfig.system.storage.auto_cleanup !== false;
+            }
+            
+            if (currentConfig.system?.security) {
+                document.getElementById('sessionTimeout').value = currentConfig.system.security.session_timeout || 24;
+                document.getElementById('maxLoginAttempts').value = currentConfig.system.security.max_login_attempts || 5;
+            }
+        }
+        
+        // Toggle provider config visibility
+        function toggleProviderConfig(provider) {
+            const deepseekDiv = document.getElementById('deepseekConfig');
+            const llamaDiv = document.getElementById('llamaConfig');
+            
+            if (provider === 'deepseek') {
+                deepseekDiv.style.display = 'block';
+                llamaDiv.style.display = 'none';
+            } else if (provider === 'llama') {
+                deepseekDiv.style.display = 'none';
+                llamaDiv.style.display = 'block';
+            } else {
+                deepseekDiv.style.display = 'none';
+                llamaDiv.style.display = 'none';
+            }
+        }
+        
+        function toggleWhatsAppConfig(enabled) {
+            const configDiv = document.getElementById('whatsappConfig');
+            configDiv.style.display = enabled ? 'block' : 'none';
+        }
+        
+        function toggleTelegramConfig(enabled) {
+            const configDiv = document.getElementById('telegramConfig');
+            configDiv.style.display = enabled ? 'block' : 'none';
+        }
+        
+        // Show alert message
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${message}`;
+            container.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // Save AI Configuration
+        async function saveAIConfig() {
+            const provider = document.getElementById('aiProvider').value;
+            const config = {
+                provider: provider,
+                assistant_name: document.getElementById('assistantName').value,
+                system_prompt: document.getElementById('systemPrompt').value,
+                deepseek: {
+                    api_key: document.getElementById('deepseekApiKey').value,
+                    model: document.getElementById('deepseekModel').value,
+                    max_tokens: parseInt(document.getElementById('deepseekMaxTokens').value),
+                    temperature: parseFloat(document.getElementById('deepseekTemperature').value)
+                },
+                llama: {
+                    model_path: document.getElementById('llamaModelPath').value,
+                    context_size: parseInt(document.getElementById('llamaContextSize').value),
+                    threads: parseInt(document.getElementById('llamaThreads').value)
+                }
+            };
+            
+            try {
+                const response = await fetch('/api/config/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showAlert('AI configuration saved successfully!', 'success');
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                showAlert('Error saving AI configuration', 'error');
+            }
+        }
+        
+        // Test AI Connection
+        async function testAIConnection() {
+            showAlert('Testing connection...', 'warning');
+            try {
+                const response = await fetch('/api/config/ai/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showAlert(`Connection successful! ${data.message || 'AI provider is responding'}`, 'success');
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                showAlert('Connection failed. Check your API key and settings.', 'error');
+            }
+        }
+        
+        // Save WhatsApp Config
+        async function saveWhatsAppConfig() {
+            const config = {
+                enabled: document.getElementById('whatsappEnabled').checked,
+                session_file: document.getElementById('whatsappSession').value
+            };
+            
+            try {
+                const response = await fetch('/api/config/whatsapp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showAlert('WhatsApp configuration saved!', 'success');
+                    toggleWhatsAppConfig(config.enabled);
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                showAlert('Error saving WhatsApp configuration', 'error');
+            }
+        }
+        
+        // Save Telegram Config
+        async function saveTelegramConfig() {
+            const config = {
+                enabled: document.getElementById('telegramEnabled').checked,
+                bot_token: document.getElementById('telegramBotToken').value,
+                allowed_users: document.getElementById('telegramAllowedUsers').value
+            };
+            
+            try {
+                const response = await fetch('/api/config/telegram', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showAlert('Telegram configuration saved!', 'success');
+                    toggleTelegramConfig(config.enabled);
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                showAlert('Error saving Telegram configuration', 'error');
+            }
+        }
+        
+        // Test Telegram Bot
+        async function testTelegramBot() {
+            const botToken = document.getElementById('telegramBotToken').value;
+            if (!botToken) {
+                showAlert('Please enter a bot token first', 'warning');
+                return;
+            }
+            
+            showAlert('Testing bot connection...', 'warning');
+            try {
+                const response = await fetch('/api/config/telegram/test', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ bot_token: botToken })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showAlert(`Bot connected: @${data.username}`, 'success');
+                } else {
+                    throw new Error('Invalid token');
+                }
+            } catch (error) {
+                showAlert('Invalid bot token or network error', 'error');
+            }
+        }
+        
+        // Save System Config
+        async function saveSystemConfig() {
+            const config = {
+                server: {
+                    host: document.getElementById('serverHost').value,
+                    port: parseInt(document.getElementById('serverPort').value),
+                    debug: document.getElementById('debugMode').checked
+                },
+                storage: {
+                    log_level: document.getElementById('logLevel').value,
+                    max_log_size: parseInt(document.getElementById('maxLogSize').value),
+                    auto_cleanup: document.getElementById('autoCleanup').checked
+                },
+                security: {
+                    session_timeout: parseInt(document.getElementById('sessionTimeout').value),
+                    max_login_attempts: parseInt(document.getElementById('maxLoginAttempts').value)
+                }
+            };
+            
+            try {
+                const response = await fetch('/api/config/system', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showAlert('System settings saved! Some changes may require restart.', 'success');
+                } else {
+                    throw new Error('Failed to save');
+                }
+            } catch (error) {
+                showAlert('Error saving system settings', 'error');
+            }
+        }
+        
+        // Reset to defaults
+        async function resetToDefaults() {
+            if (confirm('Are you sure you want to reset all settings to defaults? This action cannot be undone.')) {
+                try {
+                    const response = await fetch('/api/config/reset', { method: 'POST' });
+                    if (response.ok) {
+                        showAlert('Settings reset to defaults! Page will reload.', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        throw new Error('Reset failed');
+                    }
+                } catch (error) {
+                    showAlert('Error resetting settings', 'error');
+                }
+            }
+        }
+        
+        // Temperature slider display
+        document.getElementById('deepseekTemperature').addEventListener('input', function() {
+            document.getElementById('tempValue').textContent = this.value;
+        });
+        
+        // Provider change handler
+        document.getElementById('aiProvider').addEventListener('change', function() {
+            toggleProviderConfig(this.value);
+        });
+        
+        // Toggle handlers
+        document.getElementById('whatsappEnabled').addEventListener('change', function() {
+            toggleWhatsAppConfig(this.checked);
+        });
+        
+        document.getElementById('telegramEnabled').addEventListener
