@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwarmIA - Login</title>
+    <title>SwarmIA - Iniciar Sesión</title>
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -317,7 +317,6 @@
             animation: shake 0.5s;
         }
         
-        /* Loading spinner */
         .spinner {
             display: inline-block;
             width: 16px;
@@ -341,18 +340,18 @@
         <div class="login-card">
             <div class="logo">
                 <h1><i class="fas fa-robot"></i> SwarmIA</h1>
-                <p>Enhanced AI Assistant System</p>
+                <p>Sistema de Asistente IA Mejorado</p>
                 <span class="badge"><i class="fas fa-gem"></i> v2.0.0</span>
             </div>
             
             <div id="alertDefaultPassword" class="alert alert-warning" style="display: none;">
                 <i class="fas fa-exclamation-triangle"></i>
-                <strong>Default password detected!</strong> You must change it on first login.
+                <strong>Contraseña por defecto detectada!</strong> Debes cambiarla en el primer inicio.
             </div>
             
             <div id="alertError" class="alert alert-danger" style="display: none;">
                 <i class="fas fa-exclamation-circle"></i>
-                <span id="errorMessage">Login failed. Please check your credentials.</span>
+                <span id="errorMessage">Error de inicio de sesión. Verifica tus credenciales.</span>
             </div>
             
             <div id="alertInfo" class="alert alert-success" style="display: none;">
@@ -362,36 +361,36 @@
             
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username"><i class="fas fa-user"></i> Username</label>
+                    <label for="username"><i class="fas fa-user"></i> Usuario</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="username" name="username" placeholder="Enter username" value="admin" autocomplete="username" required>
+                        <input type="text" id="username" name="username" placeholder="Ingresa tu usuario" value="admin" autocomplete="username" required>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <label for="password"><i class="fas fa-lock"></i> Contraseña</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" placeholder="Enter password" value="admin" autocomplete="current-password" required>
+                        <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña" value="admin" autocomplete="current-password" required>
                     </div>
                 </div>
                 
                 <button type="submit" class="login-btn pulse" id="loginBtn">
                     <i class="fas fa-sign-in-alt"></i>
-                    Login to Dashboard
+                    Iniciar Sesión
                 </button>
             </form>
             
             <div class="security-note">
-                <i class="fas fa-shield-alt"></i> Secure login • Session expires after 24 hours
+                <i class="fas fa-shield-alt"></i> Inicio seguro • La sesión expira después de 24 horas
             </div>
             
             <div class="system-info">
                 <p><i class="fas fa-server"></i> SwarmIA v2.0.0</p>
-                <p><i class="fas fa-network-wired"></i> <span id="localIP">Detecting local IP...</span></p>
-                <p><i class="fas fa-exclamation-triangle"></i> Default credentials: <strong>admin / admin</strong></p>
-                <p class="version"><i class="fas fa-sync-alt"></i> Password change required on first login</p>
+                <p><i class="fas fa-network-wired"></i> <span id="localIP">Detectando IP local...</span></p>
+                <p><i class="fas fa-exclamation-triangle"></i> Credenciales por defecto: <strong>admin / admin</strong></p>
+                <p class="version"><i class="fas fa-sync-alt"></i> Cambio de contraseña requerido en el primer inicio</p>
             </div>
         </div>
     </div>
@@ -432,34 +431,28 @@
                 const response = await fetch('/api/network/info');
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('localIP').textContent = `Access: http://${data.local_ip}:${data.port}`;
+                    document.getElementById('localIP').textContent = `Acceso: http://${data.local_ip}:${data.port}`;
                 } else {
                     throw new Error('Network info not available');
                 }
             } catch (error) {
-                // Fallback - try to get port from current location
                 const port = window.location.port || '8080';
-                document.getElementById('localIP').textContent = `Access: http://${window.location.hostname}:${port}`;
+                document.getElementById('localIP').textContent = `Acceso: http://${window.location.hostname}:${port}`;
             }
         }
         
-        // Check if already logged in (redirect if session exists)
+        // Check if already logged in
         async function checkExistingSession() {
             try {
                 const response = await fetch('/api/health');
                 if (response.ok) {
-                    // If we can access health, check if we have session via cookie
-                    // This is a simple check - actual session is cookie-based
                     const cookies = document.cookie.split(';');
                     const hasSession = cookies.some(cookie => cookie.trim().startsWith('session_token='));
-                    
                     if (hasSession) {
-                        // Redirect to dashboard
-                        window.location.href = '/';
+                        window.location.href = '/dashboard';
                     }
                 }
             } catch (error) {
-                // Not logged in, stay on login page
                 console.debug('No active session');
             }
         }
@@ -472,20 +465,16 @@
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
             
-            // Validate inputs
             if (!username || !password) {
-                showError('Please enter both username and password');
+                showError('Por favor ingresa usuario y contraseña');
                 return;
             }
             
-            // Hide any existing alerts
             hideAlerts();
             
-            // Show loading state
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
+            loginBtn.innerHTML = '<span class="spinner"></span> Autenticando...';
             
-            // Create basic auth header
             const credentials = btoa(`${username}:${password}`);
             
             try {
@@ -497,59 +486,51 @@
                     }
                 });
                 
-                if (response.status === 307 || response.status === 302) {
-                    // Password change required
+                const data = await response.json();
+                
+                // Verificar si requiere cambio de contraseña
+                if (data.redirect === '/change-password') {
                     window.location.href = '/change-password';
                     return;
                 }
                 
                 if (response.ok) {
-                    const data = await response.json();
-                    
-                    // Store username in localStorage (non-sensitive)
                     localStorage.setItem('swarmia_username', data.username);
                     localStorage.setItem('swarmia_login_time', Date.now());
                     
-                    // Show success message briefly before redirect
-                    loginBtn.innerHTML = '<i class="fas fa-check"></i> Login successful! Redirecting...';
+                    loginBtn.innerHTML = '<i class="fas fa-check"></i> ¡Login exitoso! Redirigiendo...';
                     loginBtn.style.background = 'linear-gradient(90deg, #10b981, #059669)';
                     
                     setTimeout(() => {
-                        window.location.href = '/';
+                        window.location.href = '/dashboard';
                     }, 500);
                 } else if (response.status === 401) {
-                    showError('Invalid username or password');
-                    
-                    // Shake animation
+                    showError('Usuario o contraseña incorrectos');
                     const loginCard = document.querySelector('.login-card');
                     loginCard.classList.add('shake');
                     setTimeout(() => {
                         loginCard.classList.remove('shake');
                     }, 500);
                 } else {
-                    const errorData = await response.json().catch(() => ({}));
-                    showError(errorData.detail || 'Login failed. Please try again.');
+                    showError(data.detail || 'Error de inicio de sesión. Intenta nuevamente.');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                showError('Network error. Please check your connection and try again.');
+                showError('Error de red. Verifica tu conexión e intenta nuevamente.');
             } finally {
-                // Reset button state (only if not redirected)
-                if (!window.location.pathname.includes('/')) {
+                if (!window.location.pathname.includes('/change-password')) {
                     loginBtn.disabled = false;
-                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Dashboard';
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Iniciar Sesión';
                 }
             }
         });
         
-        // Show error message
         function showError(message) {
             const alertError = document.getElementById('alertError');
             const errorMessage = document.getElementById('errorMessage');
             errorMessage.textContent = message;
             alertError.style.display = 'block';
             
-            // Auto-hide after 5 seconds
             setTimeout(() => {
                 if (alertError.style.display === 'block') {
                     alertError.style.display = 'none';
@@ -557,7 +538,6 @@
             }, 5000);
         }
         
-        // Show info message
         function showInfo(message) {
             const alertInfo = document.getElementById('alertInfo');
             const infoMessage = document.getElementById('infoMessage');
@@ -571,14 +551,12 @@
             }, 4000);
         }
         
-        // Hide all alerts
         function hideAlerts() {
             document.getElementById('alertError').style.display = 'none';
             document.getElementById('alertDefaultPassword').style.display = 'none';
             document.getElementById('alertInfo').style.display = 'none';
         }
         
-        // Check if using default password
         function checkDefaultPassword() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -591,29 +569,24 @@
             }
         }
         
-        // Event listeners for real-time validation
         document.getElementById('username').addEventListener('input', checkDefaultPassword);
         document.getElementById('password').addEventListener('input', checkDefaultPassword);
         
-        // Auto-focus password field and show warning if default
         document.getElementById('username').addEventListener('focus', function() {
             if (this.value === 'admin') {
                 document.getElementById('password').focus();
             }
         });
         
-        // Initialize
         createParticles();
         getNetworkInfo();
         checkExistingSession();
         checkDefaultPassword();
         
-        // Auto-focus password if username is admin
         if (document.getElementById('username').value === 'admin') {
             document.getElementById('password').focus();
         }
         
-        // Add keyboard shortcut (Enter submits)
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -621,7 +594,6 @@
             }
         });
         
-        // Show welcome message for returning users
         const lastLogin = localStorage.getItem('swarmia_login_time');
         if (lastLogin) {
             const lastLoginDate = new Date(parseInt(lastLogin));
@@ -630,7 +602,7 @@
             
             if (diffHours < 24 && diffHours > 0) {
                 setTimeout(() => {
-                    showInfo(`Welcome back! Last login: ${lastLoginDate.toLocaleTimeString()}`);
+                    showInfo(`¡Bienvenido de nuevo! Último inicio: ${lastLoginDate.toLocaleTimeString()}`);
                 }, 500);
             }
         }
