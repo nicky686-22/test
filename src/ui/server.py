@@ -624,12 +624,12 @@ async def get_log_file(log_file: str, request: Request, lines: int = 100, sessio
         raise HTTPException(status_code=500, detail=f"Error reading log file: {str(e)}")
 
 # ============================================================
-# Configuration Endpoints
+# Configuration Endpoints (sin autenticación)
 # ============================================================
 
 @app.get("/api/config")
-async def get_full_config(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get full configuration"""
+async def get_full_config(request: Request):
+    """Get full configuration - accessible without auth"""
     return {
         "ai": {
             "provider": config.AI_DEFAULT_PROVIDER,
@@ -677,8 +677,8 @@ async def get_full_config(request: Request, session: Dict = Depends(verify_sessi
     }
 
 @app.post("/api/config/ai")
-async def update_ai_config(request: Request, session: Dict = Depends(verify_session_token)):
-    """Update AI configuration"""
+async def update_ai_config(request: Request):
+    """Update AI configuration - accessible without auth"""
     data = await request.json()
     
     try:
@@ -722,8 +722,8 @@ async def update_ai_config(request: Request, session: Dict = Depends(verify_sess
         return {"success": False, "message": str(e)}
 
 @app.post("/api/config/ai/test")
-async def test_ai_connection(request: Request, session: Dict = Depends(verify_session_token)):
-    """Test AI connection"""
+async def test_ai_connection(request: Request):
+    """Test AI connection - accessible without auth"""
     api_key = config.DEEPSEEK_API_KEY
     
     if not api_key:
@@ -950,78 +950,62 @@ async def reset_config(request: Request, session: Dict = Depends(verify_session_
 # Aggressive Agent Endpoints
 # ============================================================
 
-@app.get("/api/aggressive/dependencies")
-async def get_aggressive_dependencies(request: Request, session: Dict = Depends(verify_session_token)):
-    """Check aggressive agent dependencies"""
-    deps = {
-        "paramiko": {"installed": False, "name": "paramiko", "version": None},
-        "cryptography": {"installed": False, "name": "cryptography", "version": None},
-        "requests": {"installed": False, "name": "requests", "version": None}
+# ============================================================
+# Configuration Endpoints (sin autenticación)
+# ============================================================
+
+@app.get("/api/config")
+async def get_full_config(request: Request):
+    """Get full configuration - accessible without auth"""
+    return {
+        "ai": {
+            "provider": config.AI_DEFAULT_PROVIDER,
+            "deepseek": {
+                "api_key": config.DEEPSEEK_API_KEY,
+                "model": config.DEEPSEEK_MODEL,
+                "max_tokens": config.AI_MAX_TOKENS,
+                "temperature": config.AI_TEMPERATURE
+            },
+            "llama": {
+                "model_path": config.LLAMA_MODEL_PATH,
+                "context_size": config.LLAMA_CONTEXT_SIZE,
+                "threads": config.LLAMA_THREADS
+            },
+            "assistant_name": "SwarmIA",
+            "system_prompt": "Eres SwarmIA, un asistente de IA mejorado..."
+        },
+        "communication": {
+            "whatsapp": {
+                "enabled": config.WHATSAPP_ENABLED,
+                "session_file": config.WHATSAPP_SESSION_FILE
+            },
+            "telegram": {
+                "enabled": config.TELEGRAM_ENABLED,
+                "bot_token": config.TELEGRAM_BOT_TOKEN,
+                "allowed_users": os.getenv("TELEGRAM_ALLOWED_USERS", "")
+            }
+        },
+        "system": {
+            "server": {
+                "host": config.SERVER_HOST,
+                "port": config.SERVER_PORT,
+                "debug": config.SERVER_DEBUG
+            },
+            "storage": {
+                "log_level": "INFO",
+                "max_log_size": 100,
+                "auto_cleanup": True
+            },
+            "security": {
+                "session_timeout": config.JWT_EXPIRE_MINUTES // 60,
+                "max_login_attempts": 5
+            }
+        }
     }
-    
-    try:
-        import paramiko
-        deps["paramiko"]["installed"] = True
-        deps["paramiko"]["version"] = paramiko.__version__
-    except ImportError:
-        pass
-    
-    try:
-        import cryptography
-        deps["cryptography"]["installed"] = True
-        deps["cryptography"]["version"] = cryptography.__version__
-    except ImportError:
-        pass
-    
-    try:
-        import requests
-        deps["requests"]["installed"] = True
-        deps["requests"]["version"] = requests.__version__
-    except ImportError:
-        pass
-    
-    return deps
 
-@app.post("/api/aggressive/install")
-async def install_aggressive_dependencies(request: Request, session: Dict = Depends(verify_session_token)):
-    """Install missing aggressive agent dependencies"""
-    missing = []
-    try:
-        import paramiko
-    except ImportError:
-        missing.append("paramiko")
-    
-    try:
-        import cryptography
-    except ImportError:
-        missing.append("cryptography")
-    
-    try:
-        import requests
-    except ImportError:
-        missing.append("requests")
-    
-    if not missing:
-        return {"success": True, "message": "Todas las dependencias ya están instaladas"}
-    
-    try:
-        for dep in missing:
-            result = subprocess.run(
-                [sys.executable, "-m", "pip", "install", dep],
-                capture_output=True,
-                text=True,
-                timeout=60
-            )
-            if result.returncode != 0:
-                return {"success": False, "message": f"Error instalando {dep}: {result.stderr}"}
-        
-        return {"success": True, "message": f"Dependencias instaladas: {', '.join(missing)}"}
-    except Exception as e:
-        return {"success": False, "message": str(e)}
-
-@app.post("/api/config/aggressive")
-async def save_aggressive_config(request: Request, session: Dict = Depends(verify_session_token)):
-    """Save aggressive agent configuration"""
+@app.post("/api/config/ai")
+async def update_ai_config(request: Request):
+    """Update AI configuration - accessible without auth"""
     data = await request.json()
     
     try:
@@ -1030,59 +1014,62 @@ async def save_aggressive_config(request: Request, session: Dict = Depends(verif
             with open(env_path, 'r') as f:
                 lines = f.readlines()
             
-            updates = {
-                "AGGRESSIVE_ENABLED": str(data.get("enabled", False)).lower(),
-                "AGGRESSIVE_MODE": data.get("mode", "normal"),
-                "AGGRESSIVE_MAX_THREADS": str(data.get("max_threads", 50)),
-                "AGGRESSIVE_TIMEOUT": str(data.get("timeout", 5)),
-                "AGGRESSIVE_STEALTH": str(data.get("stealth", False)).lower(),
-                "AGGRESSIVE_SSH_ENABLED": str(data.get("ssh_enabled", True)).lower(),
-                "AGGRESSIVE_ALLOWED_NETWORKS": data.get("allowed_networks", "")
-            }
+            updated = False
+            for i, line in enumerate(lines):
+                if line.startswith("DEEPSEEK_API_KEY="):
+                    lines[i] = f"DEEPSEEK_API_KEY={data.get('deepseek', {}).get('api_key', '')}\n"
+                    updated = True
+                    break
             
-            for key, value in updates.items():
-                updated = False
-                for i, line in enumerate(lines):
-                    if line.startswith(f"{key}="):
-                        lines[i] = f"{key}={value}\n"
-                        updated = True
-                        break
-                if not updated:
-                    lines.append(f"{key}={value}\n")
+            if not updated:
+                lines.append(f"DEEPSEEK_API_KEY={data.get('deepseek', {}).get('api_key', '')}\n")
             
             with open(env_path, 'w') as f:
                 f.writelines(lines)
         
-        return {"success": True, "message": "Configuración guardada correctamente"}
+        config_path = Path("/opt/swarmia/config/config.yaml")
+        if config_path.exists():
+            import yaml
+            with open(config_path, 'r') as f:
+                full_config = yaml.safe_load(f) or {}
+            
+            if "ai" not in full_config:
+                full_config["ai"] = {}
+            full_config["ai"]["provider"] = data.get("provider")
+            full_config["ai"]["deepseek"] = data.get("deepseek", {})
+            full_config["ai"]["llama"] = data.get("llama", {})
+            full_config["ai"]["assistant_name"] = data.get("assistant_name")
+            full_config["ai"]["system_prompt"] = data.get("system_prompt")
+            
+            with open(config_path, 'w') as f:
+                yaml.dump(full_config, f, default_flow_style=False)
+        
+        return {"success": True, "message": "Configuración IA guardada"}
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-@app.post("/api/aggressive/test")
-async def test_aggressive_config(request: Request, session: Dict = Depends(verify_session_token)):
-    """Test aggressive agent configuration"""
-    if not getattr(config, 'AGGRESSIVE_ENABLED', False):
-        return {"success": False, "message": "El agente agresivo no está activado"}
+@app.post("/api/config/ai/test")
+async def test_ai_connection(request: Request):
+    """Test AI connection - accessible without auth"""
+    api_key = config.DEEPSEEK_API_KEY
     
-    allowed_networks = getattr(config, 'AGGRESSIVE_ALLOWED_NETWORKS', '')
-    if not allowed_networks:
-        return {"success": False, "message": "No hay redes permitidas configuradas"}
+    if not api_key:
+        return {"success": False, "message": "Clave API de DeepSeek no configurada"}
     
-    mode = getattr(config, 'AGGRESSIVE_MODE', 'normal')
-    if mode == "ultra":
-        missing = []
-        try:
-            import paramiko
-        except ImportError:
-            missing.append("paramiko")
-        try:
-            import cryptography
-        except ImportError:
-            missing.append("cryptography")
-        
-        if missing:
-            return {"success": False, "message": f"Faltan dependencias para modo ULTRA: {', '.join(missing)}"}
-    
-    return {"success": True, "message": f"✅ Configuración válida. Modo: {mode.upper()}"}
+    try:
+        import requests
+        response = requests.post(
+            "https://api.deepseek.com/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "OK"}], "max_tokens": 5},
+            timeout=10
+        )
+        if response.status_code == 200:
+            return {"success": True, "message": "Conexión exitosa con DeepSeek"}
+        else:
+            return {"success": False, "message": f"Error: {response.status_code}"}
+    except Exception as e:
+        return {"success": False, "message": f"Error de conexión: {str(e)}"}
 
 # ============================================================
 # Chat Endpoints
