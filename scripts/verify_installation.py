@@ -21,19 +21,18 @@ class InstallationVerifier:
         "README.md",
         "LICENSE",
         "requirements.txt",
-        "package.json",
-        "SKILL.md",
+        ".env.example",
         
         # Scripts
         "scripts/install.sh",
         "scripts/install.bat",
+        "scripts/swarmia_core.sh",
         "scripts/verify_installation.py",
         
         # Core
         "src/core/main.py",
         "src/core/config.py",
         "src/core/supervisor.py",
-        "src/core/updater.py",
         
         # AI
         "src/ai/deepseek.py",
@@ -50,25 +49,31 @@ class InstallationVerifier:
         "src/ui/server.py",
         "src/ui/templates/login.html",
         "src/ui/templates/dashboard.html",
+        "src/ui/templates/agents.html",
+        "src/ui/templates/tasks.html",
+        "src/ui/templates/config.html",
+        "src/ui/templates/logs.html",
+        "src/ui/templates/chat.html",
         "src/ui/templates/change_password.html",
-        "src/ui/static/css/style.css"
+        "src/ui/static/css/style.css",
+        
+        # Config
+        "config/config.example.yaml",
     ]
     
     REQUIRED_IMPORTS = {
         "src/core/main.py": [
-            "Config", "Supervisor", "create_update_checker",
-            "create_chat_agent", "create_aggressive_agent",
-            "setup_communication_gateway", "create_app"
+            "Config", "create_supervisor", "create_chat_agent",
+            "create_aggressive_agent", "setup_communication_gateway", "app"
         ],
-        "src/core/config.py": ["Config", "get_config"],
+        "src/core/config.py": ["Config"],
         "src/core/supervisor.py": ["Supervisor", "TaskPriority", "create_supervisor"],
-        "src/core/updater.py": ["UpdateChecker", "create_update_checker"],
         "src/ai/deepseek.py": ["DeepSeekHandler", "create_deepseek_handler"],
         "src/ai/llama.py": ["LlamaHandler", "create_llama_handler"],
         "src/agents/chat.py": ["ChatAgent", "create_chat_agent"],
         "src/agents/aggressive.py": ["AggressiveAgent", "create_aggressive_agent"],
         "src/gateway/communication.py": ["CommunicationGateway", "setup_communication_gateway"],
-        "src/ui/server.py": ["create_app"]
+        "src/ui/server.py": ["app", "main"]
     }
     
     def __init__(self, base_dir: Path):
@@ -82,7 +87,7 @@ class InstallationVerifier:
     
     def verify_all(self):
         """Run all verification checks"""
-        print("🔍 Verifying SwarmIA Installation...")
+        print("🔍 Verificando instalación de SwarmIA...")
         print("=" * 60)
         
         self.verify_files()
@@ -96,7 +101,7 @@ class InstallationVerifier:
     
     def verify_files(self):
         """Verify all required files exist"""
-        print("\n📁 Checking required files...")
+        print("\n📁 Verificando archivos requeridos...")
         
         for file_path in self.REQUIRED_FILES:
             full_path = self.base_dir / file_path
@@ -107,11 +112,11 @@ class InstallationVerifier:
                 print(f"  ✅ {file_path}")
             else:
                 self.results["files"]["missing"].append(file_path)
-                print(f"  ❌ {file_path} (MISSING)")
+                print(f"  ❌ {file_path} (FALTANTE)")
     
     def verify_imports(self):
         """Verify required imports in Python files"""
-        print("\n📦 Checking Python imports...")
+        print("\n📦 Verificando imports de Python...")
         
         for file_path, required_imports in self.REQUIRED_IMPORTS.items():
             full_path = self.base_dir / file_path
@@ -142,7 +147,6 @@ class InstallationVerifier:
                 file_imports_missing = []
                 
                 for required in required_imports:
-                    # Check if import is present (exact or as part of module)
                     found = False
                     for imp in imports:
                         if required in imp or imp.endswith(f".{required}"):
@@ -159,17 +163,17 @@ class InstallationVerifier:
                         "file": file_path,
                         "missing": file_imports_missing
                     })
-                    print(f"  ⚠️  {file_path}: Missing {', '.join(file_imports_missing)}")
+                    print(f"  ⚠️  {file_path}: Faltan {', '.join(file_imports_missing)}")
                 else:
                     self.results["imports"]["present"].append(file_path)
-                    print(f"  ✅ {file_path}: All imports present")
+                    print(f"  ✅ {file_path}: Todos los imports presentes")
                     
             except SyntaxError as e:
                 self.results["imports"]["missing"].append({
                     "file": file_path,
-                    "missing": ["SYNTAX ERROR - " + str(e)]
+                    "missing": ["ERROR DE SINTAXIS - " + str(e)]
                 })
-                print(f"  ❌ {file_path}: Syntax error - {e}")
+                print(f"  ❌ {file_path}: Error de sintaxis - {e}")
             except Exception as e:
                 self.results["imports"]["missing"].append({
                     "file": file_path,
@@ -179,20 +183,21 @@ class InstallationVerifier:
     
     def verify_syntax(self):
         """Verify Python syntax is valid"""
-        print("\n🐍 Checking Python syntax...")
+        print("\n🐍 Verificando sintaxis de Python...")
         
         # Find all Python files
         python_files = []
-        for root, dirs, files in os.walk(self.base_dir / "src"):
-            for file in files:
-                if file.endswith('.py'):
-                    python_files.append(Path(root) / file)
+        src_dir = self.base_dir / "src"
+        if src_dir.exists():
+            for root, dirs, files in os.walk(src_dir):
+                for file in files:
+                    if file.endswith('.py'):
+                        python_files.append(Path(root) / file)
         
         for py_file in python_files:
             rel_path = py_file.relative_to(self.base_dir)
             
             try:
-                # Try to parse the file
                 with open(py_file, 'r') as f:
                     ast.parse(f.read())
                 
@@ -214,20 +219,12 @@ class InstallationVerifier:
     
     def verify_configs(self):
         """Verify configuration files can be parsed"""
-        print("\n⚙️  Checking configuration files...")
+        print("\n⚙️  Verificando archivos de configuración...")
         
         config_files = [
             "requirements.txt",
-            "package.json"
-        ]
-        
-        # Check for expected config templates
-        config_templates = [
-            "config/config.yaml",
-            "config/ai_config.json",
-            "config/communication.json",
-            "config/aggressive_config.json",
-            "config/update_settings.json"
+            ".env.example",
+            "config/config.example.yaml"
         ]
         
         for config_file in config_files:
@@ -241,8 +238,7 @@ class InstallationVerifier:
                     elif config_file.endswith('.yaml') or config_file.endswith('.yml'):
                         with open(full_path, 'r') as f:
                             yaml.safe_load(f)
-                    elif config_file == 'requirements.txt':
-                        # Just check it's readable
+                    elif config_file == 'requirements.txt' or config_file == '.env.example':
                         with open(full_path, 'r') as f:
                             f.read()
                     
@@ -254,26 +250,18 @@ class InstallationVerifier:
                         "file": config_file,
                         "error": str(e)
                     })
-                    print(f"  ❌ {config_file}: Parse error - {e}")
+                    print(f"  ❌ {config_file}: Error de parseo - {e}")
             else:
                 self.results["configs"]["missing"].append({
                     "file": config_file,
-                    "error": "File not found"
+                    "error": "Archivo no encontrado"
                 })
-                print(f"  ❌ {config_file}: Not found")
-        
-        # Check config templates (they might not exist yet)
-        for config_template in config_templates:
-            full_path = self.base_dir / config_template
-            if full_path.exists():
-                print(f"  📄 {config_template} (exists)")
-            else:
-                print(f"  📝 {config_template} (template - will be created)")
+                print(f"  ❌ {config_file}: No encontrado")
     
     def print_summary(self):
         """Print verification summary"""
         print("\n" + "=" * 60)
-        print("📊 VERIFICATION SUMMARY")
+        print("📊 RESUMEN DE VERIFICACIÓN")
         print("=" * 60)
         
         # Files summary
@@ -281,49 +269,48 @@ class InstallationVerifier:
         missing_files = len(self.results["files"]["missing"])
         present_files = len(self.results["files"]["present"])
         
-        print(f"\n📁 Files: {present_files}/{total_files} present")
+        print(f"\n📁 Archivos: {present_files}/{total_files} presentes")
         if missing_files > 0:
-            print(f"  ❌ Missing files:")
+            print(f"  ❌ Archivos faltantes:")
             for file in self.results["files"]["missing"]:
                 print(f"    - {file}")
         
         # Imports summary
         import_issues = len(self.results["imports"]["missing"])
-        print(f"\n📦 Imports: {len(self.results['imports']['present'])} files OK")
+        print(f"\n📦 Imports: {len(self.results['imports']['present'])} archivos OK")
         if import_issues > 0:
-            print(f"  ⚠️  Import issues:")
+            print(f"  ⚠️  Problemas de imports:")
             for issue in self.results["imports"]["missing"]:
                 print(f"    - {issue['file']}: {', '.join(issue['missing'])}")
         
         # Syntax summary
         syntax_errors = len(self.results["syntax"]["errors"])
         valid_files = len(self.results["syntax"]["valid"])
-        print(f"\n🐍 Syntax: {valid_files} files valid")
+        print(f"\n🐍 Sintaxis: {valid_files} archivos válidos")
         if syntax_errors > 0:
-            print(f"  ❌ Syntax errors:")
+            print(f"  ❌ Errores de sintaxis:")
             for error in self.results["syntax"]["errors"]:
                 print(f"    - {error['file']}: {error['error']}")
         
         # Configs summary
         config_issues = len(self.results["configs"]["missing"])
-        print(f"\n⚙️  Configs: {len(self.results['configs']['present'])} files OK")
+        print(f"\n⚙️  Configuración: {len(self.results['configs']['present'])} archivos OK")
         if config_issues > 0:
-            print(f"  ⚠️  Config issues:")
+            print(f"  ⚠️  Problemas de configuración:")
             for issue in self.results["configs"]["missing"]:
                 print(f"    - {issue['file']}: {issue['error']}")
         
         # Overall status
         print("\n" + "=" * 60)
         if self.is_complete():
-            print("🎉 SWARMIA INSTALLATION IS COMPLETE AND READY!")
-            print("\nNext steps:")
-            print("1. Run: sudo ./scripts/install.sh (Linux)")
-            print("2. Or: Run install.bat as Administrator (Windows)")
-            print("3. Access dashboard at http://[YOUR_IP]:3000")
-            print("4. Login with admin/admin (change immediately!)")
+            print("🎉 ¡LA INSTALACIÓN DE SWARMIA ESTÁ COMPLETA Y LISTA!")
+            print("\nPróximos pasos:")
+            print("1. Ejecuta: curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash")
+            print("2. Accede al dashboard en http://[TU_IP]:8080")
+            print("3. Inicia sesión con admin/admin (cambia inmediatamente!)")
         else:
-            print("⚠️  SWARMIA INSTALLATION HAS ISSUES")
-            print("\nPlease fix the issues above before installation.")
+            print("⚠️  LA INSTALACIÓN DE SWARMIA TIENE PROBLEMAS")
+            print("\nPor favor corrige los problemas indicados antes de instalar.")
         
         print("=" * 60)
     
@@ -355,13 +342,11 @@ class InstallationVerifier:
         with open(output_file, 'w') as f:
             json.dump(report, f, indent=2, default=str)
         
-        print(f"\n📄 Report saved to: {output_file}")
+        print(f"\n📄 Reporte guardado en: {output_file}")
 
 
 def main():
     """Main function"""
-    from datetime import datetime
-    
     # Set base directory
     base_dir = Path(__file__).parent.parent
     
