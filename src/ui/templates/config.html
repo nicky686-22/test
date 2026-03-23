@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -34,58 +33,135 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
+            display: flex;
         }
         
-        /* Header */
-        .header {
+        /* ============================================================
+           MENÚ LATERAL
+        ============================================================ */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .sidebar-logo p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+        
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-x: auto;
+        }
+        
+        /* Header superior */
+        .top-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             padding: 0 24px;
             height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 99;
         }
         
-        .logo {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
         
-        .logo i {
-            font-size: 28px;
-            color: var(--primary);
-        }
-        
-        .logo h1 {
+        .user-info i {
             font-size: 20px;
-            font-weight: 600;
+            color: var(--text-secondary);
         }
         
-        .logo span {
-            font-size: 12px;
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
             color: var(--text-secondary);
-            margin-left: 8px;
-        }
-        
-        .back-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            cursor: pointer;
             transition: all 0.2s;
         }
         
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
         }
         
         /* Container */
@@ -206,9 +282,9 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
         }
         
-        .form-group input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .form-group input.file-input {
+            padding: 8px 12px;
+            cursor: pointer;
         }
         
         /* Toggle Switch */
@@ -298,18 +374,6 @@
             color: var(--text-primary);
         }
         
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid var(--error);
-            color: var(--error);
-        }
-        
-        .btn-warning {
-            background: rgba(220, 38, 38, 0.2);
-            border: 1px solid var(--aggressive);
-            color: var(--aggressive);
-        }
-        
         .form-actions {
             display: flex;
             gap: 12px;
@@ -375,6 +439,19 @@
         }
         
         @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-logo h2, .sidebar-logo p, .nav-item span {
+                display: none;
+            }
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            .nav-item i {
+                margin: 0;
+            }
             .two-columns {
                 grid-template-columns: 1fr;
             }
@@ -400,7 +477,6 @@
             to { transform: rotate(360deg); }
         }
         
-        /* Range input styling */
         input[type="range"] {
             -webkit-appearance: none;
             background: var(--bg-primary);
@@ -428,478 +504,494 @@
             color: var(--text-secondary);
         }
         
-        /* Dependency status */
-        .dep-status {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
+        .file-select-btn {
             background: var(--bg-primary);
-            border-radius: 10px;
-            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
-        .dep-status i {
-            font-size: 20px;
+        .file-select-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
         
-        .dep-status .installed {
+        .file-path-display {
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        
+        .qr-container {
+            background: var(--bg-primary);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 12px;
+        }
+        
+        .qr-placeholder {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .test-result {
+            margin-top: 8px;
+            font-size: 12px;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        
+        .test-success {
+            background: rgba(16, 185, 129, 0.1);
             color: var(--success);
         }
         
-        .dep-status .missing {
+        .test-error {
+            background: rgba(239, 68, 68, 0.1);
             color: var(--error);
-        }
-        
-        .dep-name {
-            flex: 1;
-            font-weight: 500;
-        }
-        
-        .dep-version {
-            font-size: 11px;
-            color: var(--text-secondary);
-        }
-        
-        .warning-box {
-            background: rgba(220, 38, 38, 0.1);
-            border-left: 4px solid var(--aggressive);
-            padding: 16px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .warning-box i {
-            color: var(--aggressive);
-            margin-right: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-robot"></i>
-            <h1>SwarmIA <span>v2.0</span></h1>
+    <!-- Menú Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><i class="fas fa-robot"></i> SwarmIA</h2>
+            <p>Sistema de Agentes IA</p>
         </div>
-        <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Volver al Dashboard
-        </a>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" id="nav-dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/agents" class="nav-item" id="nav-agents">
+                <i class="fas fa-microchip"></i>
+                <span>Agentes</span>
+            </a>
+            <a href="/tasks" class="nav-item" id="nav-tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Tareas</span>
+            </a>
+            <a href="/chat" class="nav-item" id="nav-chat">
+                <i class="fas fa-comment-dots"></i>
+                <span>Chat</span>
+            </a>
+            <a href="/config" class="nav-item active" id="nav-config">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+            </a>
+            <a href="/logs" class="nav-item" id="nav-logs">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <i class="fas fa-code-branch"></i> v2.0.0
+        </div>
     </div>
     
-    <div class="container">
-        <div class="page-header">
-            <h1><i class="fas fa-cog"></i> Configuración del Sistema</h1>
-            <p>Configura los proveedores de IA, canales de comunicación y ajustes del sistema</p>
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <!-- Header Superior -->
+        <div class="top-header">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">admin</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
         </div>
         
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="ai">🤖 Configuración IA</button>
-            <button class="tab-btn" data-tab="communication">📱 Comunicación</button>
-            <button class="tab-btn" data-tab="aggressive">⚔️ Agente Agresivo</button>
-            <button class="tab-btn" data-tab="system">⚙️ Ajustes del Sistema</button>
-        </div>
-        
-        <!-- Alert Container -->
-        <div id="alertContainer"></div>
-        
-        <!-- Tab: AI Configuration -->
-        <div id="tab-ai" class="tab-content active">
-            <div class="config-card">
-                <h2><i class="fas fa-brain"></i> Proveedor de IA</h2>
-                <div class="description">Selecciona y configura tu proveedor de modelo de IA</div>
-                
-                <div class="form-group">
-                    <label for="aiProvider">Proveedor Principal</label>
-                    <select id="aiProvider">
-                        <option value="deepseek">DeepSeek API (Nube)</option>
-                        <option value="llama">Llama CPP (Local)</option>
-                        <option value="mock">Modo Simulación (Desarrollo)</option>
-                    </select>
-                </div>
-                
-                <div id="deepseekConfig" class="provider-config">
-                    <div class="form-group">
-                        <label for="deepseekApiKey">Clave API de DeepSeek</label>
-                        <input type="password" id="deepseekApiKey" placeholder="sk-...">
-                        <small><i class="fas fa-info-circle"></i> Obtén tu clave API en <a href="https://platform.deepseek.com/" target="_blank" style="color: var(--primary);">platform.deepseek.com</a></small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="deepseekModel">Modelo</label>
-                        <select id="deepseekModel">
-                            <option value="deepseek-chat">deepseek-chat</option>
-                            <option value="deepseek-coder">deepseek-coder</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="deepseekMaxTokens">Tokens Máximos</label>
-                        <input type="number" id="deepseekMaxTokens" value="4096" min="1" max="8192">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="deepseekTemperature">Temperatura (0-1)</label>
-                        <input type="range" id="deepseekTemperature" min="0" max="1" step="0.1" value="0.7">
-                        <span id="tempValue" style="margin-left: 8px;">0.7</span>
-                    </div>
-                </div>
-                
-                <div id="llamaConfig" class="provider-config" style="display: none;">
-                    <div class="form-group">
-                        <label for="llamaModelPath">Ruta del Modelo (archivo GGUF)</label>
-                        <input type="text" id="llamaModelPath" placeholder="/ruta/al/modelo.gguf">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="llamaContextSize">Tamaño de Contexto</label>
-                        <input type="number" id="llamaContextSize" value="4096" min="512" max="32768">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="llamaThreads">Hilos de CPU</label>
-                        <input type="number" id="llamaThreads" value="4" min="1" max="32">
-                    </div>
-                </div>
-                
-                <div class="form-actions">
-                    <button class="btn-primary" onclick="saveAIConfig()">
-                        <i class="fas fa-save"></i> Guardar Configuración IA
-                    </button>
-                    <button class="btn-secondary" onclick="testAIConnection()">
-                        <i class="fas fa-vial"></i> Probar Conexión
-                    </button>
-                </div>
+        <div class="container">
+            <div class="page-header">
+                <h1><i class="fas fa-cog"></i> Configuración del Sistema</h1>
+                <p>Configura los proveedores de IA, canales de comunicación y ajustes del sistema</p>
             </div>
             
-            <div class="config-card">
-                <h2><i class="fas fa-chart-line"></i> Comportamiento de IA</h2>
-                <div class="description">Ajusta el comportamiento del asistente de IA</div>
-                
-                <div class="form-group">
-                    <label for="assistantName">Nombre del Asistente</label>
-                    <input type="text" id="assistantName" placeholder="SwarmIA" value="SwarmIA">
-                </div>
-                
-                <div class="form-group">
-                    <label for="systemPrompt">Prompt del Sistema (Personalidad)</label>
-                    <textarea id="systemPrompt" rows="4" placeholder="Eres un asistente de IA útil...">Eres SwarmIA, un asistente de IA mejorado. Eres útil, conciso y eficiente. Siempre completas las tareas por completo y proporcionas respuestas claras.</textarea>
-                </div>
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="ai">🤖 Configuración IA</button>
+                <button class="tab-btn" data-tab="communication">📱 Comunicación</button>
+                <button class="tab-btn" data-tab="aggressive">⚔️ Agente Agresivo</button>
+                <button class="tab-btn" data-tab="system">⚙️ Ajustes del Sistema</button>
             </div>
-        </div>
-        
-        <!-- Tab: Communication -->
-        <div id="tab-communication" class="tab-content" style="display: none;">
-            <div class="two-columns">
+            
+            <!-- Alert Container -->
+            <div id="alertContainer"></div>
+            
+            <!-- Tab: AI Configuration -->
+            <div id="tab-ai" class="tab-content active">
                 <div class="config-card">
-                    <h2><i class="fab fa-whatsapp"></i> WhatsApp</h2>
-                    <div class="description">Configura la integración con WhatsApp</div>
-                    
-                    <div class="form-group toggle-label">
-                        <span>Activar Gateway de WhatsApp</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="whatsappEnabled">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div id="whatsappConfig" style="display: none;">
-                        <div class="form-group">
-                            <label for="whatsappSession">Archivo de Sesión</label>
-                            <input type="text" id="whatsappSession" value="whatsapp_session.json">
-                        </div>
-                        <div class="alert alert-warning" style="display: block; margin-top: 12px;">
-                            <i class="fas fa-qrcode"></i> WhatsApp requiere autenticación con código QR. Después de guardar, reinicia el servicio para escanear el código QR.
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button class="btn-primary" onclick="saveWhatsAppConfig()">
-                            <i class="fas fa-save"></i> Guardar Configuración
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="config-card">
-                    <h2><i class="fab fa-telegram"></i> Telegram</h2>
-                    <div class="description">Configura la integración del bot de Telegram</div>
-                    
-                    <div class="form-group toggle-label">
-                        <span>Activar Bot de Telegram</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="telegramEnabled">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    
-                    <div id="telegramConfig" style="display: none;">
-                        <div class="form-group">
-                            <label for="telegramBotToken">Token del Bot</label>
-                            <input type="password" id="telegramBotToken" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
-                            <small><i class="fas fa-info-circle"></i> Obtén tu token de <a href="https://t.me/botfather" target="_blank" style="color: var(--primary);">@BotFather</a></small>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label for="telegramAllowedUsers">Usuarios Permitidos (separados por coma)</label>
-                            <input type="text" id="telegramAllowedUsers" placeholder="123456789,987654321">
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button class="btn-primary" onclick="saveTelegramConfig()">
-                            <i class="fas fa-save"></i> Guardar Configuración
-                        </button>
-                        <button class="btn-secondary" onclick="testTelegramBot()">
-                            <i class="fas fa-paper-plane"></i> Probar Bot
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tab: Aggressive Agent -->
-        <div id="tab-aggressive" class="tab-content" style="display: none;">
-            <div class="config-card">
-                <h2><i class="fas fa-skull-crossbones"></i> Agente Agresivo - Pentesting</h2>
-                <div class="description">
-                    ⚠️ <strong>ADVERTENCIA EXTREMA DE SEGURIDAD</strong> ⚠️<br>
-                    Este módulo contiene herramientas OFENSIVAS de penetración.<br>
-                    SOLO para uso en sistemas con AUTORIZACIÓN EXPLÍCITA.<br>
-                    El uso no autorizado constituye un DELITO.
-                </div>
-                
-                <!-- Estado de activación -->
-                <div class="form-group toggle-label">
-                    <span><i class="fas fa-power-off"></i> Activar Agente Agresivo</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="aggressiveEnabled" onchange="toggleAggressiveConfig()">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                
-                <div id="aggressiveConfig" style="display: none;">
-                    <!-- Verificación de dependencias -->
-                    <div class="form-group">
-                        <label>📦 Dependencias Requeridas</label>
-                        <div id="dependenciesStatus">
-                            <div class="dep-status">
-                                <i class="fas fa-spinner fa-spin"></i>
-                                <span class="dep-name">Verificando dependencias...</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Modo de operación -->
-                    <div class="form-group">
-                        <label for="aggressiveMode">Modo de Operación</label>
-                        <select id="aggressiveMode">
-                            <option value="normal">🛡️ Normal - Escaneo básico (puertos comunes)</option>
-                            <option value="aggressive">⚔️ Agresivo - Escaneo profundo (1000+ puertos)</option>
-                            <option value="ultra">🔥 ULTRA - Máxima agresión (todos los 65535 puertos)</option>
-                            <option value="stealth">👻 Stealth - Modo sigiloso (evita detección)</option>
-                        </select>
-                        <small>El modo ULTRA escanea todos los puertos (1-65535) y usa hasta 200 hilos</small>
-                    </div>
-                    
-                    <div class="two-columns">
-                        <!-- Rendimiento -->
-                        <div class="config-card" style="padding: 16px;">
-                            <h3><i class="fas fa-tachometer-alt"></i> Rendimiento</h3>
-                            <div class="form-group">
-                                <label for="aggressiveMaxThreads">Hilos Máximos</label>
-                                <input type="number" id="aggressiveMaxThreads" value="50" min="1" max="500">
-                                <small>Más hilos = más rápido, pero más detectable. Modo ULTRA: 200+</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="aggressiveTimeout">Timeout (segundos)</label>
-                                <input type="number" id="aggressiveTimeout" value="5" min="1" max="30">
-                                <small>Menor timeout = más rápido, pero puede perder respuestas lentas</small>
-                            </div>
-                        </div>
-                        
-                        <!-- Redes Permitidas -->
-                        <div class="config-card" style="padding: 16px;">
-                            <h3><i class="fas fa-network-wired"></i> Redes Permitidas</h3>
-                            <div class="form-group">
-                                <label for="aggressiveAllowedNetworks">Redes (separadas por coma o línea)</label>
-                                <textarea id="aggressiveAllowedNetworks" rows="4" placeholder="192.168.0.0/16&#10;10.0.0.0/8&#10;172.16.0.0/12&#10;127.0.0.0/8"></textarea>
-                                <small>El agente SOLO escaneará direcciones dentro de estas redes. ¡OBLIGATORIO!</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Configuración avanzada -->
-                    <div class="two-columns">
-                        <div class="config-card" style="padding: 16px;">
-                            <h3><i class="fas fa-lock"></i> SSH Brute Force</h3>
-                            <div class="form-group toggle-label">
-                                <span>Activar ataques SSH</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="aggressiveSshEnabled" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label>Wordlist de contraseñas</label>
-                                <select id="aggressiveWordlist">
-                                    <option value="default">Por defecto (50 contraseñas comunes)</option>
-                                    <option value="small">Pequeña (10 contraseñas)</option>
-                                    <option value="medium">Mediana (100 contraseñas)</option>
-                                    <option value="large">Grande (1000+ contraseñas)</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="config-card" style="padding: 16px;">
-                            <h3><i class="fas fa-ghost"></i> Modo Sigiloso</h3>
-                            <div class="form-group toggle-label">
-                                <span>Activar modo sigiloso</span>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="aggressiveStealth">
-                                    <span class="toggle-slider"></span>
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label for="aggressiveDelay">Delay entre requests (segundos)</label>
-                                <input type="number" id="aggressiveDelay" value="0.5" min="0" max="5" step="0.1">
-                                <small>Mayor delay = menos detectable, pero más lento</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="warning-box">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>⚠️ ADVERTENCIA LEGAL</strong><br>
-                        Este agente realiza escaneos de puertos, detección de servicios y ataques de fuerza bruta.
-                        Estas actividades pueden ser consideradas ilegales si no tienes autorización explícita del propietario del sistema.
-                        Asegúrate de tener permiso por escrito antes de activar este módulo.
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button class="btn-primary" onclick="saveAggressiveConfig()">
-                            <i class="fas fa-save"></i> Guardar Configuración
-                        </button>
-                        <button class="btn-secondary" onclick="testAggressiveConnection()">
-                            <i class="fas fa-vial"></i> Probar Configuración
-                        </button>
-                        <button class="btn-warning" onclick="installMissingDeps()" id="installDepsBtn" style="display: none;">
-                            <i class="fas fa-download"></i> Instalar Dependencias Faltantes
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Tab: System Settings -->
-        <div id="tab-system" class="tab-content" style="display: none;">
-            <div class="two-columns">
-                <div class="config-card">
-                    <h2><i class="fas fa-server"></i> Configuración del Servidor</h2>
-                    <div class="description">Configura el servidor web y ajustes de red</div>
+                    <h2><i class="fas fa-brain"></i> Proveedor de IA</h2>
+                    <div class="description">Selecciona y configura tu proveedor de modelo de IA</div>
                     
                     <div class="form-group">
-                        <label for="serverHost">Host del Servidor</label>
-                        <input type="text" id="serverHost" value="0.0.0.0" placeholder="0.0.0.0">
-                        <small>Usa 0.0.0.0 para escuchar en todas las interfaces</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="serverPort">Puerto del Servidor</label>
-                        <input type="number" id="serverPort" value="8080" min="1024" max="65535">
-                    </div>
-                    
-                    <div class="form-group toggle-label">
-                        <span>Modo Debug</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="debugMode">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="config-card">
-                    <h2><i class="fas fa-database"></i> Almacenamiento y Logs</h2>
-                    <div class="description">Configura el almacenamiento de datos y registro</div>
-                    
-                    <div class="form-group">
-                        <label for="logLevel">Nivel de Log</label>
-                        <select id="logLevel">
-                            <option value="DEBUG">DEBUG</option>
-                            <option value="INFO" selected>INFO</option>
-                            <option value="WARNING">WARNING</option>
-                            <option value="ERROR">ERROR</option>
+                        <label for="aiProvider">Proveedor Principal</label>
+                        <select id="aiProvider">
+                            <option value="deepseek">DeepSeek API (Nube)</option>
+                            <option value="llama">Llama CPP (Local)</option>
+                            <option value="mock">Modo Simulación (Desarrollo)</option>
                         </select>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="maxLogSize">Tamaño Máximo de Log (MB)</label>
-                        <input type="number" id="maxLogSize" value="100" min="10" max="1000">
+                    <div id="deepseekConfig" class="provider-config">
+                        <div class="form-group">
+                            <label for="deepseekApiKey">Clave API de DeepSeek</label>
+                            <input type="password" id="deepseekApiKey" placeholder="sk-...">
+                            <small><i class="fas fa-info-circle"></i> Obtén tu clave API en <a href="https://platform.deepseek.com/" target="_blank" style="color: var(--primary);">platform.deepseek.com</a></small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="deepseekModel">Modelo</label>
+                            <select id="deepseekModel">
+                                <option value="deepseek-chat">deepseek-chat</option>
+                                <option value="deepseek-coder">deepseek-coder</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="deepseekMaxTokens">Tokens Máximos</label>
+                            <input type="number" id="deepseekMaxTokens" value="4096" min="1" max="8192">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="deepseekTemperature">Temperatura (0-1)</label>
+                            <input type="range" id="deepseekTemperature" min="0" max="1" step="0.1" value="0.7">
+                            <span id="tempValue" style="margin-left: 8px;">0.7</span>
+                        </div>
                     </div>
                     
-                    <div class="form-group toggle-label">
-                        <span>Conservar Logs por 30 Días</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="autoCleanup" checked>
-                            <span class="toggle-slider"></span>
-                        </label>
+                    <div id="llamaConfig" class="provider-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="llamaModelPath">Ruta del Modelo (archivo GGUF)</label>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="text" id="llamaModelPath" placeholder="/ruta/al/modelo.gguf" style="flex: 1;">
+                                <button type="button" class="file-select-btn" onclick="selectLlamaFile()">
+                                    <i class="fas fa-folder-open"></i> Seleccionar
+                                </button>
+                            </div>
+                            <div id="llamaFilePath" class="file-path-display"></div>
+                            <small>Selecciona un archivo .gguf de modelo Llama</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="llamaContextSize">Tamaño de Contexto</label>
+                            <input type="number" id="llamaContextSize" value="4096" min="512" max="32768">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="llamaThreads">Hilos de CPU</label>
+                            <input type="number" id="llamaThreads" value="4" min="1" max="32">
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="saveAIConfig()">
+                            <i class="fas fa-save"></i> Guardar Configuración IA
+                        </button>
+                        <button class="btn-secondary" onclick="testAIConnection()">
+                            <i class="fas fa-vial"></i> Probar Conexión
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="config-card">
+                    <h2><i class="fas fa-chart-line"></i> Comportamiento de IA</h2>
+                    <div class="description">Ajusta el comportamiento del asistente de IA</div>
+                    
+                    <div class="form-group">
+                        <label for="assistantName">Nombre del Asistente</label>
+                        <input type="text" id="assistantName" placeholder="SwarmIA" value="SwarmIA">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="systemPrompt">Prompt del Sistema (Personalidad)</label>
+                        <textarea id="systemPrompt" rows="4" placeholder="Eres un asistente de IA útil...">Eres SwarmIA, un asistente de IA mejorado. Eres útil, conciso y eficiente. Siempre completas las tareas por completo y proporcionas respuestas claras.</textarea>
                     </div>
                 </div>
             </div>
             
-            <div class="config-card">
-                <h2><i class="fas fa-shield-alt"></i> Seguridad</h2>
-                <div class="description">Configuración de seguridad y autenticación</div>
-                
-                <div class="form-group">
-                    <label for="sessionTimeout">Tiempo de Sesión (horas)</label>
-                    <input type="number" id="sessionTimeout" value="24" min="1" max="168">
+            <!-- Tab: Communication -->
+            <div id="tab-communication" class="tab-content" style="display: none;">
+                <div class="two-columns">
+                    <div class="config-card">
+                        <h2><i class="fab fa-whatsapp"></i> WhatsApp</h2>
+                        <div class="description">Configura la integración con WhatsApp</div>
+                        
+                        <div class="form-group toggle-label">
+                            <span>Activar Gateway de WhatsApp</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="whatsappEnabled" onchange="toggleWhatsAppConfig()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div id="whatsappConfig" style="display: none;">
+                            <div class="form-group">
+                                <label for="whatsappSession">Archivo de Sesión</label>
+                                <input type="text" id="whatsappSession" value="whatsapp_session.json">
+                            </div>
+                            <div class="qr-container" id="whatsappQrContainer" style="display: none;">
+                                <div class="qr-placeholder">
+                                    <i class="fas fa-qrcode fa-4x"></i>
+                                </div>
+                                <p style="margin-top: 12px;">Escanea el código QR con WhatsApp</p>
+                                <div id="whatsappQrStatus" class="test-result"></div>
+                            </div>
+                            <div class="alert alert-warning" style="display: block; margin-top: 12px;">
+                                <i class="fas fa-qrcode"></i> WhatsApp requiere autenticación con código QR. Después de guardar, reinicia el servicio para escanear el código QR.
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="saveWhatsAppConfig()">
+                                <i class="fas fa-save"></i> Guardar Configuración
+                            </button>
+                            <button class="btn-secondary" onclick="testWhatsAppConnection()" id="testWhatsAppBtn" style="display: none;">
+                                <i class="fas fa-qrcode"></i> Escanear QR
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="config-card">
+                        <h2><i class="fab fa-telegram"></i> Telegram</h2>
+                        <div class="description">Configura la integración del bot de Telegram</div>
+                        
+                        <div class="form-group toggle-label">
+                            <span>Activar Bot de Telegram</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="telegramEnabled" onchange="toggleTelegramConfig()">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        
+                        <div id="telegramConfig" style="display: none;">
+                            <div class="form-group">
+                                <label for="telegramBotToken">Token del Bot</label>
+                                <input type="password" id="telegramBotToken" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+                                <small><i class="fas fa-info-circle"></i> Obtén tu token de <a href="https://t.me/botfather" target="_blank" style="color: var(--primary);">@BotFather</a></small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="telegramAllowedUsers">Usuarios Permitidos (separados por coma)</label>
+                                <input type="text" id="telegramAllowedUsers" placeholder="123456789,987654321">
+                            </div>
+                            <div id="telegramTestResult" class="test-result" style="display: none;"></div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="saveTelegramConfig()">
+                                <i class="fas fa-save"></i> Guardar Configuración
+                            </button>
+                            <button class="btn-secondary" onclick="testTelegramBot()">
+                                <i class="fas fa-paper-plane"></i> Probar Bot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: Aggressive Agent -->
+            <div id="tab-aggressive" class="tab-content" style="display: none;">
+                <div class="config-card">
+                    <h2><i class="fas fa-skull-crossbones"></i> Agente Agresivo - Pentesting</h2>
+                    <div class="description">
+                        ⚠️ <strong>ADVERTENCIA EXTREMA DE SEGURIDAD</strong> ⚠️<br>
+                        Este módulo contiene herramientas OFENSIVAS de penetración.<br>
+                        SOLO para uso en sistemas con AUTORIZACIÓN EXPLÍCITA.<br>
+                        El uso no autorizado constituye un DELITO.
+                    </div>
+                    
+                    <div class="form-group toggle-label">
+                        <span><i class="fas fa-power-off"></i> Activar Agente Agresivo</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="aggressiveEnabled" onchange="toggleAggressiveConfig()">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div id="aggressiveConfig" style="display: none;">
+                        <div class="form-group">
+                            <label>📦 Dependencias Requeridas</label>
+                            <div id="dependenciesStatus">
+                                <div class="dep-status">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <span class="dep-name">Verificando dependencias...</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="aggressiveMode">Modo de Operación</label>
+                            <select id="aggressiveMode">
+                                <option value="normal">🛡️ Normal - Escaneo básico (puertos comunes)</option>
+                                <option value="aggressive">⚔️ Agresivo - Escaneo profundo (1000+ puertos)</option>
+                                <option value="ultra">🔥 ULTRA - Máxima agresión (todos los 65535 puertos)</option>
+                                <option value="stealth">👻 Stealth - Modo sigiloso (evita detección)</option>
+                            </select>
+                            <small>El modo ULTRA escanea todos los puertos (1-65535) y usa hasta 200 hilos</small>
+                        </div>
+                        
+                        <div class="two-columns">
+                            <div class="config-card" style="padding: 16px;">
+                                <h3><i class="fas fa-tachometer-alt"></i> Rendimiento</h3>
+                                <div class="form-group">
+                                    <label for="aggressiveMaxThreads">Hilos Máximos</label>
+                                    <input type="number" id="aggressiveMaxThreads" value="50" min="1" max="500">
+                                    <small>Más hilos = más rápido, pero más detectable</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="aggressiveTimeout">Timeout (segundos)</label>
+                                    <input type="number" id="aggressiveTimeout" value="5" min="1" max="30">
+                                </div>
+                            </div>
+                            
+                            <div class="config-card" style="padding: 16px;">
+                                <h3><i class="fas fa-network-wired"></i> Redes Permitidas</h3>
+                                <div class="form-group">
+                                    <label for="aggressiveAllowedNetworks">Redes (separadas por coma o línea)</label>
+                                    <textarea id="aggressiveAllowedNetworks" rows="4" placeholder="192.168.0.0/16&#10;10.0.0.0/8&#10;127.0.0.0/8"></textarea>
+                                    <small>El agente SOLO escaneará direcciones dentro de estas redes. ¡OBLIGATORIO!</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>⚠️ ADVERTENCIA LEGAL</strong><br>
+                            Este agente realiza escaneos de puertos, detección de servicios y ataques de fuerza bruta.
+                            Estas actividades pueden ser consideradas ilegales si no tienes autorización explícita.
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button class="btn-primary" onclick="saveAggressiveConfig()">
+                                <i class="fas fa-save"></i> Guardar Configuración
+                            </button>
+                            <button class="btn-secondary" onclick="testAggressiveConnection()">
+                                <i class="fas fa-vial"></i> Probar Configuración
+                            </button>
+                            <button class="btn-warning" onclick="installMissingDeps()" id="installDepsBtn" style="display: none;">
+                                <i class="fas fa-download"></i> Instalar Dependencias
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tab: System Settings -->
+            <div id="tab-system" class="tab-content" style="display: none;">
+                <div class="two-columns">
+                    <div class="config-card">
+                        <h2><i class="fas fa-server"></i> Configuración del Servidor</h2>
+                        <div class="description">Configura el servidor web y ajustes de red</div>
+                        
+                        <div class="form-group">
+                            <label for="serverHost">Host del Servidor</label>
+                            <input type="text" id="serverHost" value="0.0.0.0" placeholder="0.0.0.0">
+                            <small>Usa 0.0.0.0 para escuchar en todas las interfaces</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="serverPort">Puerto del Servidor</label>
+                            <input type="number" id="serverPort" value="8080" min="1024" max="65535">
+                        </div>
+                        
+                        <div class="form-group toggle-label">
+                            <span>Modo Debug</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="debugMode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="config-card">
+                        <h2><i class="fas fa-database"></i> Almacenamiento y Logs</h2>
+                        <div class="description">Configura el almacenamiento de datos y registro</div>
+                        
+                        <div class="form-group">
+                            <label for="logLevel">Nivel de Log</label>
+                            <select id="logLevel">
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO" selected>INFO</option>
+                                <option value="WARNING">WARNING</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="maxLogSize">Tamaño Máximo de Log (MB)</label>
+                            <input type="number" id="maxLogSize" value="100" min="10" max="1000">
+                        </div>
+                        
+                        <div class="form-group toggle-label">
+                            <span>Conservar Logs por 30 Días</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoCleanup" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="form-group">
-                    <label for="maxLoginAttempts">Intentos Máximos de Login</label>
-                    <input type="number" id="maxLoginAttempts" value="5" min="3" max="10">
-                </div>
-                
-                <div class="form-actions">
-                    <button class="btn-primary" onclick="saveSystemConfig()">
-                        <i class="fas fa-save"></i> Guardar Configuración
-                    </button>
-                    <button class="btn-secondary btn-danger" onclick="resetToDefaults()">
-                        <i class="fas fa-undo"></i> Restablecer Valores
-                    </button>
+                <div class="config-card">
+                    <h2><i class="fas fa-shield-alt"></i> Seguridad</h2>
+                    <div class="description">Configuración de seguridad y autenticación</div>
+                    
+                    <div class="form-group">
+                        <label for="sessionTimeout">Tiempo de Sesión (horas)</label>
+                        <input type="number" id="sessionTimeout" value="24" min="1" max="168">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxLoginAttempts">Intentos Máximos de Login</label>
+                        <input type="number" id="maxLoginAttempts" value="5" min="3" max="10">
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="saveSystemConfig()">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                        <button class="btn-secondary btn-danger" onclick="resetToDefaults()">
+                            <i class="fas fa-undo"></i> Restablecer Valores
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    
+    <div id="alertContainer"></div>
     
     <script>
-        // Estado actual de configuración
+        // Variables globales
         let currentConfig = {
             ai: { provider: 'deepseek', deepseek: {}, llama: {} },
             communication: { whatsapp: { enabled: false }, telegram: { enabled: false } },
-            aggressive: {
-                enabled: false,
-                mode: 'normal',
-                max_threads: 50,
-                timeout: 5,
-                stealth: false,
-                delay: 0.5,
-                ssh_enabled: true,
-                allowed_networks: '',
-                wordlist: 'default'
-            },
+            aggressive: { enabled: false, mode: 'normal', max_threads: 50, timeout: 5, stealth: false, delay: 0.5, ssh_enabled: true, allowed_networks: '', wordlist: 'default' },
             system: { server: {}, storage: {}, security: {} }
         };
         
         let dependencies = {
-            paramiko: { installed: false, version: null, name: 'paramiko' },
-            cryptography: { installed: false, version: null, name: 'cryptography' },
-            requests: { installed: false, version: null, name: 'requests' }
+            paramiko: { installed: false, name: 'paramiko' },
+            cryptography: { installed: false, name: 'cryptography' },
+            requests: { installed: false, name: 'requests' }
         };
         
         // ============================================================
-        // Funciones de carga y aplicación de configuración
+        // Funciones de carga y aplicación
         // ============================================================
         
         async function loadConfig() {
@@ -912,14 +1004,13 @@
                 }
             } catch (error) {
                 console.error('Error cargando configuración:', error);
+                showAlert('Error cargando configuración', 'error');
             }
-            
-            // Cargar dependencias
             await checkDependencies();
         }
         
         function applyConfigToUI() {
-            // AI Config (mantener igual)
+            // AI Config
             const provider = currentConfig.ai?.provider || 'deepseek';
             document.getElementById('aiProvider').value = provider;
             toggleProviderConfig(provider);
@@ -934,6 +1025,7 @@
             
             if (currentConfig.ai?.llama) {
                 document.getElementById('llamaModelPath').value = currentConfig.ai.llama.model_path || '';
+                document.getElementById('llamaFilePath').textContent = currentConfig.ai.llama.model_path || '';
                 document.getElementById('llamaContextSize').value = currentConfig.ai.llama.context_size || 4096;
                 document.getElementById('llamaThreads').value = currentConfig.ai.llama.threads || 4;
             }
@@ -964,7 +1056,6 @@
                 document.getElementById('aggressiveStealth').checked = currentConfig.aggressive.stealth || false;
                 document.getElementById('aggressiveDelay').value = currentConfig.aggressive.delay || 0.5;
                 document.getElementById('aggressiveSshEnabled').checked = currentConfig.aggressive.ssh_enabled !== false;
-                document.getElementById('aggressiveWordlist').value = currentConfig.aggressive.wordlist || 'default';
                 
                 let networks = currentConfig.aggressive.allowed_networks || '';
                 if (typeof networks === 'string') {
@@ -972,7 +1063,6 @@
                 } else if (Array.isArray(networks)) {
                     document.getElementById('aggressiveAllowedNetworks').value = networks.join('\n');
                 }
-                
                 toggleAggressiveConfig(currentConfig.aggressive.enabled);
             }
             
@@ -996,77 +1086,22 @@
         }
         
         // ============================================================
-        // Verificación de dependencias
+        // Selector de archivo para Llama
         // ============================================================
         
-        async function checkDependencies() {
-            try {
-                const response = await fetch('/api/aggressive/dependencies');
-                if (response.ok) {
-                    const data = await response.json();
-                    dependencies = data;
-                    updateDependenciesUI();
+        function selectLlamaFile() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.gguf';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('llamaModelPath').value = file.path || file.name;
+                    document.getElementById('llamaFilePath').innerHTML = `<i class="fas fa-file"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    showAlert(`Archivo seleccionado: ${file.name}`, 'success');
                 }
-            } catch (error) {
-                console.error('Error checking dependencies:', error);
-                // Simular dependencias faltantes
-                dependencies = {
-                    paramiko: { installed: false, name: 'paramiko' },
-                    cryptography: { installed: false, name: 'cryptography' },
-                    requests: { installed: false, name: 'requests' }
-                };
-                updateDependenciesUI();
-            }
-        }
-        
-        function updateDependenciesUI() {
-            const container = document.getElementById('dependenciesStatus');
-            const allInstalled = Object.values(dependencies).every(d => d.installed);
-            const installBtn = document.getElementById('installDepsBtn');
-            
-            let html = '';
-            for (const [name, dep] of Object.entries(dependencies)) {
-                const installed = dep.installed;
-                html += `
-                    <div class="dep-status">
-                        <i class="fas ${installed ? 'fa-check-circle installed' : 'fa-times-circle missing'}"></i>
-                        <span class="dep-name">${dep.name}</span>
-                        <span class="dep-version">${installed ? (dep.version || 'instalado') : 'no instalado'}</span>
-                    </div>
-                `;
-            }
-            
-            html += `<div style="margin-top: 8px; font-size: 11px; color: var(--text-secondary);">
-                <i class="fas fa-info-circle"></i> 
-                ${allInstalled ? '✅ Todas las dependencias instaladas' : '⚠️ Algunas dependencias faltan. Instálalas para usar el agente agresivo.'}
-            </div>`;
-            
-            container.innerHTML = html;
-            
-            if (!allInstalled && document.getElementById('aggressiveEnabled').checked) {
-                installBtn.style.display = 'inline-flex';
-                showAlert('Faltan dependencias. Instálalas para activar el agente agresivo.', 'warning');
-            } else {
-                installBtn.style.display = 'none';
-            }
-        }
-        
-        async function installMissingDeps() {
-            showAlert('Instalando dependencias faltantes...', 'info');
-            
-            try {
-                const response = await fetch('/api/aggressive/install', { method: 'POST' });
-                const data = await response.json();
-                
-                if (response.ok && data.success) {
-                    showAlert(data.message || 'Dependencias instaladas correctamente', 'success');
-                    await checkDependencies();
-                } else {
-                    showAlert(data.message || 'Error instalando dependencias', 'error');
-                }
-            } catch (error) {
-                showAlert('Error instalando dependencias. Intenta manualmente: pip install paramiko cryptography requests', 'error');
-            }
+            };
+            input.click();
         }
         
         // ============================================================
@@ -1091,7 +1126,9 @@
         
         function toggleWhatsAppConfig(enabled) {
             const configDiv = document.getElementById('whatsappConfig');
+            const testBtn = document.getElementById('testWhatsAppBtn');
             if (configDiv) configDiv.style.display = enabled ? 'block' : 'none';
+            if (testBtn) testBtn.style.display = enabled ? 'inline-flex' : 'none';
         }
         
         function toggleTelegramConfig(enabled) {
@@ -1101,92 +1138,71 @@
         
         function toggleAggressiveConfig(enabled) {
             const configDiv = document.getElementById('aggressiveConfig');
-            if (configDiv) {
-                configDiv.style.display = enabled ? 'block' : 'none';
-            }
-            
-            // Si se activa, verificar dependencias
-            if (enabled) {
-                checkDependencies();
-            }
+            if (configDiv) configDiv.style.display = enabled ? 'block' : 'none';
+            if (enabled) checkDependencies();
         }
         
         // ============================================================
-        // Funciones de guardado
+        // Verificación de dependencias
         // ============================================================
         
-        function showAlert(message, type = 'success') {
-            const container = document.getElementById('alertContainer');
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
-            alertDiv.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
-            container.appendChild(alertDiv);
-            
-            setTimeout(() => alertDiv.remove(), 5000);
-        }
-        
-        // Guardar configuración del Agente Agresivo
-        async function saveAggressiveConfig() {
-            const allowedNetworks = document.getElementById('aggressiveAllowedNetworks').value;
-            const networks = allowedNetworks.split('\n').filter(n => n.trim()).join(',');
-            
-            const config = {
-                enabled: document.getElementById('aggressiveEnabled').checked,
-                mode: document.getElementById('aggressiveMode').value,
-                max_threads: parseInt(document.getElementById('aggressiveMaxThreads').value),
-                timeout: parseInt(document.getElementById('aggressiveTimeout').value),
-                stealth: document.getElementById('aggressiveStealth').checked,
-                delay: parseFloat(document.getElementById('aggressiveDelay').value),
-                ssh_enabled: document.getElementById('aggressiveSshEnabled').checked,
-                allowed_networks: networks,
-                wordlist: document.getElementById('aggressiveWordlist').value
-            };
-            
-            // Validar redes permitidas si está activado
-            if (config.enabled && !networks) {
-                showAlert('Debes configurar al menos una red permitida para activar el agente agresivo', 'error');
-                return;
-            }
-            
+        async function checkDependencies() {
             try {
-                const response = await fetch('/api/config/aggressive', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(config)
-                });
-                
+                const response = await fetch('/api/aggressive/dependencies');
                 if (response.ok) {
-                    showAlert('Configuración del agente agresivo guardada correctamente', 'success');
-                    if (config.enabled && config.mode === 'ultra') {
-                        showAlert('🔥 MODO ULTRA ACTIVADO - Escaneo de todos los puertos (1-65535)', 'warning');
-                    }
-                } else {
-                    throw new Error('Error al guardar');
+                    dependencies = await response.json();
+                    updateDependenciesUI();
                 }
             } catch (error) {
-                showAlert('Error guardando configuración del agente agresivo', 'error');
+                console.error('Error checking dependencies:', error);
             }
         }
         
-        async function testAggressiveConnection() {
-            showAlert('Probando configuración del agente agresivo...', 'info');
+        function updateDependenciesUI() {
+            const container = document.getElementById('dependenciesStatus');
+            const allInstalled = Object.values(dependencies).every(d => d.installed);
+            const installBtn = document.getElementById('installDepsBtn');
+            
+            let html = '';
+            for (const [name, dep] of Object.entries(dependencies)) {
+                const installed = dep.installed;
+                html += `
+                    <div class="dep-status">
+                        <i class="fas ${installed ? 'fa-check-circle installed' : 'fa-times-circle missing'}"></i>
+                        <span class="dep-name">${dep.name}</span>
+                        <span class="dep-version">${installed ? (dep.version || 'instalado') : 'no instalado'}</span>
+                    </div>
+                `;
+            }
+            
+            html += `<div style="margin-top: 8px;">${allInstalled ? '✅ Todas las dependencias instaladas' : '⚠️ Faltan dependencias'}</div>`;
+            container.innerHTML = html;
+            
+            if (!allInstalled && document.getElementById('aggressiveEnabled').checked) {
+                installBtn.style.display = 'inline-flex';
+            } else {
+                installBtn.style.display = 'none';
+            }
+        }
+        
+        async function installMissingDeps() {
+            showAlert('Instalando dependencias...', 'info');
             try {
-                const response = await fetch('/api/aggressive/test', { method: 'POST' });
+                const response = await fetch('/api/aggressive/install', { method: 'POST' });
                 const data = await response.json();
-                
                 if (response.ok && data.success) {
-                    showAlert(data.message || 'Configuración válida. El agente está listo.', 'success');
+                    showAlert(data.message, 'success');
+                    await checkDependencies();
                 } else {
-                    showAlert(data.message || 'Error en la configuración. Verifica las redes permitidas.', 'error');
+                    showAlert(data.message || 'Error instalando dependencias', 'error');
                 }
             } catch (error) {
-                showAlert('Error probando configuración', 'error');
+                showAlert('Error instalando dependencias', 'error');
             }
         }
         
         // ============================================================
-        // Funciones existentes (AI, Comms, System)
+        // Guardado de configuraciones
         // ============================================================
         
         async function saveAIConfig() {
@@ -1214,9 +1230,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                
                 if (response.ok) {
                     showAlert('Configuración IA guardada correctamente', 'success');
+                    currentConfig.ai = config;
                 } else {
                     throw new Error('Error al guardar');
                 }
@@ -1226,17 +1242,19 @@
         }
         
         async function testAIConnection() {
-            showAlert('Probando conexión...', 'warning');
+            const provider = document.getElementById('aiProvider').value;
+            showAlert(`Probando conexión con ${provider}...`, 'info');
+            
             try {
                 const response = await fetch('/api/config/ai/test', { method: 'POST' });
-                if (response.ok) {
-                    const data = await response.json();
-                    showAlert(`Conexión exitosa! ${data.message || 'El proveedor IA responde correctamente'}`, 'success');
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(data.message, 'success');
                 } else {
-                    throw new Error('Conexión fallida');
+                    showAlert(data.message || 'Conexión fallida', 'error');
                 }
             } catch (error) {
-                showAlert('Conexión fallida. Verifica tu clave API y configuración.', 'error');
+                showAlert('Error de conexión', 'error');
             }
         }
         
@@ -1252,7 +1270,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                
                 if (response.ok) {
                     showAlert('Configuración WhatsApp guardada', 'success');
                     toggleWhatsAppConfig(config.enabled);
@@ -1261,6 +1278,31 @@
                 }
             } catch (error) {
                 showAlert('Error guardando configuración WhatsApp', 'error');
+            }
+        }
+        
+        async function testWhatsAppConnection() {
+            showAlert('Generando código QR para WhatsApp...', 'info');
+            const qrContainer = document.getElementById('whatsappQrContainer');
+            const qrStatus = document.getElementById('whatsappQrStatus');
+            qrContainer.style.display = 'block';
+            qrStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Esperando escaneo...';
+            qrStatus.className = 'test-result';
+            
+            try {
+                const response = await fetch('/api/whatsapp/qr', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok && data.qr) {
+                    qrStatus.innerHTML = '<i class="fas fa-check-circle"></i> QR generado. Escanea con WhatsApp.';
+                    qrStatus.className = 'test-result test-success';
+                    // Aquí se mostraría el QR real
+                } else {
+                    qrStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error generando QR';
+                    qrStatus.className = 'test-result test-error';
+                }
+            } catch (error) {
+                qrStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error de conexión';
+                qrStatus.className = 'test-result test-error';
             }
         }
         
@@ -1277,7 +1319,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                
                 if (response.ok) {
                     showAlert('Configuración Telegram guardada', 'success');
                     toggleTelegramConfig(config.enabled);
@@ -1296,22 +1337,83 @@
                 return;
             }
             
-            showAlert('Probando conexión del bot...', 'warning');
+            const testResult = document.getElementById('telegramTestResult');
+            testResult.style.display = 'block';
+            testResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando conexión...';
+            testResult.className = 'test-result';
+            
             try {
                 const response = await fetch('/api/config/telegram/test', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ bot_token: botToken })
                 });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    showAlert(`Bot conectado: @${data.username}`, 'success');
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    testResult.innerHTML = `<i class="fas fa-check-circle"></i> Bot conectado: @${data.username}`;
+                    testResult.className = 'test-result test-success';
                 } else {
-                    throw new Error('Token inválido');
+                    testResult.innerHTML = '<i class="fas fa-exclamation-circle"></i> Token inválido';
+                    testResult.className = 'test-result test-error';
                 }
             } catch (error) {
-                showAlert('Token de bot inválido o error de red', 'error');
+                testResult.innerHTML = '<i class="fas fa-exclamation-circle"></i> Error de conexión';
+                testResult.className = 'test-result test-error';
+            }
+        }
+        
+        async function saveAggressiveConfig() {
+            const allowedNetworks = document.getElementById('aggressiveAllowedNetworks').value;
+            const networks = allowedNetworks.split('\n').filter(n => n.trim()).join(',');
+            
+            const config = {
+                enabled: document.getElementById('aggressiveEnabled').checked,
+                mode: document.getElementById('aggressiveMode').value,
+                max_threads: parseInt(document.getElementById('aggressiveMaxThreads').value),
+                timeout: parseInt(document.getElementById('aggressiveTimeout').value),
+                stealth: document.getElementById('aggressiveStealth').checked,
+                delay: parseFloat(document.getElementById('aggressiveDelay').value),
+                ssh_enabled: document.getElementById('aggressiveSshEnabled').checked,
+                allowed_networks: networks,
+                wordlist: document.getElementById('aggressiveWordlist').value
+            };
+            
+            if (config.enabled && !networks) {
+                showAlert('Debes configurar al menos una red permitida', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/config/aggressive', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                if (response.ok) {
+                    showAlert('Configuración guardada', 'success');
+                    if (config.enabled && config.mode === 'ultra') {
+                        showAlert('🔥 MODO ULTRA ACTIVADO', 'warning');
+                    }
+                } else {
+                    throw new Error('Error al guardar');
+                }
+            } catch (error) {
+                showAlert('Error guardando configuración', 'error');
+            }
+        }
+        
+        async function testAggressiveConnection() {
+            showAlert('Probando configuración...', 'info');
+            try {
+                const response = await fetch('/api/aggressive/test', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showAlert(data.message, 'success');
+                } else {
+                    showAlert(data.message || 'Configuración inválida', 'error');
+                }
+            } catch (error) {
+                showAlert('Error probando configuración', 'error');
             }
         }
         
@@ -1339,23 +1441,22 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                
                 if (response.ok) {
-                    showAlert('Configuración del sistema guardada. Algunos cambios requieren reinicio.', 'success');
+                    showAlert('Configuración del sistema guardada', 'success');
                 } else {
                     throw new Error('Error al guardar');
                 }
             } catch (error) {
-                showAlert('Error guardando configuración del sistema', 'error');
+                showAlert('Error guardando configuración', 'error');
             }
         }
         
         async function resetToDefaults() {
-            if (confirm('¿Estás seguro de que quieres restablecer toda la configuración a los valores predeterminados? Esta acción no se puede deshacer.')) {
+            if (confirm('¿Restablecer toda la configuración a valores predeterminados?')) {
                 try {
                     const response = await fetch('/api/config/reset', { method: 'POST' });
                     if (response.ok) {
-                        showAlert('Configuración restablecida! La página se recargará.', 'success');
+                        showAlert('Configuración restablecida', 'success');
                         setTimeout(() => location.reload(), 1500);
                     } else {
                         throw new Error('Error al restablecer');
@@ -1364,6 +1465,25 @@
                     showAlert('Error restableciendo configuración', 'error');
                 }
             }
+        }
+        
+        // ============================================================
+        // Utilidades
+        // ============================================================
+        
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+            alertDiv.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+            container.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+        
+        function logout() {
+            document.cookie = "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = '/login';
         }
         
         // ============================================================
@@ -1390,22 +1510,11 @@
             toggleAggressiveConfig(this.checked);
         });
         
-        document.getElementById('aggressiveStealth').addEventListener('change', function() {
-            const delayInput = document.getElementById('aggressiveDelay');
-            delayInput.disabled = !this.checked;
-            if (this.checked && delayInput.value < 0.5) {
-                delayInput.value = 0.5;
-            }
-        });
-        
-        // Tab switching
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 const tabId = this.getAttribute('data-tab');
-                
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                
                 document.querySelectorAll('.tab-content').forEach(content => {
                     content.style.display = 'none';
                 });
@@ -1413,179 +1522,21 @@
             });
         });
         
-        // ============================================================
-        // Inicialización
-        // ============================================================
-        
+        // Inicializar
         loadConfig();
         
-        // Detectar cambios sin guardar
         let formChanged = false;
-        const inputs = document.querySelectorAll('input, select, textarea');
-        inputs.forEach(input => {
+        document.querySelectorAll('input, select, textarea').forEach(input => {
             input.addEventListener('change', () => { formChanged = true; });
         });
         
         window.addEventListener('beforeunload', (e) => {
             if (formChanged) {
                 e.preventDefault();
-                e.returnValue = 'Tienes cambios sin guardar. ¿Estás seguro de que quieres salir?';
+                e.returnValue = 'Tienes cambios sin guardar';
                 return e.returnValue;
             }
         });
-        
-        // Botones de exportar/importar
-        async function exportConfig() {
-            try {
-                const response = await fetch('/api/config/export');
-                if (response.ok) {
-                    const data = await response.json();
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `swarmia_config_${new Date().toISOString().slice(0,19)}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    showAlert('Configuración exportada correctamente', 'success');
-                }
-            } catch (error) {
-                showAlert('Error exportando configuración', 'error');
-            }
-        }
-        
-        async function importConfig() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'application/json';
-            input.onchange = async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = async (event) => {
-                    try {
-                        const config = JSON.parse(event.target.result);
-                        const response = await fetch('/api/config/import', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(config)
-                        });
-                        
-                        if (response.ok) {
-                            showAlert('Configuración importada correctamente. Recargando...', 'success');
-                            setTimeout(() => location.reload(), 1500);
-                        } else {
-                            throw new Error('Importación fallida');
-                        }
-                    } catch (error) {
-                        showAlert('Archivo de configuración inválido', 'error');
-                    }
-                };
-                reader.readAsText(file);
-            };
-            input.click();
-        }
-        
-        function addExportImportButtons() {
-            const container = document.querySelector('.page-header');
-            if (container) {
-                const btnGroup = document.createElement('div');
-                btnGroup.style.marginTop = '16px';
-                btnGroup.style.display = 'flex';
-                btnGroup.style.gap = '12px';
-                btnGroup.innerHTML = `
-                    <button class="btn-secondary" onclick="exportConfig()">
-                        <i class="fas fa-download"></i> Exportar Configuración
-                    </button>
-                    <button class="btn-secondary" onclick="importConfig()">
-                        <i class="fas fa-upload"></i> Importar Configuración
-                    </button>
-                `;
-                container.appendChild(btnGroup);
-            }
-        }
-        
-        function addRestartButton() {
-            const systemTab = document.getElementById('tab-system');
-            if (systemTab) {
-                const restartCard = document.createElement('div');
-                restartCard.className = 'config-card';
-                restartCard.style.marginTop = '24px';
-                restartCard.style.borderColor = 'var(--warning)';
-                restartCard.innerHTML = `
-                    <h2><i class="fas fa-power-off"></i> Gestión de Servicios</h2>
-                    <div class="description">Reinicia los servicios de SwarmIA para aplicar cambios</div>
-                    <div class="form-actions">
-                        <button class="btn-primary" onclick="restartService()" style="background: linear-gradient(90deg, #f59e0b, #d97706);">
-                            <i class="fas fa-sync-alt"></i> Reiniciar SwarmIA
-                        </button>
-                        <button class="btn-secondary btn-danger" onclick="restartAndReboot()">
-                            <i class="fas fa-redo-alt"></i> Reiniciar y Apagar
-                        </button>
-                    </div>
-                `;
-                systemTab.appendChild(restartCard);
-            }
-        }
-        
-        async function restartService() {
-            if (confirm('¿Reiniciar los servicios de SwarmIA? Esto interrumpirá temporalmente el dashboard y los agentes.')) {
-                showAlert('Reiniciando servicios de SwarmIA...', 'warning');
-                try {
-                    const response = await fetch('/api/system/restart', { method: 'POST' });
-                    if (response.ok) {
-                        showAlert('Reinicio iniciado. El dashboard se reconectará en breve.', 'success');
-                        setTimeout(() => window.location.href = '/', 5000);
-                    } else {
-                        throw new Error('Reinicio fallido');
-                    }
-                } catch (error) {
-                    showAlert('Error reiniciando servicios', 'error');
-                }
-            }
-        }
-        
-        async function restartAndReboot() {
-            if (confirm('ADVERTENCIA: ¡Esto reiniciará todo el sistema! Todos los servicios serán interrumpidos. ¿Continuar?')) {
-                showAlert('Reinicio del sistema iniciado...', 'warning');
-                try {
-                    const response = await fetch('/api/system/reboot', { method: 'POST' });
-                    if (response.ok) {
-                        showAlert('El sistema se está reiniciando. El dashboard se reconectará en unos minutos.', 'success');
-                    } else {
-                        throw new Error('Reinicio fallido');
-                    }
-                } catch (error) {
-                    showAlert('Error iniciando reinicio', 'error');
-                }
-            }
-        }
-        
-        function addVersionInfo() {
-            const container = document.querySelector('.container');
-            if (container) {
-                const versionBar = document.createElement('div');
-                versionBar.style.marginTop = '32px';
-                versionBar.style.padding = '16px';
-                versionBar.style.textAlign = 'center';
-                versionBar.style.borderTop = '1px solid var(--border)';
-                versionBar.style.color = 'var(--text-secondary)';
-                versionBar.style.fontSize = '12px';
-                versionBar.innerHTML = `
-                    <i class="fas fa-code-branch"></i> SwarmIA v2.0.0 | 
-                    <i class="fas fa-heart" style="color: #ef4444;"></i> Asistente IA Mejorado |
-                    <i class="fas fa-shield-alt"></i> Seguro por defecto
-                `;
-                container.appendChild(versionBar);
-            }
-        }
-        
-        addExportImportButtons();
-        addRestartButton();
-        addVersionInfo();
-        
-        console.log('Página de configuración cargada correctamente');
     </script>
 </body>
 </html>
