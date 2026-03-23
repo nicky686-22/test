@@ -1,10 +1,8 @@
 #!/bin/bash
-# SwarmIA Core Installer
-# Lógica real de instalación con entorno virtual
+# SwarmIA Core Installer - Con detección de versión Python
 
 set -e
 
-# Colores
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -15,76 +13,98 @@ NC='\033[0m'
 echo -e "${CYAN}[*] Iniciando instalación de SwarmIA Core...${NC}"
 echo ""
 
-# Verificar dependencias
-echo -e "${BLUE}[*] Verificando dependencias...${NC}"
+INSTALL_DIR="/opt/swarmia"
 
-MISSING=""
-for cmd in python3 git; do
-    if ! command -v $cmd >/dev/null 2>&1; then
-        MISSING="$MISSING $cmd"
+# ============================================
+# FUNCIÓN: Verificar versión de Python
+# ============================================
+check_python_version() {
+    if ! command -v python3 >/dev/null 2>&1; then
+        echo -e "${RED}[!] Python3 no encontrado. Instalando...${NC}"
+        apt update && apt install -y python3 python3-venv python3-pip
+        return 1
     fi
-done
-
-# Verificar python3-venv
-if ! python3 -c "import venv" 2>/dev/null; then
-    MISSING="$MISSING python3-venv"
-fi
-
-if [[ -n "$MISSING" ]]; then
-    echo -e "${YELLOW}[!] Instalando dependencias faltantes:${NC}$MISSING"
     
-    if command -v apt >/dev/null 2>&1; then
-        apt update
-        apt install -y python3 python3-venv git
-    elif command -v yum >/dev/null 2>&1; then
-        yum install -y python3 python3-virtualenv git
-    else
-        echo -e "${RED}[!] No se pudo instalar dependencias automáticamente${NC}"
+    PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+    PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+    
+    echo -e "${BLUE}[*] Versión de Python detectada: ${YELLOW}$PYTHON_VERSION${NC}"
+    
+    # Si la versión es mayor a 3.12, mostrar advertencia y continuar
+    if [[ $PYTHON_MAJOR -eq 3 ]] && [[ $PYTHON_MINOR -gt 12 ]]; then
+        echo -e "${YELLOW}[!] ADVERTENCIA: Python $PYTHON_VERSION detectado${NC}"
+        echo -e "${YELLOW}[!] SwarmIA fue probado con Python 3.12. Puede haber incompatibilidades.${NC}"
+        echo -e "${YELLOW}[!] Continuando con la instalación...${NC}"
+        echo ""
+        return 0
+    fi
+    
+    # Si la versión es menor a 3.8, error
+    if [[ $PYTHON_MAJOR -eq 3 ]] && [[ $PYTHON_MINOR -lt 8 ]]; then
+        echo -e "${RED}[!] ERROR: Python $PYTHON_VERSION no es compatible${NC}"
+        echo -e "${RED}[!] Se requiere Python 3.8 o superior${NC}"
         exit 1
     fi
-fi
+    
+    echo -e "${GREEN}[✓] Versión de Python compatible${NC}"
+    return 0
+}
 
-echo -e "${GREEN}[✓] Dependencias OK${NC}"
+# ============================================
+# FUNCIÓN: Verificar si ya está instalado
+# ============================================
+check_installed() {
+    if [[ -d "$INSTALL_DIR/venv" ]] && [[ -f "$INSTALL_DIR/venv/bin/python" ]]; then
+        if "$INSTALL_DIR/venv/bin/pip" list 2>/dev/null | grep -q "flask"; then
+            return 0
+        fi
+    fi
+    return 1
+}
 
-# Directorio de instalación
-INSTALL_DIR="/opt/swarmia"
-echo -e "${BLUE}[*] Instalando en: ${YELLOW}$INSTALL_DIR${NC}"
+# ============================================
+# FUNCIÓN: Instalar dependencias con manejo de errores
+# ============================================
+install_dependencies() {
+    echo -e "${BLUE}[*] Creando entorno virtual...${NC}"
+    python3 -m venv venv
+    
+    echo -e "${BLUE}[*] Instalando dependencias Python...${NC}"
+    
+    # Intentar instalar con --break-system-packages si es necesario
+    if "$INSTALL_DIR/venv/bin/pip" install --upgrade pip 2>&1 | grep -q "externally-managed"; then
+        echo -e "${YELLOW}[!] Detectado entorno gestionado externamente. Usando --break-system-packages...${NC}"
+        "$INSTALL_DIR/venv/bin/pip" install --upgrade pip --break-system-packages
+        "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
+    else
+        "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
+        "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt"
+    fi
+}
 
-# Clonar o actualizar repositorio
-if [[ -d "$INSTALL_DIR/.git" ]]; then
-    echo -e "${BLUE}[*] Actualizando instalación existente...${NC}"
-    cd "$INSTALL_DIR"
-    git pull origin main
-else
-    echo -e "${BLUE}[*] Clonando repositorio...${NC}"
-    rm -rf "$INSTALL_DIR"
-    git clone https://github.com/nicky686-22/test.git "$INSTALL_DIR"
-fi
-
-cd "$INSTALL_DIR"
-
-# Crear entorno virtual
-echo -e "${BLUE}[*] Creando entorno virtual...${NC}"
-python3 -m venv venv
-
-# Instalar dependencias Python en el entorno virtual
-echo -e "${BLUE}[*] Instalando dependencias Python...${NC}"
-"$INSTALL_DIR/venv/bin/pip" install --upgrade pip
-
-if [[ -f "$INSTALL_DIR/requirements.txt" ]]; then
-    "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt"
-else
-    echo -e "${YELLOW}[!] requirements.txt no encontrado, instalando mínimos...${NC}"
-    "$INSTALL_DIR/venv/bin/pip" install flask flask-socketio python-dotenv requests
-fi
-
-# Crear directorios adicionales
-mkdir -p "$INSTALL_DIR"/{logs,data,config}
-
-# Configuración por defecto
-if [[ ! -f "$INSTALL_DIR/config/config.yaml" ]]; then
-    echo -e "${BLUE}[*] Creando configuración por defecto...${NC}"
-    cat > "$INSTALL_DIR/config/config.yaml" << 'EOF'
+# ============================================
+# FUNCIÓN: Configurar archivos
+# ============================================
+setup_config() {
+    mkdir -p "$INSTALL_DIR"/{logs,data,config}
+    
+    if [[ ! -f "$INSTALL_DIR/.env" ]]; then
+        echo -e "${BLUE}[*] Creando archivo .env...${NC}"
+        cat > "$INSTALL_DIR/.env" << 'EOF'
+FLASK_SECRET_KEY=changeme
+ADMIN_USER=admin
+ADMIN_PASSWORD_HASH=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+SWARMIA_HOST=0.0.0.0
+SWARMIA_PORT=8080
+EOF
+    else
+        echo -e "${GREEN}[✓] .env ya existe, conservando${NC}"
+    fi
+    
+    if [[ ! -f "$INSTALL_DIR/config/config.yaml" ]]; then
+        echo -e "${BLUE}[*] Creando config/config.yaml...${NC}"
+        cat > "$INSTALL_DIR/config/config.yaml" << 'EOF'
 app:
   name: "SwarmIA"
   host: "0.0.0.0"
@@ -110,25 +130,59 @@ security:
   session_timeout: 3600
   max_login_attempts: 5
 EOF
+    else
+        echo -e "${GREEN}[✓] config/config.yaml ya existe, conservando${NC}"
+    fi
+}
+
+# ============================================
+# INICIO DE LA INSTALACIÓN
+# ============================================
+
+# 1. Verificar dependencias básicas
+echo -e "${BLUE}[*] Verificando dependencias del sistema...${NC}"
+
+for cmd in git curl wget; do
+    if ! command -v $cmd >/dev/null 2>&1; then
+        echo -e "${YELLOW}[!] Instalando $cmd...${NC}"
+        apt update && apt install -y $cmd
+    fi
+done
+
+# 2. Verificar versión de Python
+check_python_version
+
+# 3. Preparar directorio de instalación
+echo -e "${BLUE}[*] Preparando directorio de instalación...${NC}"
+
+if [[ -d "$INSTALL_DIR/.git" ]]; then
+    echo -e "${GREEN}[✓] Instalación existente detectada en $INSTALL_DIR${NC}"
+    cd "$INSTALL_DIR"
+    echo -e "${BLUE}[*] Actualizando repositorio...${NC}"
+    git pull origin main
+else
+    echo -e "${BLUE}[*] Clonando repositorio...${NC}"
+    rm -rf "$INSTALL_DIR"
+    git clone https://github.com/nicky686-22/test.git "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
 fi
 
-# Archivo .env por defecto
-if [[ ! -f "$INSTALL_DIR/.env" ]]; then
-    echo -e "${BLUE}[*] Creando archivo .env...${NC}"
-    cat > "$INSTALL_DIR/.env" << 'EOF'
-FLASK_SECRET_KEY=changeme
-ADMIN_USER=admin
-ADMIN_PASSWORD_HASH=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
-SWARMIA_HOST=0.0.0.0
-SWARMIA_PORT=8080
-EOF
+# 4. Instalar dependencias (saltar si ya están)
+if check_installed; then
+    echo -e "${GREEN}[✓] Dependencias Python ya instaladas. Saltando...${NC}"
+else
+    install_dependencies
+    echo -e "${GREEN}[✓] Dependencias instaladas${NC}"
 fi
 
-# Permisos
+# 5. Configurar archivos
+setup_config
+
+# 6. Permisos
 chown -R $(logname 2>/dev/null || echo $SUDO_USER || echo "root"): "$INSTALL_DIR" 2>/dev/null || true
 chmod +x "$INSTALL_DIR/src/main.py" 2>/dev/null || true
 
-# Crear servicio systemd
+# 7. Crear servicio systemd
 if command -v systemctl >/dev/null 2>&1; then
     echo -e "${BLUE}[*] Creando servicio systemd...${NC}"
     
@@ -139,7 +193,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$(logname 2>/dev/null || echo $SUDO_USER || echo "root")
+User=root
 WorkingDirectory=$INSTALL_DIR
 Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/main.py
@@ -156,13 +210,14 @@ EOF
     echo -e "${GREEN}[✓] Servicio creado e iniciado${NC}"
 fi
 
-# Script de arranque
+# 8. Crear comando global
 cat > /usr/local/bin/swarmia << 'EOF'
 #!/bin/bash
 cd /opt/swarmia && /opt/swarmia/venv/bin/python src/main.py "$@"
 EOF
 chmod +x /usr/local/bin/swarmia
 
+# 9. Mostrar resultado
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║                    INSTALACIÓN COMPLETADA                    ║${NC}"
@@ -172,10 +227,12 @@ echo -e "${CYAN}📁 Instalado en: ${YELLOW}$INSTALL_DIR${NC}"
 echo -e "${CYAN}🌐 Dashboard: ${YELLOW}http://localhost:8080${NC}"
 echo -e "${CYAN}🔑 Credenciales: ${YELLOW}admin / admin${NC}"
 echo ""
+echo -e "${CYAN}🐍 Versión Python detectada: ${YELLOW}$PYTHON_VERSION${NC}"
+echo ""
 echo -e "${BLUE}Comandos útiles:${NC}"
+echo -e "  ${GREEN}systemctl status swarmia${NC}  - Ver estado del servicio"
+echo -e "  ${GREEN}systemctl restart swarmia${NC} - Reiniciar servicio"
+echo -e "  ${GREEN}journalctl -u swarmia -f${NC}   - Ver logs en tiempo real"
 echo -e "  ${GREEN}swarmia${NC}                   - Iniciar manualmente"
-echo -e "  ${GREEN}systemctl start swarmia${NC}   - Iniciar servicio"
-echo -e "  ${GREEN}systemctl status swarmia${NC}  - Ver estado"
-echo -e "  ${GREEN}journalctl -u swarmia -f${NC}  - Ver logs en tiempo real"
 echo ""
 echo -e "${YELLOW}[!] IMPORTANTE: Cambia las credenciales en el primer acceso${NC}"
