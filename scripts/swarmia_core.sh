@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwarmIA Core Installer - Con detección de versión Python
+# SwarmIA Core Installer - Versión Estable con manejo de errores
 
 set -e
 
@@ -31,7 +31,6 @@ check_python_version() {
     
     echo -e "${BLUE}[*] Versión de Python detectada: ${YELLOW}$PYTHON_VERSION${NC}"
     
-    # Si la versión es mayor a 3.12, mostrar advertencia y continuar
     if [[ $PYTHON_MAJOR -eq 3 ]] && [[ $PYTHON_MINOR -gt 12 ]]; then
         echo -e "${YELLOW}[!] ADVERTENCIA: Python $PYTHON_VERSION detectado${NC}"
         echo -e "${YELLOW}[!] SwarmIA fue probado con Python 3.12. Puede haber incompatibilidades.${NC}"
@@ -40,7 +39,6 @@ check_python_version() {
         return 0
     fi
     
-    # Si la versión es menor a 3.8, error
     if [[ $PYTHON_MAJOR -eq 3 ]] && [[ $PYTHON_MINOR -lt 8 ]]; then
         echo -e "${RED}[!] ERROR: Python $PYTHON_VERSION no es compatible${NC}"
         echo -e "${RED}[!] Se requiere Python 3.8 o superior${NC}"
@@ -56,7 +54,7 @@ check_python_version() {
 # ============================================
 check_installed() {
     if [[ -d "$INSTALL_DIR/venv" ]] && [[ -f "$INSTALL_DIR/venv/bin/python" ]]; then
-        if "$INSTALL_DIR/venv/bin/pip" list 2>/dev/null | grep -q "flask"; then
+        if "$INSTALL_DIR/venv/bin/pip" list 2>/dev/null | grep -q "fastapi"; then
             return 0
         fi
     fi
@@ -64,23 +62,26 @@ check_installed() {
 }
 
 # ============================================
-# FUNCIÓN: Instalar dependencias con manejo de errores
+# FUNCIÓN: Instalar dependencias
 # ============================================
 install_dependencies() {
     echo -e "${BLUE}[*] Creando entorno virtual...${NC}"
     python3 -m venv venv
     
-    echo -e "${BLUE}[*] Instalando dependencias Python...${NC}"
+    echo -e "${BLUE}[*] Actualizando pip, setuptools y wheel...${NC}"
+    "$INSTALL_DIR/venv/bin/pip" install --upgrade pip setuptools wheel
     
-    # Intentar instalar con --break-system-packages si es necesario
-    if "$INSTALL_DIR/venv/bin/pip" install --upgrade pip 2>&1 | grep -q "externally-managed"; then
-        echo -e "${YELLOW}[!] Detectado entorno gestionado externamente. Usando --break-system-packages...${NC}"
-        "$INSTALL_DIR/venv/bin/pip" install --upgrade pip --break-system-packages
-        "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt" --break-system-packages
-    else
-        "$INSTALL_DIR/venv/bin/pip" install --upgrade pip
+    echo -e "${BLUE}[*] Instalando pyyaml primero (evita errores)...${NC}"
+    "$INSTALL_DIR/venv/bin/pip" install pyyaml==6.0.1
+    
+    echo -e "${BLUE}[*] Instalando dependencias restantes...${NC}"
+    if [[ -f "$INSTALL_DIR/requirements.txt" ]]; then
         "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt"
+    else
+        "$INSTALL_DIR/venv/bin/pip" install fastapi uvicorn pydantic python-dotenv click
     fi
+    
+    echo -e "${GREEN}[✓] Dependencias instaladas correctamente${NC}"
 }
 
 # ============================================
@@ -172,7 +173,6 @@ if check_installed; then
     echo -e "${GREEN}[✓] Dependencias Python ya instaladas. Saltando...${NC}"
 else
     install_dependencies
-    echo -e "${GREEN}[✓] Dependencias instaladas${NC}"
 fi
 
 # 5. Configurar archivos
