@@ -215,7 +215,7 @@ fi
 # 8. Crear comando global
 cat > /usr/local/bin/swarmia << 'EOF'
 #!/bin/bash
-cd /opt/swarmia && /opt/swarmia/venv/bin/python src/ui/server.py "$@"
+cd /opt/swarmia && /opt/swarmia/venv/bin/python src/core/main.py "$@"
 EOF
 chmod +x /usr/local/bin/swarmia
 
