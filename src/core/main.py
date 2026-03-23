@@ -15,19 +15,20 @@ from pathlib import Path
 from datetime import datetime
 from typing import Dict, Optional
 
-# Add project root to path
-project_root = Path(__file__).parent.parent
+# Add project root to path (2 niveles arriba porque estamos en src/core/)
+project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 import uvicorn
 
-# Importar componentes REALES (no simulados)
+# Importar componentes REALES (usando rutas desde la raíz)
 from src.core.config import Config
 from src.core.supervisor import create_supervisor
 from src.agents.chat import create_chat_agent
 from src.agents.aggressive import create_aggressive_agent
 from src.gateway.communication import setup_communication_gateway
-from src.ui.server import app  # <--- IMPORTANTE: importar la app real
+from src.ui.server import app
+
 
 
 # ============================================================
