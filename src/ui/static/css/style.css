@@ -1,3 +1,132 @@
+/* ============================================================
+   SwarmIA - Estilos Globales
+   Sistema de Agentes Distribuidos v2.0
+   ============================================================ */
+
+/* ============================================================
+   Variables CSS
+   ============================================================ */
+:root {
+    /* Colores principales */
+    --primary-color: #4f46e5;
+    --primary-dark: #4338ca;
+    --primary-light: #818cf8;
+    --secondary-color: #10b981;
+    --secondary-dark: #059669;
+    --secondary-light: #34d399;
+    
+    /* Colores de estado */
+    --success-color: #10b981;
+    --success-light: rgba(16, 185, 129, 0.1);
+    --warning-color: #f59e0b;
+    --warning-light: rgba(245, 158, 11, 0.1);
+    --danger-color: #ef4444;
+    --danger-light: rgba(239, 68, 68, 0.1);
+    --info-color: #3b82f6;
+    --info-light: rgba(59, 130, 246, 0.1);
+    
+    /* Fondos */
+    --dark-bg: #0f172a;
+    --sidebar-bg: #1e293b;
+    --card-bg: #1e293b;
+    --card-hover: #2d3a4f;
+    
+    /* Texto */
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    /* Bordes */
+    --border-color: #334155;
+    --border-light: #475569;
+    
+    /* Espaciado */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-2xl: 48px;
+    
+    /* Radios */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+    
+    /* Sombras */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    
+    /* Transiciones */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    
+    /* Z-index */
+    --z-dropdown: 100;
+    --z-modal: 1000;
+    --z-tooltip: 2000;
+}
+
+/* ============================================================
+   Reset y Estilos Base
+   ============================================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: var(--dark-bg);
+    color: var(--text-primary);
+    line-height: 1.5;
+    min-height: 100vh;
+}
+
+/* ============================================================
+   Tipografía
+   ============================================================ */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.75rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
+h6 { font-size: 1rem; }
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--primary-light);
+}
+
+code, pre {
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.875rem;
+}
+
+/* ============================================================
+   Bordes
+   ============================================================ */
 .border { border: 1px solid var(--border-color); }
 .border-t { border-top: 1px solid var(--border-color); }
 .border-b { border-bottom: 1px solid var(--border-color); }
@@ -10,6 +139,9 @@
 .border-danger { border-color: var(--danger-color); }
 .border-info { border-color: var(--info-color); }
 
+/* ============================================================
+   Fondos
+   ============================================================ */
 .bg-primary { background: var(--primary-color); }
 .bg-success { background: var(--success-color); }
 .bg-warning { background: var(--warning-color); }
@@ -18,6 +150,9 @@
 .bg-dark { background: var(--dark-bg); }
 .bg-card { background: var(--card-bg); }
 
+/* ============================================================
+   Márgenes
+   ============================================================ */
 .m-0 { margin: 0; }
 .mt-0 { margin-top: 0; }
 .mr-0 { margin-right: 0; }
@@ -48,6 +183,9 @@
 .mb-4 { margin-bottom: var(--space-lg); }
 .ml-4 { margin-left: var(--space-lg); }
 
+/* ============================================================
+   Padding
+   ============================================================ */
 .p-0 { padding: 0; }
 .pt-0 { padding-top: 0; }
 .pr-0 { padding-right: 0; }
@@ -78,7 +216,9 @@
 .pb-4 { padding-bottom: var(--space-lg); }
 .pl-4 { padding-left: var(--space-lg); }
 
-/* Scrollbar Styling */
+/* ============================================================
+   Scrollbar
+   ============================================================ */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -97,19 +237,25 @@
     background: var(--border-light);
 }
 
-/* Selection */
+/* ============================================================
+   Selección de texto
+   ============================================================ */
 ::selection {
-    background: rgba(99, 102, 241, 0.3);
+    background: rgba(79, 70, 229, 0.3);
     color: var(--text-primary);
 }
 
-/* Focus Styles */
+/* ============================================================
+   Focus
+   ============================================================ */
 :focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
 
-/* Print Styles */
+/* ============================================================
+   Estilos de impresión
+   ============================================================ */
 @media print {
     .no-print {
         display: none !important;
@@ -126,7 +272,9 @@
     }
 }
 
-/* Dark mode adjustments (already dark by default) */
+/* ============================================================
+   Modo claro (preferencia del sistema)
+   ============================================================ */
 @media (prefers-color-scheme: light) {
     :root {
         --dark-bg: #f8fafc;
@@ -136,10 +284,13 @@
         --text-primary: #1e293b;
         --text-secondary: #64748b;
         --border-color: #e2e8f0;
+        --border-light: #cbd5e1;
     }
 }
 
-/* Responsive Design */
+/* ============================================================
+   Responsive Design
+   ============================================================ */
 @media (max-width: 768px) {
     html {
         font-size: 14px;
@@ -177,7 +328,11 @@
     }
 }
 
-/* Custom Components */
+/* ============================================================
+   Componentes Personalizados
+   ============================================================ */
+
+/* Indicador de estado */
 .status-indicator {
     display: inline-flex;
     align-items: center;
@@ -210,6 +365,7 @@
     animation: pulse 1s infinite;
 }
 
+/* Barra de progreso */
 .progress-bar {
     width: 100%;
     height: 8px;
@@ -225,6 +381,7 @@
     transition: width 0.3s ease;
 }
 
+/* Tooltip */
 .tooltip {
     position: relative;
     display: inline-block;
@@ -233,7 +390,7 @@
 .tooltip .tooltip-text {
     visibility: hidden;
     position: absolute;
-    z-index: 1;
+    z-index: var(--z-tooltip);
     bottom: 125%;
     left: 50%;
     transform: translateX(-50%);
@@ -246,7 +403,7 @@
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity var(--transition-normal);
 }
 
 .tooltip:hover .tooltip-text {
@@ -254,7 +411,7 @@
     opacity: 1;
 }
 
-/* Code Blocks */
+/* Bloques de código */
 .code-block {
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
@@ -303,7 +460,7 @@
     font-size: 1.5rem;
 }
 
-/* Empty State */
+/* Estado vacío */
 .empty-state {
     text-align: center;
     padding: var(--space-2xl) var(--space-lg);
@@ -325,7 +482,7 @@
     margin-bottom: var(--space-lg);
 }
 
-/* Divider */
+/* Divisor */
 .divider {
     height: 1px;
     background: var(--border-color);
@@ -339,7 +496,9 @@
     margin: 0 var(--space-lg);
 }
 
-/* Grid System */
+/* ============================================================
+   Sistema de Grid
+   ============================================================ */
 .grid {
     display: grid;
     gap: var(--space-md);
@@ -369,7 +528,11 @@
     .grid-cols-4 { grid-template-columns: repeat(1, 1fr); }
 }
 
-/* SwarmIA Specific Components */
+/* ============================================================
+   Componentes Específicos de SwarmIA
+   ============================================================ */
+
+/* Logo */
 .swarm-logo {
     font-family: 'Segoe UI', sans-serif;
     font-weight: 800;
@@ -380,6 +543,7 @@
     color: transparent;
 }
 
+/* Tarjeta de agente */
 .agent-card {
     border-left: 4px solid var(--primary-color);
 }
@@ -389,6 +553,7 @@
 .agent-card.web { border-left-color: var(--warning-color); }
 .agent-card.system { border-left-color: var(--danger-color); }
 
+/* Prioridades de tareas */
 .task-priority {
     display: inline-block;
     padding: 4px 12px;
@@ -403,6 +568,7 @@
 .priority-normal { background: var(--info-light); color: var(--info-color); }
 .priority-low { background: rgba(148, 163, 184, 0.1); color: var(--text-secondary); }
 
+/* Estados de tareas */
 .task-status {
     display: inline-block;
     padding: 4px 12px;
@@ -415,8 +581,9 @@
 .status-completed { background: var(--success-light); color: var(--success-color); }
 .status-failed { background: var(--danger-light); color: var(--danger-color); }
 .status-pending { background: rgba(148, 163, 184, 0.1); color: var(--text-secondary); }
+.status-cancelled { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); }
 
-/* Network Status Indicator */
+/* Indicador de red */
 .network-status {
     display: flex;
     align-items: center;
@@ -438,7 +605,7 @@
     border-color: var(--warning-color);
 }
 
-/* System Health Meter */
+/* Medidor de salud del sistema */
 .health-meter {
     display: flex;
     align-items: center;
@@ -456,7 +623,7 @@
 .health-fill {
     height: 100%;
     border-radius: var(--radius-full);
-    transition: width 0.3s ease;
+    transition: width var(--transition-normal);
 }
 
 .health-excellent { background: var(--success-color); }
@@ -464,7 +631,7 @@
 .health-fair { background: var(--warning-color); }
 .health-poor { background: var(--danger-color); }
 
-/* Quick Stats */
+/* Estadísticas rápidas */
 .quick-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -479,7 +646,7 @@
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    transition: all 0.3s ease;
+    transition: all var(--transition-normal);
 }
 
 .stat-item:hover {
@@ -497,7 +664,7 @@
     font-size: 1.5rem;
 }
 
-.stat-icon.primary { background: rgba(99, 102, 241, 0.1); color: var(--primary-color); }
+.stat-icon.primary { background: rgba(79, 70, 229, 0.1); color: var(--primary-color); }
 .stat-icon.success { background: rgba(16, 185, 129, 0.1); color: var(--success-color); }
 .stat-icon.warning { background: rgba(245, 158, 11, 0.1); color: var(--warning-color); }
 .stat-icon.danger { background: rgba(239, 68, 68, 0.1); color: var(--danger-color); }
@@ -526,7 +693,125 @@
 .stat-change.positive { color: var(--success-color); }
 .stat-change.negative { color: var(--danger-color); }
 
-/* Final touches */
+/* ============================================================
+   Animaciones
+   ============================================================ */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Clases de animación */
+.animate-pulse {
+    animation: pulse 2s infinite;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+.animate-fadeIn {
+    animation: fadeIn var(--transition-normal);
+}
+
+.animate-slideInUp {
+    animation: slideInUp var(--transition-normal);
+}
+
+.animate-shake {
+    animation: shake 0.5s;
+}
+
+/* ============================================================
+   Utilidades
+   ============================================================ */
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.text-primary { color: var(--primary-color); }
+.text-success { color: var(--success-color); }
+.text-warning { color: var(--warning-color); }
+.text-danger { color: var(--danger-color); }
+.text-info { color: var(--info-color); }
+.text-secondary { color: var(--text-secondary); }
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+.font-normal { font-weight: 400; }
+
+.cursor-pointer { cursor: pointer; }
+.cursor-not-allowed { cursor: not-allowed; }
+
+.overflow-hidden { overflow: hidden; }
+.overflow-auto { overflow: auto; }
+.overflow-x-auto { overflow-x: auto; }
+.overflow-y-auto { overflow-y: auto; }
+
+.rounded-sm { border-radius: var(--radius-sm); }
+.rounded-md { border-radius: var(--radius-md); }
+.rounded-lg { border-radius: var(--radius-lg); }
+.rounded-full { border-radius: var(--radius-full); }
+
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+/* ============================================================
+   Focus global
+   ============================================================ */
 *:focus {
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
@@ -534,31 +819,4 @@
 
 *:focus:not(:focus-visible) {
     outline: none;
-}
-
-/* Print optimization */
-@media print {
-    .no-print {
-        display: none !important;
-    }
-    
-    body {
-        background: white !important;
-        color: black !important;
-    }
-    
-    .card {
-        border: 1px solid #ddd !important;
-        box-shadow: none !important;
-        break-inside: avoid;
-    }
-    
-    a {
-        color: black !important;
-        text-decoration: underline !important;
-    }
-    
-    .btn {
-        display: none !important;
-    }
 }
