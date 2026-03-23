@@ -56,7 +56,7 @@ echo -e "${YELLOW}⚠️  Esta acción eliminará COMPLETAMENTE SwarmIA del sist
 echo -e "${YELLOW}⚠️  Toda la configuración, datos y logs serán eliminados.${NC}"
 echo ""
 echo -e "${BLUE}¿Estás seguro? (escribe SI para confirmar): ${NC}"
-read -r response
+read -r response < /dev/tty || read -r response
 
 if [[ "$response" != "SI" ]]; then
     echo -e "${YELLOW}❌ Limpieza cancelada.${NC}"
