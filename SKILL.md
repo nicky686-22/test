@@ -1,289 +1,220 @@
-# SwarmIA Skill for OpenClaw
+# SwarmIA - Sistema de Asistentes IA Distribuidos
 
-Installs and manages SwarmIA - Enhanced AI Assistant System
+Sistema de asistentes IA con procesamiento por prioridades, múltiples proveedores de IA y dashboard elegante.
 
-## Description
+### Descripción
 
-SwarmIA is an "enhanced AI assistant system" that is "brutal in every sense" compared to OpenClaw. It features:
+SwarmIA es un sistema de asistentes IA distribuidos que incluye:
 
-- **Priority-based task processing** with CRITICAL priority for user messages
-- **WhatsApp & Telegram integration** with independent APIs
-- **Dual AI support**: DeepSeek API and Llama local models
-- **Agents that complete tasks fully** without leaving things half-done
-- **Elegant dashboard** with mandatory password change
-- **Auto-update system** from GitHub
-- **Aggressive methods** for system access (SSH, remote access)
+- Procesamiento de tareas por prioridad con prioridad CRÍTICA para mensajes de usuario
+- Integración con WhatsApp y Telegram con APIs independientes
+- Soporte dual de IA: API de DeepSeek y modelos locales Llama
+- Agentes que completan tareas completamente sin dejar cosas a medias
+- Dashboard elegante con cambio de contraseña obligatorio
+- Sistema de auto-actualización desde GitHub
+- Sistema Anti-Hacking con bloqueo automático de IPs y detección de ataques
+- Ejecución de comandos desde Telegram/WhatsApp
 
-## Installation
+### Instalación
 
-### As OpenClaw Skill
-```bash
-# Install via clawhub
-clawhub install nicky686-22/SwarmIA
+Instalación Rápida (Linux)
 
-# Or manually
-cd ~/.openclaw/skills
-git clone https://github.com/nicky686-22/SwarmIA.git
-```
+curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash
 
-### Standalone Installation
-```bash
-# Linux
-curl -sSL https://raw.githubusercontent.com/nicky686-22/SwarmIA/main/scripts/install.sh | sudo bash
+Instalación Manual
 
-# Windows
-# Download install.bat and run as Administrator
-```
+git clone https://github.com/nicky686-22/test.git SwarmIA
+cd SwarmIA
+pip install -r requirements.txt
+python src/main.py
 
-## Usage
+Windows: Descargar install.bat y ejecutar como Administrador
 
-### OpenClaw Commands
-```
-/swarmia install      - Install SwarmIA system
-/swarmia start        - Start SwarmIA service
-/swarmia stop         - Stop SwarmIA service
-/swarmia status       - Check SwarmIA status
-/swarmia update       - Check for updates
-/swarmia dashboard    - Open dashboard in browser
-/swarmia config       - Show configuration
-/swarmia logs         - Show recent logs
-/swarmia backup       - Create backup
-/swarmia restore      - Restore from backup
-/swarmia uninstall    - Uninstall SwarmIA
-```
+### Acceso al Dashboard
 
-### Direct Access
-After installation, access:
-- Dashboard: `http://[YOUR_IP]:3000`
-- Default credentials: admin/admin (change immediately!)
-- API Docs: `http://[YOUR_IP]:3000/docs`
+URL: http://[TU_IP]:8080
+Usuario: admin
+Contraseña: admin (cambiar en el primer inicio)
+Documentación API: http://[TU_IP]:8080/api/docs
 
-## Features
+### Comandos Remotos (Telegram/WhatsApp)
 
-### 🚀 Enhanced Performance
-- **CRITICAL priority** for user messages (never queued)
-- **Agents complete tasks fully** (no half-done work)
-- **Real-time monitoring** with detailed statistics
-- **Auto-scaling** based on load
+Una vez configurado el bot, puedes enviar estos comandos:
 
-### 🔧 Aggressive System Access
-- **SSH integration** for remote system management
-- **Multiple access methods** (Web, API, CLI, SSH)
-- **System command execution** with elevated privileges
-- **File system access** with full permissions
-- **Network scanning** and device discovery
-- **Service management** (start/stop/restart services)
+/status     - Estado del sistema y estadísticas
+/install    - Instalar paquetes de Python
+/update     - Actualizar SwarmIA desde GitHub
+/restart    - Reiniciar servicios SwarmIA
+/block_ip   - Bloquear IP maliciosa
+/unblock_ip - Desbloquear una IP
+/scan       - Escanear puertos de una IP
+/info       - Geolocalización de una IP
+/whois      - Información WHOIS
+/uptime     - Tiempo de actividad del sistema
+/logs       - Mostrar logs recientes
+/help       - Mostrar comandos disponibles
 
-### 🤖 Dual AI Support
-- **DeepSeek API** (requires token)
-- **Llama local models** (GGUF format)
-- **Model switching** on the fly
-- **Context management** with conversation history
+### Características Principales
 
-### 📱 Communication
-- **WhatsApp Business API** integration
-- **Telegram Bot API** integration
-- **Multi-user support** with permissions
-- **Message queuing** with priority
-- **Media support** (images, documents, audio)
+Rendimiento Mejorado:
+- Prioridad CRÍTICA para mensajes de usuario (nunca se encolan)
+- Agentes que completan tareas completamente
+- Monitoreo en tiempo real con estadísticas detalladas
+- Auto-escalado basado en carga
 
-### 🛡️ Security
-- **JWT authentication** with refresh tokens
-- **Mandatory password change** on first login
-- **IP whitelisting** for dashboard access
-- **Rate limiting** and DDoS protection
-- **Activity logging** with audit trails
+Sistema Anti-Hacking:
+- Detección automática de ataques: escaneo de puertos, fuerza bruta SSH, SQL injection, XSS
+- Bloqueo automático de IPs maliciosas con iptables
+- Geolocalización de atacantes (país, ciudad, ISP)
+- Alertas en tiempo real vía Telegram/WhatsApp
+- Registro completo de ataques en base de datos SQLite
 
-### 🔄 Auto Updates
-- **GitHub update checking** every 24 hours
-- **One-click updates** from dashboard
-- **Rollback capability** if update fails
-- **Changelog display** for each version
+Acceso Agresivo al Sistema:
+- Integración SSH para gestión remota
+- Ejecución de comandos del sistema con privilegios elevados
+- Escaneo de red y descubrimiento de dispositivos
+- Gestión de servicios (iniciar/detener/reiniciar)
 
-## Configuration
+Soporte Dual de IA:
+- API de DeepSeek (requiere token)
+- Modelos locales Llama (formato GGUF)
+- Cambio de modelo en tiempo real
+- Historial de conversación por sesión
 
-### AI Configuration
-```yaml
-ai:
-  default_provider: "deepseek"  # or "llama"
-  deepseek:
-    api_key: "your-deepseek-token"
-    model: "deepseek-chat"
-  llama:
-    model_path: "/path/to/model.gguf"
-    model_name: "My Local Model"
-```
+Comunicación:
+- WhatsApp Business API
+- Telegram Bot API
+- Soporte multi-usuario con permisos
+- Colas de mensajes con prioridad
+- Soporte multimedia (imágenes, documentos, audio)
 
-### Communication Configuration
-```yaml
-whatsapp:
-  enabled: true
-  provider: "twilio"
-  account_sid: "your-account-sid"
-  auth_token: "your-auth-token"
-  from_number: "+1234567890"
+Seguridad:
+- Autenticación JWT con tokens de refresco
+- Cambio de contraseña obligatorio en primer inicio
+- Lista blanca de IPs para acceso al dashboard
+- Limitación de tasa y protección DDoS
+- Registro de actividad con trazabilidad
 
-telegram:
-  enabled: true
-  bot_token: "your-bot-token"
-  allowed_users: ["user_id_1", "user_id_2"]
-```
+Auto-actualizaciones:
+- Verificación de actualizaciones en GitHub cada 24 horas
+- Actualizaciones con un clic desde el dashboard
+- Capacidad de reversión si falla la actualización
 
-### Aggressive Methods Configuration
-```yaml
-aggressive_methods:
-  enabled: true
-  ssh:
-    enabled: true
-    username: "swarmia"
-    key_path: "/etc/swarmia/ssh_key"
-  system_commands:
-    enabled: true
-    allowed_commands: ["systemctl", "apt", "yum", "pacman"]
-  file_access:
-    enabled: true
-    allowed_paths: ["/home", "/var/log", "/etc/swarmia"]
-```
+### Configuración Rápida
 
-## File Structure
+Crea un archivo .env en la raíz:
 
-```
+SWARMIA_PORT=8080
+DEEPSEEK_API_KEY=tu-clave-api
+TELEGRAM_ENABLED=true
+TELEGRAM_BOT_TOKEN=tu-token
+AGGRESSIVE_ENABLED=false
+AGGRESSIVE_MODE=normal
+AGGRESSIVE_ALLOWED_NETWORKS=192.168.0.0/16,10.0.0.0/8
+
+### Activación del Modo Ultra
+
+El modo Ultra escanea todos los puertos (1-65535) con máxima velocidad:
+
+1. Editar .env:
+AGGRESSIVE_ENABLED=true
+AGGRESSIVE_MODE=ultra
+AGGRESSIVE_ALLOWED_NETWORKS=192.168.0.0/16,10.0.0.0/8
+AGGRESSIVE_MAX_THREADS=200
+
+2. Instalar dependencias adicionales:
+pip install paramiko cryptography requests
+
+3. Verificar activación en logs:
+[AGGRESSIVE] 🔥 ULTRA MODE ACTIVATED - MAXIMUM AGGRESSION 🔥
+
+### Estructura del Proyecto
+
 SwarmIA/
-├── SKILL.md                    # This file
-├── README.md                   # Project README
-├── LICENSE                     # MIT License
-├── requirements.txt            # Python dependencies
-├── package.json                # Node.js dependencies
+├── SKILL.md
+├── README.md
+├── LICENSE
+├── requirements.txt
+├── .env.example
+├── config/
+│   └── config.example.yaml
 ├── scripts/
-│   ├── install.sh             # Linux installer
-│   └── install.bat            # Windows installer
+│   ├── install.sh
+│   └── install.bat
 ├── src/
 │   ├── core/
-│   │   ├── main.py            # Main entry point
-│   │   ├── config.py          # Configuration system
-│   │   ├── supervisor.py      # Agent supervisor
-│   │   └── updater.py         # Update system
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   └── supervisor.py
 │   ├── ai/
-│   │   ├── deepseek.py        # DeepSeek API handler
-│   │   └── llama.py           # Llama local handler
+│   │   ├── deepseek.py
+│   │   └── llama.py
 │   ├── agents/
-│   │   ├── chat.py            # Chat agent
-│   │   └── aggressive.py      # Aggressive methods agent
+│   │   ├── chat.py
+│   │   └── aggressive.py
 │   ├── gateway/
-│   │   └── communication.py   # WhatsApp/Telegram gateway
+│   │   └── communication.py
 │   └── ui/
-│       ├── server.py          # FastAPI server
-│       ├── templates/         # HTML templates
-│       └── static/            # CSS/JS files
-└── docs/                      # Documentation
-```
+│       ├── server.py
+│       ├── templates/
+│       └── static/
+└── docs/
 
-## Development
+### Desarrollo
 
-### Prerequisites
-- Python 3.8+
-- Node.js 14+ (for some features)
-- Git
-- OpenClaw (for skill installation)
+Prerrequisitos: Python 3.8+, Git
 
-### Setup Development Environment
-```bash
-# Clone repository
-git clone https://github.com/nicky686-22/SwarmIA.git
+Configurar entorno de desarrollo:
+
+git clone https://github.com/nicky686-22/test.git SwarmIA
 cd SwarmIA
-
-# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate     # Windows
-
-# Install dependencies
+source venv/bin/activate
 pip install -r requirements.txt
+python src/main.py --debug
 
-# Run in development mode
-python -m src.core.main --dev
-```
+### Solución de Problemas
 
-### Testing
-```bash
-# Run tests
-pytest tests/
+Puerto 8080 en uso: editar .env SWARMIA_PORT=8081
+Dashboard no accesible: sudo ufw allow 8080/tcp
+IA no responde: verificar API key en dashboard > Configuración > Probar Conexión
+Actualización fallida: cd /opt/swarmia && git pull origin main
 
-# Run with coverage
-pytest --cov=src tests/
+Ubicación de Logs:
+/opt/swarmia/logs/swarmia.log - Logs principales
+/opt/swarmia/logs/supervisor.log - Logs del supervisor
+/opt/swarmia/logs/security.log - Logs de seguridad (ataques)
 
-# Run specific test
-pytest tests/test_chat_agent.py -v
-```
+### Contribuciones
 
-## Troubleshooting
+1. Haz fork del repositorio
+2. Crea una rama para tu feature
+3. Realiza tus cambios
+4. Envía un pull request
 
-### Common Issues
+### Licencia
 
-1. **Port 3000 already in use**
-   ```bash
-   # Change port in config
-   swarmia config set server.port 3001
-   ```
+MIT License - Ver archivo LICENSE para detalles
 
-2. **Dashboard not accessible**
-   ```bash
-   # Check firewall
-   sudo ufw allow 3000/tcp
-   # or
-   sudo firewall-cmd --add-port=3000/tcp --permanent
-   ```
+### Soporte
 
-3. **AI not responding**
-   ```bash
-   # Check AI configuration
-   swarmia config show ai
-   # Test connection
-   swarmia test ai
-   ```
+GitHub Issues: https://github.com/nicky686-22/test/issues
+Documentación: https://github.com/nicky686-22/test#readme
 
-4. **Update failed**
-   ```bash
-   # Restore from backup
-   swarmia restore latest
-   # Manual update
-   cd /opt/swarmia
-   git pull origin main
-   ```
+### Historial de Cambios
 
-### Logs Location
-- Main logs: `/opt/swarmia/logs/swarmia.log`
-- Supervisor logs: `/opt/swarmia/logs/supervisor.log`
-- Agent logs: `/opt/swarmia/logs/agent_*.log`
-- Update logs: `/opt/swarmia/logs/updater.log`
+v2.0.0 (2026-03-23)
+- Sistema Anti-Hacking con detección de ataques
+- Modo Ultra para escaneo agresivo de puertos
+- Comandos remotos desde Telegram/WhatsApp
+- Bloqueo automático de IPs maliciosas
+- Geolocalización de atacantes
+- Mejoras de rendimiento en el supervisor
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-## License
-
-MIT License - See LICENSE file for details
-
-## Support
-
-- GitHub Issues: https://github.com/nicky686-22/SwarmIA/issues
-- Documentation: https://github.com/nicky686-22/SwarmIA/docs
-- OpenClaw Discord: https://discord.gg/clawd
-
-## Changelog
-
-### v1.0.0 (2026-03-22)
-- Initial release
-- Complete SwarmIA system
-- Dual AI support (DeepSeek + Llama)
-- WhatsApp/Telegram integration
-- Elegant dashboard
-- Auto-update system
-- Aggressive methods for system access
-- OpenClaw skill integration
+v1.0.0 (2026-03-22)
+- Lanzamiento inicial
+- Sistema completo de asistentes IA
+- Soporte DeepSeek y Llama
+- Integración WhatsApp/Telegram
+- Dashboard elegante
+- Sistema de auto-actualización
