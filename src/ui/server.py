@@ -320,10 +320,19 @@ async def dashboard(request: Request, session: Dict = Depends(verify_session_tok
 @app.get("/change-password", response_class=HTMLResponse)
 async def change_password_page(request: Request):
     """Password change page - accessible with valid session token"""
+    # DEBUG: imprimir todas las cookies recibidas
+    print(f"DEBUG - Cookies recibidas: {dict(request.cookies)}")
+    
     token = request.cookies.get("session_token")
+    print(f"DEBUG - Token extraído: {token}")
+    print(f"DEBUG - Active sessions: {list(active_sessions.keys())}")
+    
     if not token or token not in active_sessions:
+        print(f"DEBUG - Token no válido o sesión no encontrada")
         return RedirectResponse(url="/login", status_code=303)
+    
     session = active_sessions[token]
+    print(f"DEBUG - Sesión encontrada para usuario: {session['username']}")
     return templates.TemplateResponse("change_password.html", {"request": request, "username": session["username"]})
     
 @app.post("/api/change-password")
