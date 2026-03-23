@@ -603,15 +603,25 @@ async def save_aggressive_config(request: Request):
     data = await request.json()
     
     try:
-        # Guardar en archivo de configuración YAML
-        config_path = config.CONFIG_DIR / "config.yaml"
+        import yaml
         
-        if config_path.exists():
-            import yaml
-            with open(config_path, 'r') as f:
-                full_config = yaml.safe_load(f) or {}
-        else:
-            full_config = {}
+        config_path = config.CONFIG_DIR / "config.yaml"
+        example_path = config.CONFIG_DIR / "config.example.yaml"
+        
+        # Si no existe config.yaml, crearlo desde el ejemplo
+        if not config_path.exists():
+            if example_path.exists():
+                import shutil
+                shutil.copy(example_path, config_path)
+                print(f"📄 Creado {config_path} desde plantilla")
+            else:
+                # Si no hay ejemplo, crear uno básico
+                config_path.parent.mkdir(parents=True, exist_ok=True)
+                config_path.touch()
+        
+        # Cargar configuración existente
+        with open(config_path, 'r') as f:
+            full_config = yaml.safe_load(f) or {}
         
         # Procesar redes permitidas
         allowed_networks = data.get("allowed_networks", "")
@@ -639,8 +649,16 @@ async def save_aggressive_config(request: Request):
         
         # También actualizar variables de entorno en .env
         env_path = config.BASE_DIR / ".env"
-        env_vars = {}
+        env_example_path = config.BASE_DIR / ".env.example"
         
+        # Si no existe .env, crearlo desde el ejemplo
+        if not env_path.exists():
+            if env_example_path.exists():
+                import shutil
+                shutil.copy(env_example_path, env_path)
+                print(f"📄 Creado {env_path} desde plantilla")
+        
+        env_vars = {}
         if env_path.exists():
             with open(env_path, 'r') as f:
                 for line in f:
