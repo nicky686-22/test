@@ -33,17 +33,19 @@ LOGS_DIR="/var/log/swarmia"
 DATA_DIR="/var/lib/swarmia"
 PORT="3000"
 
-# Crear directorios COMPLETOS
+# Limpiar instalación anterior PERO mantener directorios
+echo -e "${BLUE}[*] Cleaning previous installation...${NC}"
+systemctl stop swarmia 2>/dev/null || true
+
+# Crear directorios COMPLETOS (primero)
 echo -e "${BLUE}[*] Creating directories...${NC}"
 mkdir -p "$SWARMIA_DIR" "$CONFIG_DIR" "$LOGS_DIR" "$DATA_DIR"
 mkdir -p "$SWARMIA_DIR/static/css" "$SWARMIA_DIR/static/js" "$SWARMIA_DIR/static/images" "$SWARMIA_DIR/templates"
 mkdir -p "$SWARMIA_DIR/src/core"
 echo -e "${GREEN}[✓] Directories created${NC}"
 
-# Limpiar instalación anterior
-echo -e "${BLUE}[*] Cleaning previous installation...${NC}"
-systemctl stop swarmia 2>/dev/null || true
-rm -rf "$SWARMIA_DIR"/*
+# Limpiar contenido pero mantener estructura
+rm -rf "$SWARMIA_DIR"/* 2>/dev/null || true
 
 # Instalar dependencias mínimas
 echo -e "${BLUE}[*] Installing dependencies...${NC}"
@@ -568,15 +570,15 @@ class SwarmIADashboard {
     }
 }
 
-// Inicializar dashboard cuando el DOM esté listo
+// Inicializar dashboard cuando el DOM
+ esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboard = new SwarmIADashboard();
 });
 JS_EOF
 
 # Crear archivo HTML del dashboard
-cat > "$SWARMIA_DIR/t
-emplates/index.html" << 'HTML_EOF'
+cat > "$SWARMIA_DIR/templates/index.html" << 'HTML_EOF'
 <!DOCTYPE html>
 <html lang="en">
 <head>
