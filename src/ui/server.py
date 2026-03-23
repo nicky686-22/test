@@ -304,13 +304,22 @@ async def dashboard(request: Request, session: Dict = Depends(verify_session_tok
     )
 
 @app.get("/change-password", response_class=HTMLResponse)
-async def change_password_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """Password change page"""
+async def change_password_page(request: Request):
+    """Password change page - accessible with valid session token"""
+    token = request.cookies.get("session_token")
+    if not token or token not in active_sessions:
+        return RedirectResponse(url="/login", status_code=303)
+    session = active_sessions[token]
     return templates.TemplateResponse("change_password.html", {"request": request, "username": session["username"]})
-
+    
 @app.post("/api/change-password")
-async def api_change_password(request: Request, session: Dict = Depends(verify_session_token)):
+async def api_change_password(request: Request):
     """Change password API"""
+    token = request.cookies.get("session_token")
+    if not token or token not in active_sessions:
+        raise HTTPException(status_code=401, detail="Session expired or invalid")
+    
+    session = active_sessions[token]
     data = await request.json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
@@ -344,6 +353,7 @@ async def api_change_password(request: Request, session: Dict = Depends(verify_s
         )
         conn.commit()
     
+    # Clear all sessions
     active_sessions.clear()
     return {"success": True, "message": "Password changed successfully"}
 
