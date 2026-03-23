@@ -226,14 +226,16 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
     else:
         correct_password = secrets.compare_digest(credentials.password, password_hash)
     
+    # Después de validar la contraseña (cuando password_changed == 1)
     if not (correct_username and correct_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-    
+
     token = create_session_token(credentials.username)
     response = JSONResponse({
         "success": True,
         "message": "Login successful",
-        "username": credentials.username
+        "username": credentials.username,
+        "redirect": "/dashboard"  # Añadir redirect
     })
     response.set_cookie(
         key="session_token",
