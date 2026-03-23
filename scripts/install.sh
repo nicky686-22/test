@@ -1,6 +1,5 @@
 #!/bin/bash
-# SwarmIA Universal Installer - Simple version
-# Works with: curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash
+# SwarmIA Universal Installer - Ultra Simple version
 
 set -e
 
@@ -15,28 +14,25 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                 SwarmIA Universal Installer                  ║"
-echo "║                     Simple & Reliable                        ║"
+echo "║                     Ultra Simple & Fast                      ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
 # Verificar root
 if [[ $EUID -ne 0 ]]; then
     echo -e "${RED}[!] This installer must be run as root${NC}"
-    echo -e "${YELLOW}Please run: sudo bash <(curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh)${NC}"
     exit 1
 fi
 
-# Descargar y ejecutar el instalador simple
-echo -e "${BLUE}[*] Downloading SwarmIA installer...${NC}"
-TEMP_DIR="/tmp/swarmia_install_$(date +%s)"
-mkdir -p "$TEMP_DIR"
-cd "$TEMP_DIR"
+# Descargar y ejecutar el instalador ultra simple
+echo -e "${BLUE}[*] Downloading installer...${NC}"
+TEMP_SCRIPT="/tmp/swarmia_install_$(date +%s).sh"
 
-curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/simple_installer.sh -o swarmia_installer.sh
-chmod +x swarmia_installer.sh
+curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/ultra_simple_installer.sh -o "$TEMP_SCRIPT"
+chmod +x "$TEMP_SCRIPT"
 
 echo -e "${GREEN}[✓] Installer ready${NC}"
 echo ""
 
-# Ejecutar el instalador
-exec ./swarmia_installer.sh
+# Ejecutar
+exec "$TEMP_SCRIPT"
