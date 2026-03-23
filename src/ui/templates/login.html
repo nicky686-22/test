@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SwarmIA - Login</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #6366f1;
-            --primary-dark: #4f46e5;
+            --primary-color: #4f46e5;
+            --primary-dark: #4338ca;
             --secondary-color: #10b981;
             --dark-bg: #0f172a;
             --card-bg: #1e293b;
@@ -36,11 +36,49 @@
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+        }
+        
+        /* Background animated particles */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(79, 70, 229, 0.3);
+            border-radius: 50%;
+            animation: float linear infinite;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
         }
         
         .login-container {
             width: 100%;
             max-width: 420px;
+            position: relative;
+            z-index: 1;
         }
         
         .login-card {
@@ -51,6 +89,8 @@
             border: 1px solid var(--border-color);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(10px);
+            background: rgba(30, 41, 59, 0.95);
         }
         
         .login-card::before {
@@ -80,8 +120,18 @@
         
         .logo p {
             color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-top: 5px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: rgba(79, 70, 229, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            margin-top: 8px;
         }
         
         .form-group {
@@ -93,7 +143,7 @@
             margin-bottom: 8px;
             color: var(--text-secondary);
             font-weight: 500;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         
         .input-with-icon {
@@ -106,32 +156,35 @@
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-secondary);
+            font-size: 1rem;
         }
         
         .input-with-icon input {
             width: 100%;
             padding: 14px 16px 14px 48px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.6);
             border: 1px solid var(--border-color);
             border-radius: 10px;
             color: var(--text-primary);
-            font-size: 1rem;
+            font-size: 0.95rem;
             transition: all 0.3s ease;
         }
         
         .input-with-icon input:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+            background: rgba(15, 23, 42, 0.8);
         }
         
         .input-with-icon input::placeholder {
             color: var(--text-secondary);
+            font-size: 0.85rem;
         }
         
         .login-btn {
             width: 100%;
-            padding: 16px;
+            padding: 14px;
             background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
             color: white;
             border: none;
@@ -148,34 +201,55 @@
         
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.4);
         }
         
         .login-btn:active {
             transform: translateY(0);
         }
         
-        .login-btn i {
-            font-size: 1.1rem;
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .alert {
-            padding: 14px;
+            padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
             display: none;
+            font-size: 0.85rem;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .alert-warning {
-            background: rgba(245, 158, 11, 0.1);
+            background: rgba(245, 158, 11, 0.15);
             border: 1px solid var(--warning-color);
             color: #fbbf24;
         }
         
         .alert-danger {
-            background: rgba(239, 68, 68, 0.1);
+            background: rgba(239, 68, 68, 0.15);
             border: 1px solid var(--danger-color);
             color: #f87171;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid var(--success-color);
+            color: #34d399;
         }
         
         .alert i {
@@ -183,21 +257,30 @@
         }
         
         .system-info {
-            margin-top: 30px;
+            margin-top: 24px;
             padding-top: 20px;
             border-top: 1px solid var(--border-color);
             text-align: center;
             color: var(--text-secondary);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
         
         .system-info p {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
         
         .system-info .version {
             color: var(--primary-color);
             font-weight: 600;
+        }
+        
+        .security-note {
+            background: rgba(16, 185, 129, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 0.7rem;
+            text-align: center;
         }
         
         @media (max-width: 480px) {
@@ -215,23 +298,56 @@
         }
         
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.8;
+                box-shadow: 0 0 0 5px rgba(79, 70, 229, 0.3);
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
+    <!-- Animated background particles -->
+    <div class="bg-particles" id="particles"></div>
+    
     <div class="login-container">
         <div class="login-card">
             <div class="logo">
                 <h1><i class="fas fa-robot"></i> SwarmIA</h1>
-                <p>The Enhanced OpenClaw - Brutal in Every Sense</p>
+                <p>Enhanced AI Assistant System</p>
+                <span class="badge"><i class="fas fa-gem"></i> v2.0.0</span>
             </div>
             
             <div id="alertDefaultPassword" class="alert alert-warning" style="display: none;">
                 <i class="fas fa-exclamation-triangle"></i>
-                <strong>Default Password Detected:</strong> You must change the password on first login
+                <strong>Default password detected!</strong> You must change it on first login.
             </div>
             
             <div id="alertError" class="alert alert-danger" style="display: none;">
@@ -239,47 +355,112 @@
                 <span id="errorMessage">Login failed. Please check your credentials.</span>
             </div>
             
+            <div id="alertInfo" class="alert alert-success" style="display: none;">
+                <i class="fas fa-info-circle"></i>
+                <span id="infoMessage"></span>
+            </div>
+            
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="username">Username</label>
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
                     <div class="input-with-icon">
                         <i class="fas fa-user"></i>
-                        <input type="text" id="username" name="username" placeholder="Enter username" value="admin" required>
+                        <input type="text" id="username" name="username" placeholder="Enter username" value="admin" autocomplete="username" required>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
                     <div class="input-with-icon">
                         <i class="fas fa-lock"></i>
-                        <input type="password" id="password" name="password" placeholder="Enter password" value="admin" required>
+                        <input type="password" id="password" name="password" placeholder="Enter password" value="admin" autocomplete="current-password" required>
                     </div>
                 </div>
                 
-                <button type="submit" class="login-btn pulse">
+                <button type="submit" class="login-btn pulse" id="loginBtn">
                     <i class="fas fa-sign-in-alt"></i>
                     Login to Dashboard
                 </button>
             </form>
             
+            <div class="security-note">
+                <i class="fas fa-shield-alt"></i> Secure login • Session expires after 24 hours
+            </div>
+            
             <div class="system-info">
-                <p><i class="fas fa-server"></i> SwarmIA v1.0.0</p>
+                <p><i class="fas fa-server"></i> SwarmIA v2.0.0</p>
                 <p><i class="fas fa-network-wired"></i> <span id="localIP">Detecting local IP...</span></p>
-                <p><i class="fas fa-shield-alt"></i> Default credentials: admin/admin</p>
-                <p class="version"><i class="fas fa-exclamation-circle"></i> Password change required on first login</p>
+                <p><i class="fas fa-exclamation-triangle"></i> Default credentials: <strong>admin / admin</strong></p>
+                <p class="version"><i class="fas fa-sync-alt"></i> Password change required on first login</p>
             </div>
         </div>
     </div>
     
     <script>
-        // Get local IP for display
-        async function getLocalIP() {
+        // Generate background particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            if (!container) return;
+            
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                const size = Math.random() * 4 + 2;
+                const left = Math.random() * 100;
+                const duration = Math.random() * 20 + 10;
+                const delay = Math.random() * 20;
+                
+                particle.style.cssText = `
+                    width: ${size}px;
+                    height: ${size}px;
+                    left: ${left}%;
+                    animation-duration: ${duration}s;
+                    animation-delay: -${delay}s;
+                    background: rgba(79, 70, 229, ${Math.random() * 0.3 + 0.1});
+                `;
+                
+                container.appendChild(particle);
+            }
+        }
+        
+        // Get local IP and port
+        async function getNetworkInfo() {
             try {
                 const response = await fetch('/api/network/info');
-                const data = await response.json();
-                document.getElementById('localIP').textContent = `Local: ${data.local_ip}:${data.port}`;
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('localIP').textContent = `Access: http://${data.local_ip}:${data.port}`;
+                } else {
+                    throw new Error('Network info not available');
+                }
             } catch (error) {
-                document.getElementById('localIP').textContent = 'Local: 127.0.0.1:3000';
+                // Fallback - try to get port from current location
+                const port = window.location.port || '8080';
+                document.getElementById('localIP').textContent = `Access: http://${window.location.hostname}:${port}`;
+            }
+        }
+        
+        // Check if already logged in (redirect if session exists)
+        async function checkExistingSession() {
+            try {
+                const response = await fetch('/api/health');
+                if (response.ok) {
+                    // If we can access health, check if we have session via cookie
+                    // This is a simple check - actual session is cookie-based
+                    const cookies = document.cookie.split(';');
+                    const hasSession = cookies.some(cookie => cookie.trim().startsWith('session_token='));
+                    
+                    if (hasSession) {
+                        // Redirect to dashboard
+                        window.location.href = '/';
+                    }
+                }
+            } catch (error) {
+                // Not logged in, stay on login page
+                console.debug('No active session');
             }
         }
         
@@ -287,12 +468,22 @@
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            const loginBtn = document.getElementById('loginBtn');
+            
+            // Validate inputs
+            if (!username || !password) {
+                showError('Please enter both username and password');
+                return;
+            }
             
             // Hide any existing alerts
-            document.getElementById('alertError').style.display = 'none';
-            document.getElementById('alertDefaultPassword').style.display = 'none';
+            hideAlerts();
+            
+            // Show loading state
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="spinner"></span> Authenticating...';
             
             // Create basic auth header
             const credentials = btoa(`${username}:${password}`);
@@ -306,7 +497,7 @@
                     }
                 });
                 
-                if (response.status === 307) {
+                if (response.status === 307 || response.status === 302) {
                     // Password change required
                     window.location.href = '/change-password';
                     return;
@@ -315,57 +506,133 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    // Store session info
+                    // Store username in localStorage (non-sensitive)
                     localStorage.setItem('swarmia_username', data.username);
+                    localStorage.setItem('swarmia_login_time', Date.now());
                     
-                    // Redirect to dashboard
-                    window.location.href = '/';
-                } else {
-                    // Show error
-                    document.getElementById('errorMessage').textContent = 'Invalid username or password';
-                    document.getElementById('alertError').style.display = 'block';
+                    // Show success message briefly before redirect
+                    loginBtn.innerHTML = '<i class="fas fa-check"></i> Login successful! Redirecting...';
+                    loginBtn.style.background = 'linear-gradient(90deg, #10b981, #059669)';
+                    
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 500);
+                } else if (response.status === 401) {
+                    showError('Invalid username or password');
                     
                     // Shake animation
                     const loginCard = document.querySelector('.login-card');
-                    loginCard.style.animation = 'shake 0.5s';
+                    loginCard.classList.add('shake');
                     setTimeout(() => {
-                        loginCard.style.animation = '';
+                        loginCard.classList.remove('shake');
                     }, 500);
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    showError(errorData.detail || 'Login failed. Please try again.');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                document.getElementById('errorMessage').textContent = 'Network error. Please try again.';
-                document.getElementById('alertError').style.display = 'block';
+                showError('Network error. Please check your connection and try again.');
+            } finally {
+                // Reset button state (only if not redirected)
+                if (!window.location.pathname.includes('/')) {
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Login to Dashboard';
+                }
             }
         });
+        
+        // Show error message
+        function showError(message) {
+            const alertError = document.getElementById('alertError');
+            const errorMessage = document.getElementById('errorMessage');
+            errorMessage.textContent = message;
+            alertError.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (alertError.style.display === 'block') {
+                    alertError.style.display = 'none';
+                }
+            }, 5000);
+        }
+        
+        // Show info message
+        function showInfo(message) {
+            const alertInfo = document.getElementById('alertInfo');
+            const infoMessage = document.getElementById('infoMessage');
+            infoMessage.textContent = message;
+            alertInfo.style.display = 'block';
+            
+            setTimeout(() => {
+                if (alertInfo.style.display === 'block') {
+                    alertInfo.style.display = 'none';
+                }
+            }, 4000);
+        }
+        
+        // Hide all alerts
+        function hideAlerts() {
+            document.getElementById('alertError').style.display = 'none';
+            document.getElementById('alertDefaultPassword').style.display = 'none';
+            document.getElementById('alertInfo').style.display = 'none';
+        }
         
         // Check if using default password
-        document.getElementById('password').addEventListener('input', function() {
-            if (this.value === 'admin' && document.getElementById('username').value === 'admin') {
-                document.getElementById('alertDefaultPassword').style.display = 'block';
+        function checkDefaultPassword() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const alertDefault = document.getElementById('alertDefaultPassword');
+            
+            if (username === 'admin' && password === 'admin') {
+                alertDefault.style.display = 'block';
             } else {
-                document.getElementById('alertDefaultPassword').style.display = 'none';
+                alertDefault.style.display = 'none';
+            }
+        }
+        
+        // Event listeners for real-time validation
+        document.getElementById('username').addEventListener('input', checkDefaultPassword);
+        document.getElementById('password').addEventListener('input', checkDefaultPassword);
+        
+        // Auto-focus password field and show warning if default
+        document.getElementById('username').addEventListener('focus', function() {
+            if (this.value === 'admin') {
+                document.getElementById('password').focus();
             }
         });
         
-        // Add shake animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                20%, 40%, 60%, 80% { transform: translateX(5px); }
-            }
-        `;
-        document.head.appendChild(style);
-        
         // Initialize
-        getLocalIP();
+        createParticles();
+        getNetworkInfo();
+        checkExistingSession();
+        checkDefaultPassword();
         
-        // Auto-focus password field if username is admin
+        // Auto-focus password if username is admin
         if (document.getElementById('username').value === 'admin') {
             document.getElementById('password').focus();
-            document.getElementById('alertDefaultPassword').style.display = 'block';
+        }
+        
+        // Add keyboard shortcut (Enter submits)
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+        
+        // Show welcome message for returning users
+        const lastLogin = localStorage.getItem('swarmia_login_time');
+        if (lastLogin) {
+            const lastLoginDate = new Date(parseInt(lastLogin));
+            const now = new Date();
+            const diffHours = (now - lastLoginDate) / (1000 * 60 * 60);
+            
+            if (diffHours < 24 && diffHours > 0) {
+                setTimeout(() => {
+                    showInfo(`Welcome back! Last login: ${lastLoginDate.toLocaleTimeString()}`);
+                }, 500);
+            }
         }
     </script>
 </body>
