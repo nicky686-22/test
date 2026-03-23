@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwarmIA - Tasks Management</title>
+    <title>SwarmIA - Tareas</title>
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -23,7 +23,6 @@
             --high: #f97316;
             --normal: #3b82f6;
             --low: #10b981;
-            --background: #0f172a;
         }
         
         * {
@@ -37,58 +36,135 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
+            display: flex;
         }
         
-        /* Header */
-        .header {
+        /* ============================================================
+           MENÚ LATERAL
+        ============================================================ */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .sidebar-logo p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+        
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-x: auto;
+        }
+        
+        /* Header superior */
+        .top-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             padding: 0 24px;
             height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 99;
         }
         
-        .logo {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
         
-        .logo i {
-            font-size: 28px;
-            color: var(--primary);
-        }
-        
-        .logo h1 {
+        .user-info i {
             font-size: 20px;
-            font-weight: 600;
+            color: var(--text-secondary);
         }
         
-        .logo span {
-            font-size: 12px;
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
             color: var(--text-secondary);
-            margin-left: 8px;
-        }
-        
-        .back-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            cursor: pointer;
             transition: all 0.2s;
         }
         
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
         }
         
         /* Container */
@@ -176,7 +252,7 @@
             flex-wrap: wrap;
         }
         
-        .filter-select, .filter-input {
+        .filter-select {
             background: var(--bg-primary);
             border: 1px solid var(--border);
             color: var(--text-primary);
@@ -184,11 +260,6 @@
             border-radius: 8px;
             font-size: 13px;
             cursor: pointer;
-        }
-        
-        .filter-select:focus, .filter-input:focus {
-            outline: none;
-            border-color: var(--primary);
         }
         
         .search-box {
@@ -242,16 +313,10 @@
             font-size: 12px;
             border-bottom: 1px solid var(--border);
             cursor: pointer;
-            user-select: none;
         }
         
         .tasks-table th:hover {
             color: var(--primary);
-        }
-        
-        .tasks-table th i {
-            margin-left: 6px;
-            font-size: 10px;
         }
         
         .tasks-table td {
@@ -264,7 +329,22 @@
             background: rgba(79, 70, 229, 0.05);
         }
         
-        /* Task Status Badges */
+        /* Badges */
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .priority-critical { background: rgba(220, 38, 38, 0.2); color: var(--critical); }
+        .priority-high { background: rgba(249, 115, 22, 0.2); color: var(--high); }
+        .priority-normal { background: rgba(59, 130, 246, 0.2); color: var(--normal); }
+        .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--low); }
+        
         .status-badge {
             display: inline-flex;
             align-items: center;
@@ -280,22 +360,6 @@
         .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
         .status-failed { background: rgba(239, 68, 68, 0.2); color: var(--error); }
         .status-cancelled { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
-        
-        /* Priority Badges */
-        .priority-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-        
-        .priority-critical { background: rgba(220, 38, 38, 0.2); color: var(--critical); }
-        .priority-high { background: rgba(249, 115, 22, 0.2); color: var(--high); }
-        .priority-normal { background: rgba(59, 130, 246, 0.2); color: var(--normal); }
-        .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--low); }
         
         /* Action Buttons */
         .action-buttons {
@@ -397,14 +461,6 @@
             margin-bottom: 24px;
         }
         
-        .modal-body pre {
-            background: var(--bg-primary);
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            font-size: 12px;
-        }
-        
         .modal-actions {
             display: flex;
             gap: 12px;
@@ -473,6 +529,19 @@
         
         /* Responsive */
         @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-logo h2, .sidebar-logo p, .nav-item span {
+                display: none;
+            }
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            .nav-item i {
+                margin: 0;
+            }
             .container { padding: 16px; }
             .filters-bar { flex-direction: column; align-items: stretch; }
             .search-box input { width: 100%; }
@@ -499,147 +568,169 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
-        
-        .refresh-indicator {
-            animation: pulse 1s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-robot"></i>
-            <h1>SwarmIA <span>v2.0</span></h1>
+    <!-- Menú Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><i class="fas fa-robot"></i> SwarmIA</h2>
+            <p>Sistema de Agentes IA</p>
         </div>
-        <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Back to Dashboard
-        </a>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" id="nav-dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/agents" class="nav-item" id="nav-agents">
+                <i class="fas fa-microchip"></i>
+                <span>Agentes</span>
+            </a>
+            <a href="/tasks" class="nav-item active" id="nav-tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Tareas</span>
+            </a>
+            <a href="/chat" class="nav-item" id="nav-chat">
+                <i class="fas fa-comment-dots"></i>
+                <span>Chat</span>
+            </a>
+            <a href="/config" class="nav-item" id="nav-config">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+            </a>
+            <a href="/logs" class="nav-item" id="nav-logs">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <i class="fas fa-code-branch"></i> v2.0.0
+        </div>
     </div>
     
-    <div class="container">
-        <div class="page-header">
-            <div>
-                <h1><i class="fas fa-tasks"></i> Task Management</h1>
-                <p>Monitor and manage all system tasks</p>
-            </div>
-            <button class="btn-icon" onclick="refreshTasks()" id="refreshBtn">
-                <i class="fas fa-sync-alt"></i> Refresh
-            </button>
-        </div>
-        
-        <!-- Stats Cards -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value" id="totalTasks">0</div>
-                <div class="stat-label">Total Tasks</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="pendingTasks">0</div>
-                <div class="stat-label">Pending</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="runningTasks">0</div>
-                <div class="stat-label">Running</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="completedTasks">0</div>
-                <div class="stat-label">Completed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="failedTasks">0</div>
-                <div class="stat-label">Failed</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="avgDuration">0s</div>
-                <div class="stat-label">Avg Duration</div>
-            </div>
-        </div>
-        
-        <!-- Filters -->
-        <div class="filters-bar">
-            <div class="filters-group">
-                <select id="statusFilter" class="filter-select" onchange="filterTasks()">
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="running">Running</option>
-                    <option value="completed">Completed</option>
-                    <option value="failed">Failed</option>
-                    <option value="cancelled">Cancelled</option>
-                </select>
-                
-                <select id="priorityFilter" class="filter-select" onchange="filterTasks()">
-                    <option value="all">All Priorities</option>
-                    <option value="critical">Critical</option>
-                    <option value="high">High</option>
-                    <option value="normal">Normal</option>
-                    <option value="low">Low</option>
-                </select>
-                
-                <select id="typeFilter" class="filter-select" onchange="filterTasks()">
-                    <option value="all">All Types</option>
-                    <option value="process_message">Process Message</option>
-                    <option value="complete_conversation">Complete Conversation</option>
-                    <option value="analyze_sentiment">Analyze Sentiment</option>
-                    <option value="execute_action">Execute Action</option>
-                </select>
-            </div>
-            
-            <div class="search-box">
-                <input type="text" id="searchInput" placeholder="Search by ID or description..." onkeyup="filterTasks()">
-                <button class="btn-icon" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Clear
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <!-- Header Superior -->
+        <div class="top-header">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">admin</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Salir
                 </button>
             </div>
         </div>
         
-        <!-- Tasks Table -->
-        <div class="tasks-table-container">
-            <table class="tasks-table">
-                <thead>
-                    <tr>
-                        <th onclick="sortBy('id')">Task ID <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('type')">Type <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('description')">Description <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('priority')">Priority <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('status')">Status <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('agent')">Agent <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('created')">Created <i class="fas fa-sort"></i></th>
-                        <th onclick="sortBy('duration')">Duration <i class="fas fa-sort"></i></th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tasksTableBody">
-                    <tr>
-                        <td colspan="9" class="empty-state">
-                            <i class="fas fa-spinner fa-spin"></i> Loading tasks...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-tasks"></i> Gestión de Tareas</h1>
+                    <p>Monitoreo y gestión de todas las tareas del sistema</p>
+                </div>
+                <button class="btn-icon" onclick="refreshTasks()" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTasks">0</div>
+                    <div class="stat-label">Total Tareas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingTasks">0</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="runningTasks">0</div>
+                    <div class="stat-label">En Ejecución</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completedTasks">0</div>
+                    <div class="stat-label">Completadas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="failedTasks">0</div>
+                    <div class="stat-label">Fallidas</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgDuration">0s</div>
+                    <div class="stat-label">Duración Promedio</div>
+                </div>
+            </div>
+            
+            <!-- Filters -->
+            <div class="filters-bar">
+                <div class="filters-group">
+                    <select id="statusFilter" class="filter-select" onchange="filterTasks()">
+                        <option value="all">Todos los estados</option>
+                        <option value="pending">Pendientes</option>
+                        <option value="running">En ejecución</option>
+                        <option value="completed">Completadas</option>
+                        <option value="failed">Fallidas</option>
+                        <option value="cancelled">Canceladas</option>
+                    </select>
+                    
+                    <select id="priorityFilter" class="filter-select" onchange="filterTasks()">
+                        <option value="all">Todas las prioridades</option>
+                        <option value="critical">Crítica</option>
+                        <option value="high">Alta</option>
+                        <option value="normal">Normal</option>
+                        <option value="low">Baja</option>
+                    </select>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar por ID o tipo..." onkeyup="filterTasks()">
+                    <button class="btn-icon" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tasks Table -->
+            <div class="tasks-table-container">
+                <table class="tasks-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortBy('id')">ID <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('type')">Tipo <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('priority')">Prioridad <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('status')">Estado <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('agent')">Agente <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('created')">Creada <i class="fas fa-sort"></i></th>
+                            <th onclick="sortBy('duration')">Duración <i class="fas fa-sort"></i></th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <tr>
+                            <td colspan="8" class="empty-state">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando tareas...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
         </div>
-        
-        <!-- Pagination -->
-        <div class="pagination" id="pagination"></div>
     </div>
     
-    <!-- Task Detail Modal -->
+    <!-- Modal de Detalles -->
     <div id="taskModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fas fa-info-circle"></i> Task Details</h3>
+                <h3><i class="fas fa-info-circle"></i> Detalles de la Tarea</h3>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <div class="modal-body" id="taskModalBody">
-                Loading...
+                Cargando...
             </div>
             <div class="modal-actions">
-                <button class="btn-icon" onclick="closeModal()">Close</button>
+                <button class="btn-icon" onclick="closeModal()">Cerrar</button>
             </div>
         </div>
     </div>
@@ -656,26 +747,27 @@
         let itemsPerPage = 20;
         let currentSort = { field: 'created', direction: 'desc' };
         
-        // Load tasks from API
         async function loadTasks() {
             showLoading(true);
             try {
-                const response = await fetch('/api/tasks?limit=500');
-                if (response.ok) {
-                    const data = await response.json();
-                    allTasks = data.tasks || [];
-                    applyFilters();
-                    updateStats();
-                } else {
-                    throw new Error('Failed to load tasks');
-                }
+                // Usar el endpoint que SÍ existe en el backend
+                const response = await fetch('/api/tasks/recent?limit=500');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                allTasks = data.tasks || [];
+                applyFilters();
+                updateStats();
             } catch (error) {
-                console.error('Error loading tasks:', error);
-                showAlert('Error loading tasks', 'error');
+                console.error('Error cargando tareas:', error);
+                allTasks = [];
+                applyFilters();
+                updateStats();
+                showAlert('Error al cargar tareas: ' + error.message, 'error');
                 document.getElementById('tasksTableBody').innerHTML = `
-                    <tr><td colspan="9" class="empty-state">
+                    <tr><td colspan="8" class="empty-state">
                         <i class="fas fa-exclamation-triangle"></i><br>
-                        Failed to load tasks. Please try again.
+                        Error al cargar tareas.<br>
+                        <button class="btn-icon" onclick="refreshTasks()" style="margin-top: 16px;">Reintentar</button>
                     </td></tr>
                 `;
             } finally {
@@ -683,7 +775,6 @@
             }
         }
         
-        // Update statistics
         function updateStats() {
             const stats = {
                 total: allTasks.length,
@@ -693,10 +784,9 @@
                 failed: allTasks.filter(t => t.status === 'failed').length
             };
             
-            // Calculate average duration for completed tasks
             const completedTasks = allTasks.filter(t => t.status === 'completed' && t.duration);
             const avgDuration = completedTasks.length > 0 
-                ? Math.round(completedTasks.reduce((sum, t) => sum + parseFloat(t.duration || 0), 0) / completedTasks.length)
+                ? Math.round(completedTasks.reduce((sum, t) => sum + (parseFloat(t.duration) || 0), 0) / completedTasks.length)
                 : 0;
             
             document.getElementById('totalTasks').textContent = stats.total;
@@ -707,54 +797,40 @@
             document.getElementById('avgDuration').textContent = avgDuration > 0 ? `${avgDuration}s` : 'N/A';
         }
         
-        // Apply filters
         function applyFilters() {
             const status = document.getElementById('statusFilter').value;
             const priority = document.getElementById('priorityFilter').value;
-            const type = document.getElementById('typeFilter').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
             
             filteredTasks = allTasks.filter(task => {
                 if (status !== 'all' && task.status !== status) return false;
                 if (priority !== 'all' && task.priority?.toLowerCase() !== priority) return false;
-                if (type !== 'all' && task.type !== type) return false;
-                if (search) {
-                    const idMatch = task.id?.toLowerCase().includes(search);
-                    const descMatch = task.description?.toLowerCase().includes(search);
-                    if (!idMatch && !descMatch) return false;
-                }
+                if (search && !task.id?.toLowerCase().includes(search) && !task.type?.toLowerCase().includes(search)) return false;
                 return true;
             });
             
-            // Apply sorting
             sortTasks();
-            
             currentPage = 1;
             renderTable();
             renderPagination();
         }
         
-        // Sort tasks
         function sortTasks() {
             filteredTasks.sort((a, b) => {
                 let aVal = a[currentSort.field];
                 let bVal = b[currentSort.field];
-                
                 if (currentSort.field === 'created') {
                     aVal = new Date(a.created_at || 0);
                     bVal = new Date(b.created_at || 0);
                 }
-                
                 if (aVal === undefined) aVal = '';
                 if (bVal === undefined) bVal = '';
-                
                 if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
                 if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
                 return 0;
             });
         }
         
-        // Sort by field
         function sortBy(field) {
             if (currentSort.field === field) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
@@ -766,7 +842,6 @@
             renderTable();
         }
         
-        // Render table
         function renderTable() {
             const tbody = document.getElementById('tasksTableBody');
             const start = (currentPage - 1) * itemsPerPage;
@@ -774,12 +849,7 @@
             const pageTasks = filteredTasks.slice(start, end);
             
             if (pageTasks.length === 0) {
-                tbody.innerHTML = `
-                    <tr><td colspan="9" class="empty-state">
-                        <i class="fas fa-inbox"></i><br>
-                        No tasks found
-                    </td></tr>
-                `;
+                tbody.innerHTML = `<tr><td colspan="8" class="empty-state"><i class="fas fa-inbox"></i><br>No hay tareas</td></tr>`;
                 return;
             }
             
@@ -787,59 +857,43 @@
                 <tr>
                     <td><code>${task.id?.substring(0, 12)}...</code></td>
                     <td>${task.type || 'N/A'}</td>
-                    <td>${task.description || task.type || 'No description'}</td>
                     <td>${getPriorityBadge(task.priority)}</td>
                     <td>${getStatusBadge(task.status)}</td>
-                    <td>${task.agent_type || task.assigned_agent || 'Pending'}</td>
+                    <td>${task.assigned_agent || 'Pendiente'}</td>
                     <td>${formatDate(task.created_at)}</td>
                     <td>${formatDuration(task.duration)}</td>
                     <td class="action-buttons">
-                        <button class="action-btn view" onclick="viewTaskDetails('${task.id}')" title="View Details">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        ${task.status === 'running' ? `
-                            <button class="action-btn cancel" onclick="cancelTask('${task.id}')" title="Cancel Task">
-                                <i class="fas fa-ban"></i>
-                            </button>
-                        ` : ''}
-                        ${task.status === 'failed' ? `
-                            <button class="action-btn retry" onclick="retryTask('${task.id}')" title="Retry Task">
-                                <i class="fas fa-redo"></i>
-                            </button>
-                        ` : ''}
+                        <button class="action-btn view" onclick="viewTaskDetails('${task.id}')" title="Ver detalles"><i class="fas fa-eye"></i></button>
+                        ${task.status === 'running' ? `<button class="action-btn cancel" onclick="cancelTask('${task.id}')" title="Cancelar"><i class="fas fa-ban"></i></button>` : ''}
+                        ${task.status === 'failed' ? `<button class="action-btn retry" onclick="retryTask('${task.id}')" title="Reintentar"><i class="fas fa-redo"></i></button>` : ''}
                     </td>
                 </tr>
             `).join('');
         }
         
-        // Get priority badge HTML
         function getPriorityBadge(priority) {
             const p = (priority || 'normal').toLowerCase();
             const icons = { critical: '🔴', high: '🟠', normal: '🔵', low: '🟢' };
             return `<span class="priority-badge priority-${p}">${icons[p] || '⚪'} ${priority || 'NORMAL'}</span>`;
         }
         
-        // Get status badge HTML
         function getStatusBadge(status) {
             const s = (status || 'pending').toLowerCase();
             const icons = { completed: '✓', running: '⏳', pending: '⏰', failed: '✗', cancelled: '⊘' };
-            return `<span class="status-badge status-${s}">${icons[s] || '●'} ${status || 'PENDING'}</span>`;
+            return `<span class="status-badge status-${s}">${icons[s] || '●'} ${status || 'PENDIENTE'}</span>`;
         }
         
-        // Format date
         function formatDate(dateStr) {
             if (!dateStr) return 'N/A';
             const date = new Date(dateStr);
             const now = new Date();
             const diff = now - date;
-            
-            if (diff < 60000) return 'Just now';
-            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 60000) return 'ahora';
+            if (diff < 3600000) return `hace ${Math.floor(diff / 60000)} min`;
+            if (diff < 86400000) return `hace ${Math.floor(diff / 3600000)} h`;
             return date.toLocaleDateString();
         }
         
-        // Format duration
         function formatDuration(duration) {
             if (!duration) return 'N/A';
             if (typeof duration === 'number') {
@@ -850,159 +904,86 @@
             return duration;
         }
         
-        // Render pagination
         function renderPagination() {
             const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
             const pagination = document.getElementById('pagination');
-            
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
-            }
+            if (totalPages <= 1) { pagination.innerHTML = ''; return; }
             
             let html = '';
-            if (currentPage > 1) {
-                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Prev</button>`;
-            }
-            
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
-            
-            for (let i = startPage; i <= endPage; i++) {
+            if (currentPage > 1) html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Anterior</button>`;
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
                 html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
             }
-            
-            if (currentPage < totalPages) {
-                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
-            }
-            
+            if (currentPage < totalPages) html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Siguiente →</button>`;
             pagination.innerHTML = html;
         }
         
-        function goToPage(page) {
-            currentPage = page;
-            renderTable();
-            renderPagination();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        
-        function filterTasks() {
-            applyFilters();
-        }
+        function goToPage(page) { currentPage = page; renderTable(); renderPagination(); window.scrollTo({ top: 0 }); }
+        function filterTasks() { applyFilters(); }
         
         function clearFilters() {
             document.getElementById('statusFilter').value = 'all';
             document.getElementById('priorityFilter').value = 'all';
-            document.getElementById('typeFilter').value = 'all';
             document.getElementById('searchInput').value = '';
             applyFilters();
         }
         
-        // Refresh tasks
         async function refreshTasks() {
             const btn = document.getElementById('refreshBtn');
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
             btn.disabled = true;
-            
             await loadTasks();
-            
-            setTimeout(() => {
-                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
-                btn.disabled = false;
-            }, 500);
+            setTimeout(() => { btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar'; btn.disabled = false; }, 500);
         }
         
-        // View task details
         async function viewTaskDetails(taskId) {
             showLoading(true);
             try {
-                const response = await fetch(`/api/tasks/${taskId}`);
-                if (response.ok) {
-                    const task = await response.json();
-                    const modalBody = document.getElementById('taskModalBody');
-                    modalBody.innerHTML = `
-                        <div style="margin-bottom: 16px;">
-                            <strong>Task ID:</strong> <code>${task.id}</code>
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Type:</strong> ${task.type}
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Description:</strong> ${task.description || task.type}
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Priority:</strong> ${getPriorityBadge(task.priority)}
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Status:</strong> ${getStatusBadge(task.status)}
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Agent:</strong> ${task.assigned_agent || 'Not assigned'}
-                        </div>
-                        <div style="margin-bottom: 16px;">
-                            <strong>Created:</strong> ${new Date(task.created_at).toLocaleString()}
-                        </div>
-                        ${task.started_at ? `<div style="margin-bottom: 16px;"><strong>Started:</strong> ${new Date(task.started_at).toLocaleString()}</div>` : ''}
-                        ${task.completed_at ? `<div style="margin-bottom: 16px;"><strong>Completed:</strong> ${new Date(task.completed_at).toLocaleString()}</div>` : ''}
-                        ${task.duration ? `<div style="margin-bottom: 16px;"><strong>Duration:</strong> ${formatDuration(task.duration)}</div>` : ''}
-                        ${task.error ? `<div style="margin-bottom: 16px;"><strong>Error:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${task.error}</pre></div>` : ''}
-                        ${task.result ? `<div style="margin-bottom: 16px;"><strong>Result:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${JSON.stringify(task.result, null, 2)}</pre></div>` : ''}
-                        <div style="margin-bottom: 16px;">
-                            <strong>Data:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${JSON.stringify(task.data, null, 2)}</pre>
-                        </div>
+                const task = allTasks.find(t => t.id === taskId);
+                if (task) {
+                    document.getElementById('taskModalBody').innerHTML = `
+                        <div><strong>ID:</strong> <code>${task.id}</code></div>
+                        <div><strong>Tipo:</strong> ${task.type}</div>
+                        <div><strong>Prioridad:</strong> ${getPriorityBadge(task.priority)}</div>
+                        <div><strong>Estado:</strong> ${getStatusBadge(task.status)}</div>
+                        <div><strong>Agente:</strong> ${task.assigned_agent || 'No asignado'}</div>
+                        <div><strong>Creada:</strong> ${new Date(task.created_at).toLocaleString()}</div>
+                        ${task.completed_at ? `<div><strong>Completada:</strong> ${new Date(task.completed_at).toLocaleString()}</div>` : ''}
+                        ${task.duration ? `<div><strong>Duración:</strong> ${formatDuration(task.duration)}</div>` : ''}
+                        ${task.error ? `<div><strong>Error:</strong> <pre>${task.error}</pre></div>` : ''}
+                        ${task.result ? `<div><strong>Resultado:</strong> <pre>${JSON.stringify(task.result, null, 2)}</pre></div>` : ''}
                     `;
                     document.getElementById('taskModal').style.display = 'flex';
                 } else {
-                    throw new Error('Task not found');
+                    throw new Error('Tarea no encontrada');
                 }
             } catch (error) {
-                showAlert('Error loading task details', 'error');
-            } finally {
-                showLoading(false);
-            }
+                showAlert('Error cargando detalles: ' + error.message, 'error');
+            } finally { showLoading(false); }
         }
         
-        // Cancel task
         async function cancelTask(taskId) {
-            if (!confirm('Are you sure you want to cancel this task?')) return;
-            
+            if (!confirm('¿Cancelar esta tarea?')) return;
             showLoading(true);
             try {
                 const response = await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
-                if (response.ok) {
-                    showAlert('Task cancelled successfully', 'success');
-                    await loadTasks();
-                } else {
-                    throw new Error('Failed to cancel task');
-                }
-            } catch (error) {
-                showAlert('Error cancelling task', 'error');
-            } finally {
-                showLoading(false);
-            }
+                if (response.ok) { showAlert('Tarea cancelada', 'success'); await loadTasks(); }
+                else throw new Error();
+            } catch { showAlert('Error al cancelar', 'error'); }
+            finally { showLoading(false); }
         }
         
-        // Retry task
         async function retryTask(taskId) {
-            if (!confirm('Retry this failed task?')) return;
-            
+            if (!confirm('¿Reintentar esta tarea?')) return;
             showLoading(true);
             try {
                 const response = await fetch(`/api/tasks/${taskId}/retry`, { method: 'POST' });
-                if (response.ok) {
-                    showAlert('Task queued for retry', 'success');
-                    await loadTasks();
-                } else {
-                    throw new Error('Failed to retry task');
-                }
-            } catch (error) {
-                showAlert('Error retrying task', 'error');
-            } finally {
-                showLoading(false);
-            }
+                if (response.ok) { showAlert('Tarea encolada para reintento', 'success'); await loadTasks(); }
+                else throw new Error();
+            } catch { showAlert('Error al reintentar', 'error'); }
+            finally { showLoading(false); }
         }
         
-        // Show alert
         function showAlert(message, type) {
             const container = document.getElementById('alertContainer');
             const alert = document.createElement('div');
@@ -1012,44 +993,19 @@
             setTimeout(() => alert.remove(), 3000);
         }
         
-        // Show/hide loading
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        }
+        function showLoading(show) { document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none'; }
+        function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
+        function logout() { document.cookie = "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"; window.location.href = '/login'; }
         
-        function closeModal() {
-            document.getElementById('taskModal').style.display = 'none';
-        }
-        
-        // Auto-refresh every 10 seconds
         let autoRefreshInterval;
+        function startAutoRefresh() { autoRefreshInterval = setInterval(loadTasks, 10000); }
+        function stopAutoRefresh() { if (autoRefreshInterval) clearInterval(autoRefreshInterval); }
         
-        function startAutoRefresh() {
-            autoRefreshInterval = setInterval(() => {
-                loadTasks();
-            }, 10000);
-        }
-        
-        function stopAutoRefresh() {
-            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-        }
-        
-        // Initialize
         loadTasks();
         startAutoRefresh();
-        
-        // Cleanup on page unload
         window.addEventListener('beforeunload', stopAutoRefresh);
-        
-        // Close modal on ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeModal();
-        });
-        
-        // Click outside modal to close
-        document.getElementById('taskModal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('taskModal')) closeModal();
-        });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        document.getElementById('taskModal').addEventListener('click', (e) => { if (e.target === document.getElementById('taskModal')) closeModal(); });
     </script>
 </body>
 </html>
