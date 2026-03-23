@@ -198,7 +198,7 @@ Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
 Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/main.py
+ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/ui/server.py
 Restart=always
 RestartSec=10
 
@@ -215,7 +215,7 @@ fi
 # 8. Crear comando global
 cat > /usr/local/bin/swarmia << 'EOF'
 #!/bin/bash
-cd /opt/swarmia && /opt/swarmia/venv/bin/python src/main.py "$@"
+cd /opt/swarmia && /opt/swarmia/venv/bin/python src/ui/server.py "$@"
 EOF
 chmod +x /usr/local/bin/swarmia
 
