@@ -1,6 +1,6 @@
 #!/bin/bash
-# SwarmIA Installation Script - Versión Mejorada
-# Soluciona problemas de instalación existente
+# SwarmIA Installation Script - Versión 2.2
+# Funciona completamente desde Git con modo no interactivo
 
 set -e
 
@@ -19,12 +19,49 @@ DATA_DIR="/var/lib/swarmia"
 PORT="3000"
 REPO_URL="https://github.com/nicky686-22/test.git"
 
-# Banner simplificado (sin clear)
+# Modo no interactivo (para curl | sudo bash)
+NON_INTERACTIVE=false
+ACTION="install"  # install, update, reinstall, uninstall
+
+# Parsear argumentos
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --non-interactive)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --update)
+            ACTION="update"
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --reinstall)
+            ACTION="reinstall"
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --uninstall)
+            ACTION="uninstall"
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        *)
+            echo -e "${RED}Unknown option: $1${NC}"
+            echo "Usage: curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash"
+            echo "       curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash -s -- --update"
+            echo "       curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash -s -- --reinstall"
+            echo "       curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install.sh | sudo bash -s -- --uninstall"
+            exit 1
+            ;;
+    esac
+done
+
+# Banner simplificado
 print_banner() {
     echo -e "${GREEN}"
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                    SwarmIA Installation                      ║"
-    echo "║                    Version 2.1 - Fixed                       ║"
+    echo "║                    Version 2.2 - Git Ready                   ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
@@ -54,43 +91,74 @@ detect_system() {
     echo -e "${GREEN}[✓] Detected: $OS $VER${NC}"
 }
 
-# Verificar instalación existente
-check_existing_installation() {
+# Decidir acción basada en instalación existente
+decide_action() {
     if [ -d "$SWARMIA_DIR" ]; then
-        echo -e "${YELLOW}[!] SwarmIA is already installed at $SWARMIA_DIR${NC}"
-        echo ""
-        echo "What would you like to do?"
-        echo "  1) Update existing installation"
-        echo "  2) Clean reinstall (keep configs)"
-        echo "  3) Complete uninstall"
-        echo "  4) Exit"
-        echo ""
-        
-        read -p "Select option [1-4]: " choice
-        
-        case $choice in
-            1)
-                echo -e "${BLUE}[*] Updating existing installation...${NC}"
-                update_installation
-                ;;
-            2)
-                echo -e "${BLUE}[*] Performing clean reinstall...${NC}"
-                clean_reinstall
-                ;;
-            3)
-                echo -e "${BLUE}[*] Uninstalling SwarmIA...${NC}"
-                uninstall_swarmia
-                ;;
-            4)
-                echo -e "${YELLOW}[*] Exiting...${NC}"
-                exit 0
-                ;;
-            *)
-                echo -e "${RED}[!] Invalid option. Exiting...${NC}"
-                exit 1
-                ;;
-        esac
+        if [ "$NON_INTERACTIVE" = true ]; then
+            # Modo no interactivo: actualizar por defecto
+            if [ "$ACTION" = "install" ]; then
+                ACTION="update"
+            fi
+        else
+            # Modo interactivo: mostrar menú
+            echo -e "${YELLOW}[!] SwarmIA is already installed at $SWARMIA_DIR${NC}"
+            echo ""
+            echo "What would you like to do?"
+            echo "  1) Update existing installation"
+            echo "  2) Clean reinstall (keep configs)"
+            echo "  3) Complete uninstall"
+            echo "  4) Exit"
+            echo ""
+            
+            # Solo leer si hay terminal
+            if [ -t 0 ]; then
+                read -p "Select option [1-4]: " choice
+                
+                case $choice in
+                    1) ACTION="update" ;;
+                    2) ACTION="reinstall" ;;
+                    3) ACTION="uninstall" ;;
+                    4) 
+                        echo -e "${YELLOW}[*] Exiting...${NC}"
+                        exit 0
+                        ;;
+                    *)
+                        echo -e "${RED}[!] Invalid option. Using default: update${NC}"
+                        ACTION="update"
+                        ;;
+                esac
+            else
+                # No hay terminal, usar default
+                echo -e "${YELLOW}[!] No terminal detected. Using default: update${NC}"
+                ACTION="update"
+            fi
+        fi
+    else
+        # No hay instalación, instalar fresco
+        ACTION="install"
     fi
+}
+
+# Ejecutar acción
+execute_action() {
+    case $ACTION in
+        "install")
+            echo -e "${BLUE}[*] Installing SwarmIA...${NC}"
+            install_fresh
+            ;;
+        "update")
+            echo -e "${BLUE}[*] Updating existing installation...${NC}"
+            update_installation
+            ;;
+        "reinstall")
+            echo -e "${BLUE}[*] Performing clean reinstall...${NC}"
+            clean_reinstall
+            ;;
+        "uninstall")
+            echo -e "${BLUE}[*] Uninstalling SwarmIA...${NC}"
+            uninstall_swarmia
+            ;;
+    esac
 }
 
 # Actualizar instalación existente
@@ -107,6 +175,7 @@ update_installation() {
     fi
     
     echo -e "${GREEN}[✓] Installation updated${NC}"
+    restart_service
     show_access_info
 }
 
@@ -136,12 +205,14 @@ clean_reinstall() {
 
 # Desinstalar completamente
 uninstall_swarmia() {
-    echo -e "${RED}[!] WARNING: This will completely remove SwarmIA${NC}"
-    read -p "Are you sure? (y/N): " confirm
-    
-    if [[ $confirm != "y" && $confirm != "Y" ]]; then
-        echo -e "${YELLOW}[*] Uninstall cancelled${NC}"
-        exit 0
+    if [ "$NON_INTERACTIVE" = false ]; then
+        echo -e "${RED}[!] WARNING: This will completely remove SwarmIA${NC}"
+        read -p "Are you sure? (y/N): " confirm
+        
+        if [[ $confirm != "y" && $confirm != "Y" ]]; then
+            echo -e "${YELLOW}[*] Uninstall cancelled${NC}"
+            exit 0
+        fi
     fi
     
     echo -e "${BLUE}[*] Stopping service...${NC}"
@@ -285,6 +356,19 @@ start_service() {
     fi
 }
 
+# Reiniciar servicio
+restart_service() {
+    echo -e "${BLUE}[*] Restarting SwarmIA service...${NC}"
+    systemctl restart swarmia
+    sleep 1
+    
+    if systemctl is-active --quiet swarmia; then
+        echo -e "${GREEN}[✓] Service restarted successfully${NC}"
+    else
+        echo -e "${RED}[!] Failed to restart service${NC}"
+    fi
+}
+
 # Mostrar información de acceso
 show_access_info() {
     echo ""
@@ -310,10 +394,8 @@ main() {
     echo -e "${YELLOW}Repository: $REPO_URL${NC}"
     echo ""
     
-    check_existing_installation
-    
-    # Si no hay instalación existente, instalar fresco
-    install_fresh
+    decide_action
+    execute_action
 }
 
 # Ejecutar
