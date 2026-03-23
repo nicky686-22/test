@@ -11,6 +11,7 @@ import secrets
 import asyncio
 import socket
 import sqlite3
+import subprocess
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -283,14 +284,8 @@ async def change_password_page(request: Request):
     return templates.TemplateResponse("change_password.html", {"request": request})
 
 @app.post("/api/change-password")
-async def api_change_password(
-    request: Request,
-    current_password: str = None,
-    new_password: str = None,
-    confirm_password: str = None
-):
+async def api_change_password(request: Request):
     """Change password API"""
-    # Get data from request body
     data = await request.json()
     current_password = data.get("current_password")
     new_password = data.get("new_password")
@@ -400,7 +395,6 @@ async def get_recent_tasks(request: Request, limit: int = 20):
     
     tasks = supervisor.get_tasks(limit=limit) if supervisor else []
     
-    # Convert to dict for JSON serialization
     tasks_data = []
     for task in tasks:
         tasks_data.append({
@@ -505,6 +499,475 @@ async def network_info():
     }
 
 # ============================================================
+# Aggressive Agent Endpoints
+# ============================================================
+
+@app.get("/api/aggressive/dependencies")
+async def get_aggressive_dependencies(request: Request):
+    """Verificar dependencias del agente agresivo"""
+    session = verify_session_token(request)
+    
+    deps = {
+        "paramiko": {"installed": False, "name": "paramiko", "version": None},
+        "cryptography": {"installed": False, "name": "cryptography", "version": None},
+        "requests": {"installed": False, "name": "requests", "version": None}
+    }
+    
+    # Verificar paramiko
+    try:
+        import paramiko
+        deps["paramiko"]["installed"] = True
+        deps["paramiko"]["version"] = paramiko.__version__
+    except ImportError:
+        pass
+    
+    # Verificar cryptography
+    try:
+        import cryptography
+        deps["cryptography"]["installed"] = True
+        deps["cryptography"]["version"] = cryptography.__version__
+    except ImportError:
+        pass
+    
+    # Verificar requests
+    try:
+        import requests
+        deps["requests"]["installed"] = True
+        deps["requests"]["version"] = requests.__version__
+    except ImportError:
+        pass
+    
+    return deps
+
+
+@app.post("/api/aggressive/install")
+async def install_aggressive_dependencies(request: Request):
+    """Instalar dependencias faltantes del agente agresivo"""
+    session = verify_session_token(request)
+    
+    missing = []
+    try:
+        import paramiko
+    except ImportError:
+        missing.append("paramiko")
+    
+    try:
+        import cryptography
+    except ImportError:
+        missing.append("cryptography")
+    
+    try:
+        import requests
+    except ImportError:
+        missing.append("requests")
+    
+    if not missing:
+        return {"success": True, "message": "Todas las dependencias ya están instaladas"}
+    
+    try:
+        # Intentar instalar con pip
+        for dep in missing:
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", dep],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            if result.returncode != 0:
+                return {
+                    "success": False, 
+                    "message": f"Error instalando {dep}: {result.stderr}"
+                }
+        
+        return {
+            "success": True,
+            "message": f"Dependencias instaladas correctamente: {', '.join(missing)}"
+        }
+        
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "message": "Timeout instalando dependencias. Intenta manualmente: pip install paramiko cryptography requests"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"Error instalando dependencias: {str(e)}"
+        }
+
+
+@app.post("/api/config/aggressive")
+async def save_aggressive_config(request: Request):
+    """Guardar configuración del agente agresivo"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    try:
+        # Guardar en archivo de configuración YAML
+        config_path = config.CONFIG_DIR / "config.yaml"
+        
+        if config_path.exists():
+            import yaml
+            with open(config_path, 'r') as f:
+                full_config = yaml.safe_load(f) or {}
+        else:
+            full_config = {}
+        
+        # Procesar redes permitidas
+        allowed_networks = data.get("allowed_networks", "")
+        if isinstance(allowed_networks, str):
+            networks_list = [n.strip() for n in allowed_networks.split('\n') if n.strip()]
+        else:
+            networks_list = []
+        
+        # Actualizar sección aggressive
+        full_config["aggressive"] = {
+            "enabled": data.get("enabled", False),
+            "mode": data.get("mode", "normal"),
+            "max_threads": data.get("max_threads", 50),
+            "timeout": data.get("timeout", 5),
+            "stealth_mode": data.get("stealth", False),
+            "delay_between_requests": data.get("delay", 0.5),
+            "ssh_enabled": data.get("ssh_enabled", True),
+            "allowed_networks": networks_list,
+            "wordlist": data.get("wordlist", "default")
+        }
+        
+        # Guardar archivo YAML
+        with open(config_path, 'w') as f:
+            yaml.dump(full_config, f, default_flow_style=False)
+        
+        # También actualizar variables de entorno en .env
+        env_path = config.BASE_DIR / ".env"
+        env_vars = {}
+        
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        env_vars[key] = value
+        
+        env_vars["AGGRESSIVE_ENABLED"] = str(data.get("enabled", False)).lower()
+        env_vars["AGGRESSIVE_MODE"] = data.get("mode", "normal")
+        env_vars["AGGRESSIVE_MAX_THREADS"] = str(data.get("max_threads", 50))
+        env_vars["AGGRESSIVE_TIMEOUT"] = str(data.get("timeout", 5))
+        env_vars["AGGRESSIVE_STEALTH"] = str(data.get("stealth", False)).lower()
+        env_vars["AGGRESSIVE_SSH_ENABLED"] = str(data.get("ssh_enabled", True)).lower()
+        env_vars["AGGRESSIVE_ALLOWED_NETWORKS"] = ",".join(networks_list)
+        
+        with open(env_path, 'w') as f:
+            for key, value in env_vars.items():
+                f.write(f"{key}={value}\n")
+        
+        return {"success": True, "message": "Configuración guardada correctamente"}
+        
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@app.post("/api/aggressive/test")
+async def test_aggressive_config(request: Request):
+    """Probar configuración del agente agresivo"""
+    session = verify_session_token(request)
+    
+    # Verificar si el agente agresivo está activado
+    if not getattr(config, 'AGGRESSIVE_ENABLED', False):
+        return {
+            "success": False,
+            "message": "El agente agresivo no está activado. Actívalo en configuración."
+        }
+    
+    # Verificar redes permitidas
+    allowed_networks = getattr(config, 'AGGRESSIVE_ALLOWED_NETWORKS', '')
+    if not allowed_networks:
+        return {
+            "success": False,
+            "message": "No hay redes permitidas configuradas. Debes agregar al menos una red."
+        }
+    
+    # Verificar dependencias para modo ultra
+    mode = getattr(config, 'AGGRESSIVE_MODE', 'normal')
+    if mode == "ultra":
+        missing = []
+        try:
+            import paramiko
+        except ImportError:
+            missing.append("paramiko")
+        try:
+            import cryptography
+        except ImportError:
+            missing.append("cryptography")
+        
+        if missing:
+            return {
+                "success": False,
+                "message": f"Faltan dependencias para modo ULTRA: {', '.join(missing)}. Instálalas desde el dashboard."
+            }
+    
+    return {
+        "success": True,
+        "message": f"✅ Configuración válida. Modo: {mode.upper()}, Redes: {allowed_networks[:100]}"
+    }
+
+
+@app.get("/api/config")
+async def get_full_config(request: Request):
+    """Obtener configuración completa"""
+    session = verify_session_token(request)
+    
+    # Cargar redes permitidas
+    allowed_networks = getattr(config, 'AGGRESSIVE_ALLOWED_NETWORKS', '')
+    if isinstance(allowed_networks, list):
+        networks_str = "\n".join(allowed_networks)
+    else:
+        networks_str = allowed_networks.replace(',', '\n')
+    
+    return {
+        "ai": {
+            "provider": config.AI_DEFAULT_PROVIDER,
+            "deepseek": {
+                "api_key": config.DEEPSEEK_API_KEY,
+                "model": config.DEEPSEEK_MODEL,
+                "max_tokens": config.AI_MAX_TOKENS,
+                "temperature": config.AI_TEMPERATURE
+            },
+            "llama": {
+                "model_path": config.LLAMA_MODEL_PATH,
+                "context_size": config.LLAMA_CONTEXT_SIZE,
+                "threads": config.LLAMA_THREADS
+            },
+            "assistant_name": "SwarmIA",
+            "system_prompt": "Eres SwarmIA, un asistente de IA mejorado..."
+        },
+        "communication": {
+            "whatsapp": {
+                "enabled": config.WHATSAPP_ENABLED,
+                "session_file": config.WHATSAPP_SESSION_FILE
+            },
+            "telegram": {
+                "enabled": config.TELEGRAM_ENABLED,
+                "bot_token": config.TELEGRAM_BOT_TOKEN,
+                "allowed_users": os.getenv("TELEGRAM_ALLOWED_USERS", "")
+            }
+        },
+        "aggressive": {
+            "enabled": getattr(config, 'AGGRESSIVE_ENABLED', False),
+            "mode": getattr(config, 'AGGRESSIVE_MODE', 'normal'),
+            "max_threads": getattr(config, 'AGGRESSIVE_MAX_THREADS', 50),
+            "timeout": getattr(config, 'AGGRESSIVE_TIMEOUT', 5),
+            "stealth": getattr(config, 'AGGRESSIVE_STEALTH', False),
+            "delay": getattr(config, 'AGGRESSIVE_DELAY_BETWEEN_REQUESTS', 0.5),
+            "ssh_enabled": getattr(config, 'AGGRESSIVE_SSH_ENABLED', True),
+            "allowed_networks": networks_str
+        },
+        "system": {
+            "server": {
+                "host": config.SERVER_HOST,
+                "port": config.SERVER_PORT,
+                "debug": config.SERVER_DEBUG
+            },
+            "storage": {
+                "log_level": "INFO",
+                "max_log_size": 100,
+                "auto_cleanup": True
+            },
+            "security": {
+                "session_timeout": config.JWT_EXPIRE_MINUTES // 60,
+                "max_login_attempts": 5
+            }
+        }
+    }
+
+
+@app.post("/api/config/ai")
+async def update_ai_config(request: Request):
+    """Actualizar configuración de IA"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    # Guardar configuración (implementación básica)
+    try:
+        config_path = config.CONFIG_DIR / "config.yaml"
+        if config_path.exists():
+            import yaml
+            with open(config_path, 'r') as f:
+                full_config = yaml.safe_load(f) or {}
+        else:
+            full_config = {}
+        
+        full_config["ai"] = {
+            "provider": data.get("provider"),
+            "deepseek": data.get("deepseek", {}),
+            "llama": data.get("llama", {}),
+            "assistant_name": data.get("assistant_name"),
+            "system_prompt": data.get("system_prompt")
+        }
+        
+        with open(config_path, 'w') as f:
+            yaml.dump(full_config, f, default_flow_style=False)
+        
+        return {"success": True, "message": "Configuración IA guardada"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@app.post("/api/config/ai/test")
+async def test_ai_connection(request: Request):
+    """Probar conexión con proveedor IA"""
+    session = verify_session_token(request)
+    
+    provider = config.AI_DEFAULT_PROVIDER
+    
+    if provider == "deepseek":
+        if not config.DEEPSEEK_API_KEY:
+            return {"success": False, "message": "Clave API de DeepSeek no configurada"}
+        
+        try:
+            import requests
+            response = requests.post(
+                "https://api.deepseek.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {config.DEEPSEEK_API_KEY}"},
+                json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "ping"}], "max_tokens": 5},
+                timeout=10
+            )
+            if response.status_code == 200:
+                return {"success": True, "message": "Conexión exitosa con DeepSeek"}
+            else:
+                return {"success": False, "message": f"Error: {response.status_code}"}
+        except Exception as e:
+            return {"success": False, "message": f"Error de conexión: {str(e)}"}
+    
+    elif provider == "llama":
+        if not config.LLAMA_MODEL_PATH:
+            return {"success": False, "message": "Ruta del modelo Llama no configurada"}
+        return {"success": True, "message": "Modo local - verifica que el modelo exista"}
+    
+    return {"success": True, "message": "Modo simulación activo"}
+
+
+@app.post("/api/config/whatsapp")
+async def update_whatsapp_config(request: Request):
+    """Actualizar configuración WhatsApp"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    config.WHATSAPP_ENABLED = data.get("enabled", False)
+    return {"success": True, "message": "Configuración WhatsApp guardada"}
+
+
+@app.post("/api/config/telegram")
+async def update_telegram_config(request: Request):
+    """Actualizar configuración Telegram"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    config.TELEGRAM_ENABLED = data.get("enabled", False)
+    config.TELEGRAM_BOT_TOKEN = data.get("bot_token", "")
+    return {"success": True, "message": "Configuración Telegram guardada"}
+
+
+@app.post("/api/config/telegram/test")
+async def test_telegram_bot(request: Request):
+    """Probar bot de Telegram"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    bot_token = data.get("bot_token", "")
+    
+    if not bot_token:
+        return {"success": False, "message": "Token no proporcionado"}
+    
+    try:
+        import requests
+        response = requests.get(f"https://api.telegram.org/bot{bot_token}/getMe", timeout=10)
+        if response.ok:
+            bot_info = response.json()
+            return {
+                "success": True,
+                "username": bot_info.get("result", {}).get("username", "unknown")
+            }
+        else:
+            return {"success": False, "message": "Token inválido"}
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@app.post("/api/config/system")
+async def update_system_config(request: Request):
+    """Actualizar configuración del sistema"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    if "server" in data:
+        config.SERVER_HOST = data["server"].get("host", config.SERVER_HOST)
+        config.SERVER_PORT = data["server"].get("port", config.SERVER_PORT)
+        config.SERVER_DEBUG = data["server"].get("debug", config.SERVER_DEBUG)
+    
+    return {"success": True, "message": "Configuración del sistema guardada"}
+
+
+@app.post("/api/config/reset")
+async def reset_config(request: Request):
+    """Restablecer configuración a valores por defecto"""
+    session = verify_session_token(request)
+    
+    # Restablecer configuración agresiva
+    config.AGGRESSIVE_ENABLED = False
+    config.AGGRESSIVE_MODE = "normal"
+    
+    return {"success": True, "message": "Configuración restablecida"}
+
+
+@app.get("/api/config/export")
+async def export_config(request: Request):
+    """Exportar configuración actual"""
+    session = verify_session_token(request)
+    
+    config_data = {
+        "version": "2.0.0",
+        "timestamp": datetime.now().isoformat(),
+        "config": {
+            "server": {
+                "host": config.SERVER_HOST,
+                "port": config.SERVER_PORT,
+                "debug": config.SERVER_DEBUG
+            },
+            "ai": {
+                "provider": config.AI_DEFAULT_PROVIDER,
+                "deepseek_model": config.DEEPSEEK_MODEL,
+                "llama_path": config.LLAMA_MODEL_PATH
+            },
+            "aggressive": {
+                "enabled": getattr(config, 'AGGRESSIVE_ENABLED', False),
+                "mode": getattr(config, 'AGGRESSIVE_MODE', 'normal'),
+                "max_threads": getattr(config, 'AGGRESSIVE_MAX_THREADS', 50),
+                "allowed_networks": getattr(config, 'AGGRESSIVE_ALLOWED_NETWORKS', '')
+            }
+        }
+    }
+    
+    return config_data
+
+
+@app.post("/api/config/import")
+async def import_config(request: Request):
+    """Importar configuración"""
+    session = verify_session_token(request)
+    data = await request.json()
+    
+    # Implementación básica
+    if "config" in data:
+        cfg = data["config"]
+        if "aggressive" in cfg:
+            config.AGGRESSIVE_ENABLED = cfg["aggressive"].get("enabled", False)
+            config.AGGRESSIVE_MODE = cfg["aggressive"].get("mode", "normal")
+    
+    return {"success": True, "message": "Configuración importada"}
+
+
+# ============================================================
 # Startup/Shutdown Events
 # ============================================================
 
@@ -532,6 +995,15 @@ async def startup_event():
     
     # Log startup
     print(f"✅ Dashboard initialized on port {config.SERVER_PORT}")
+    
+    # Mostrar estado del agente agresivo
+    if getattr(config, 'AGGRESSIVE_ENABLED', False):
+        mode = getattr(config, 'AGGRESSIVE_MODE', 'normal')
+        if mode == 'ultra':
+            print(f"🔥 ULTRA AGGRESSIVE MODE ACTIVATED - MAXIMUM AGGRESSION 🔥")
+        else:
+            print(f"⚔️ Aggressive agent enabled - Mode: {mode.upper()}")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
