@@ -1,0 +1,111 @@
+# SwarmIA Configuration
+app:
+  name: "SwarmIA"
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+
+# AI Models
+models:
+  deepseek:
+    enabled: false
+    api_key: ""
+    model: "deepseek-chat"
+    max_tokens: 4096
+    temperature: 0.7
+  llama:
+    enabled: false
+    model_path: ""
+    context_size: 4096
+    threads: 4
+
+# Communication Gateways
+gateways:
+  whatsapp:
+    enabled: false
+    session_file: "whatsapp_session.json"
+  telegram:
+    enabled: false
+    bot_token: ""
+    allowed_users: ""
+
+# ============================================================
+# AGGRESSIVE AGENT CONFIGURATION - PENTESTING TOOLS
+# ⚠️ SOLO PARA PRUEBAS AUTORIZADAS ⚠️
+# ============================================================
+aggressive:
+  # Habilitar agente agresivo (default: false)
+  enabled: true
+  
+  # Modo de operación: normal, aggressive, ultra, stealth
+  # - normal:    Escaneo básico, pocos puertos
+  # - aggressive: Escaneo agresivo, más puertos, más hilos
+  # - ultra:     Escaneo extremo, todos los puertos, máximo rendimiento
+  # - stealth:   Modo sigiloso, evita detección
+  mode: "ultra"
+  
+  # Intensidad de escaneo: light, normal, aggressive, ultra, stealth
+  intensity: "ultra"
+  
+  # Límites y rendimiento
+  max_threads: 200           # Hilos máximos para escaneo
+  timeout: 5                 # Timeout de conexión (segundos)
+  
+  # Modo sigiloso (evasión de detección)
+  stealth_mode: false
+  delay_between_requests: 0   # Delay en segundos entre requests (stealth)
+  user_agent_rotation: true   # Rotar User-Agent
+  proxy_rotation: false       # Rotar proxies
+  
+  # Técnicas de evasión
+  evasion_techniques: true
+  
+  # SSH Brute Force
+  ssh:
+    enabled: true
+    timeout: 10
+    banner_timeout: 30
+    auth_timeout: 30
+    max_attempts: 1000
+    use_key_attack: true
+  
+  # HTTP Attacks
+  http:
+    enabled: true
+    timeout: 10
+    max_redirects: 5
+    verify_ssl: false
+    common_paths:
+      - "admin"
+      - "login"
+      - "wp-admin"
+      - "phpmyadmin"
+      - "backup"
+      - "config"
+  
+  # Exploits
+  exploits:
+    enable_cve_check: true      # Verificar CVEs conocidos
+    enable_default_creds: true  # Probar credenciales por defecto
+    enable_sql_injection: true  # Probar SQL Injection
+    enable_xss: true            # Probar XSS
+  
+  # Redes permitidas (seguridad)
+  allowed_networks:
+    - "192.168.0.0/16"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "127.0.0.0/8"           # localhost para pruebas
+  
+  # Wordlists personalizadas (opcional)
+  wordlists:
+    passwords: []
+    usernames: []
+    directories: []
+    subdomains: []
+
+# Security
+security:
+  session_timeout: 3600
+  max_login_attempts: 5
+  jwt_secret: "change-this-in-production"
