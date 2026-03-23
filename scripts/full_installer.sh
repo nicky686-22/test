@@ -481,7 +481,7 @@ show_config_summary() {
     if [ "$INTERACTIVE" = true ]; then
         read -p "Proceed with installation? (y/N): " confirm
         
-        if [[ $confirm != "y" && $confirm != "Y" ]; then
+        if [[ $confirm != "y" if [[ $confirm != "y" && $confirm != "Y" ]; thenif [[ $confirm != "y" && $confirm != "Y" ]; then $confirm != "Y" ]]; then
             echo -e "${YELLOW}[*] Installation cancelled${NC}"
             exit 0
         fi
