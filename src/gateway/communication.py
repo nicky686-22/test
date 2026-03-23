@@ -10,6 +10,7 @@ import time
 import json
 import logging
 import threading
+import asyncio
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Callable
@@ -65,6 +66,7 @@ class MessageHandler(ABC):
         self.gateway = gateway
         self.logger = logging.getLogger(f"swarmia.{self.__class__.__name__}")
         self.running = False
+        self._thread = None
     
     @abstractmethod
     def start(self):
@@ -106,25 +108,25 @@ class WhatsAppHandler(MessageHandler):
     def start(self):
         """Iniciar handler de WhatsApp"""
         if not self.config or not self.config.WHATSAPP_ENABLED:
-            self.logger.info("WhatsApp handler disabled (not configured)")
+            self.logger.info("Handler de WhatsApp desactivado (no configurado)")
             return
         
         self.running = True
-        self.logger.info("WhatsApp handler started (webhook mode)")
+        self.logger.info("Handler de WhatsApp iniciado (modo webhook)")
     
     def stop(self):
         """Detener handler de WhatsApp"""
         self.running = False
-        self.logger.info("WhatsApp handler stopped")
+        self.logger.info("Handler de WhatsApp detenido")
     
     def send_message(self, recipient: str, text: str) -> bool:
         """Enviar mensaje por WhatsApp"""
         try:
             # Aquí iría la lógica real de WhatsApp
-            self.logger.info(f"[WhatsApp] Sending to {recipient}: {text[:50]}...")
+            self.logger.info(f"[WhatsApp] Enviando a {recipient}: {text[:50]}...")
             return True
         except Exception as e:
-            self.logger.error(f"WhatsApp send error: {e}")
+            self.logger.error(f"Error enviando WhatsApp: {e}")
             return False
     
     def handle_webhook(self, request_data: Dict):
@@ -139,7 +141,7 @@ class WhatsAppHandler(MessageHandler):
                                      raw_data=request_data)
                 return True
         except Exception as e:
-            self.logger.error(f"WhatsApp webhook error: {e}")
+            self.logger.error(f"Error en webhook de WhatsApp: {e}")
         return False
 
 
@@ -151,6 +153,7 @@ class TelegramHandler(MessageHandler):
         self.bot = None
         self.application = None
         self.allowed_users = set()
+        self._loop = None
         
         # Configurar usuarios permitidos
         allowed = os.getenv("TELEGRAM_ALLOWED_USERS", "")
@@ -158,18 +161,17 @@ class TelegramHandler(MessageHandler):
             self.allowed_users = set(allowed.split(','))
     
     def start(self):
-        """Iniciar bot de Telegram"""
+        """Iniciar bot de Telegram en hilo separado"""
         if not self.config or not self.config.TELEGRAM_ENABLED:
-            self.logger.info("Telegram handler disabled (not configured)")
+            self.logger.info("Handler de Telegram desactivado (no configurado)")
             return
         
         if not self.config.TELEGRAM_BOT_TOKEN:
-            self.logger.error("Telegram bot token not configured")
+            self.logger.error("Token de bot de Telegram no configurado")
             return
         
         try:
-            from telegram import Update
-            from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
+            from telegram.ext import Application, CommandHandler, MessageHandler, filters
             
             # Crear aplicación
             self.application = Application.builder().token(self.config.TELEGRAM_BOT_TOKEN).build()
@@ -182,30 +184,51 @@ class TelegramHandler(MessageHandler):
             self.application.add_handler(CommandHandler("agents", self._handle_agents))
             self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self._handle_message))
             
-            # Iniciar polling
-            self.application.run_polling(allowed_updates=["message"])
+            # Iniciar en hilo separado para no bloquear
+            self._thread = threading.Thread(target=self._run_bot, daemon=True)
+            self._thread.start()
             
             self.running = True
-            self.logger.info("Telegram handler started successfully")
+            self.logger.info("Handler de Telegram iniciado correctamente")
             
         except ImportError:
-            self.logger.error("python-telegram-bot not installed. Run: pip install python-telegram-bot")
+            self.logger.error("python-telegram-bot no instalado. Ejecuta: pip install python-telegram-bot")
         except Exception as e:
-            self.logger.error(f"Failed to start Telegram handler: {e}")
+            self.logger.error(f"Error al iniciar handler de Telegram: {e}")
+    
+    def _run_bot(self):
+        """Ejecutar el bot en un hilo separado"""
+        try:
+            # Crear nuevo event loop para este hilo
+            self._loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self._loop)
+            
+            # Iniciar polling (esto es bloqueante pero en su propio hilo)
+            self.application.run_polling(allowed_updates=["message"])
+        except Exception as e:
+            self.logger.error(f"Error en el bucle del bot: {e}")
     
     def stop(self):
         """Detener bot de Telegram"""
-        if self.application:
-            self.application.stop()
-            self.application = None
         self.running = False
-        self.logger.info("Telegram handler stopped")
+        if self.application:
+            try:
+                # Detener la aplicación
+                if self._loop:
+                    self._loop.call_soon_threadsafe(self.application.stop)
+                else:
+                    self.application.stop()
+            except Exception as e:
+                self.logger.error(f"Error al detener bot: {e}")
+            self.application = None
+        
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2)
+        
+        self.logger.info("Handler de Telegram detenido")
     
     async def _handle_start(self, update, context):
         """Manejar comando /start"""
-        from telegram import Update
-        from telegram.ext import CallbackContext
-        
         user_id = str(update.effective_user.id)
         
         if self.allowed_users and user_id not in self.allowed_users:
@@ -247,7 +270,6 @@ class TelegramHandler(MessageHandler):
     async def _handle_status(self, update, context):
         """Manejar comando /status"""
         try:
-            # Obtener estado del supervisor
             status_text = (
                 "📊 *Estado de SwarmIA*\n\n"
                 "✅ Sistema funcionando correctamente\n"
@@ -285,9 +307,6 @@ class TelegramHandler(MessageHandler):
     
     async def _handle_message(self, update, context):
         """Manejar mensajes entrantes"""
-        from telegram import Update
-        from telegram.ext import CallbackContext
-        
         user_id = str(update.effective_user.id)
         username = update.effective_user.username or update.effective_user.first_name
         text = update.message.text
@@ -318,24 +337,38 @@ class TelegramHandler(MessageHandler):
     
     def send_message(self, recipient: str, text: str) -> bool:
         """Enviar mensaje por Telegram"""
-        if not self.application:
+        if not self.application or not self.running:
+            self.logger.warning("Bot de Telegram no disponible")
             return False
         
         try:
-            import asyncio
-            
-            async def send():
-                await self.application.bot.send_message(
-                    chat_id=recipient,
-                    text=text,
-                    parse_mode="Markdown"
+            # Usar asyncio.run_coroutine_threadsafe para enviar desde otro hilo
+            if self._loop and self._loop.is_running():
+                future = asyncio.run_coroutine_threadsafe(
+                    self._async_send_message(recipient, text),
+                    self._loop
                 )
-            
-            asyncio.run(send())
-            return True
+                future.result(timeout=10)
+                return True
+            else:
+                # Fallback: ejecutar sincrónicamente
+                asyncio.run(self._async_send_message(recipient, text))
+                return True
         except Exception as e:
-            self.logger.error(f"Telegram send error: {e}")
+            self.logger.error(f"Error enviando mensaje Telegram: {e}")
             return False
+    
+    async def _async_send_message(self, chat_id: str, text: str):
+        """Método asíncrono para enviar mensaje"""
+        try:
+            await self.application.bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            self.logger.error(f"Error en envío asíncrono: {e}")
+            raise
 
 
 # ============================================================
@@ -346,11 +379,11 @@ class MockWhatsAppHandler(WhatsAppHandler):
     """Mock handler para WhatsApp en desarrollo"""
     
     def start(self):
-        self.logger.info("[MOCK] WhatsApp handler started")
+        self.logger.info("[MOCK] Handler de WhatsApp iniciado")
         self.running = True
     
     def send_message(self, recipient: str, text: str) -> bool:
-        self.logger.info(f"[MOCK] WhatsApp to {recipient}: {text[:50]}...")
+        self.logger.info(f"[MOCK] WhatsApp a {recipient}: {text[:50]}...")
         return True
 
 
@@ -358,11 +391,11 @@ class MockTelegramHandler(TelegramHandler):
     """Mock handler para Telegram en desarrollo"""
     
     def start(self):
-        self.logger.info("[MOCK] Telegram handler started")
+        self.logger.info("[MOCK] Handler de Telegram iniciado")
         self.running = True
     
     def send_message(self, recipient: str, text: str) -> bool:
-        self.logger.info(f"[MOCK] Telegram to {recipient}: {text[:50]}...")
+        self.logger.info(f"[MOCK] Telegram a {recipient}: {text[:50]}...")
         return True
 
 
@@ -403,7 +436,7 @@ class CommunicationGateway:
         # Estado
         self.running = False
         
-        self.logger.info("Communication gateway initialized")
+        self.logger.info("Gateway de comunicación inicializado")
     
     def _setup_logger(self) -> logging.Logger:
         """Configurar logger"""
@@ -423,25 +456,25 @@ class CommunicationGateway:
     def register_handler(self, platform: str, handler: MessageHandler):
         """Registrar un handler para una plataforma"""
         self.handlers[platform] = handler
-        self.logger.info(f"Handler registered for platform: {platform}")
+        self.logger.info(f"Handler registrado para plataforma: {platform}")
     
     def register_message_handler(self, handler: Callable):
         """Registrar callback para mensajes recibidos"""
         self.message_handlers.append(handler)
-        self.logger.debug(f"Message handler registered: {handler.__name__}")
+        self.logger.debug(f"Handler de mensajes registrado: {handler.__name__}")
     
     def on_message_received(self, message: Message):
         """Procesar mensaje recibido"""
         self.stats["messages_received"] += 1
         
-        self.logger.info(f"Message received: {message.platform.value} from {message.sender}")
+        self.logger.info(f"Mensaje recibido: {message.platform.value} de {message.sender}")
         
         # Notificar a todos los handlers registrados
         for handler in self.message_handlers:
             try:
                 handler(message)
             except Exception as e:
-                self.logger.error(f"Message handler error: {e}")
+                self.logger.error(f"Error en handler de mensaje: {e}")
                 self.stats["errors"] += 1
         
         # También enviar al supervisor para procesamiento
@@ -472,10 +505,10 @@ class CommunicationGateway:
                 source="gateway"
             )
             
-            self.logger.debug(f"Message forwarded to supervisor: task_id={task_id}")
+            self.logger.debug(f"Mensaje enviado al supervisor: task_id={task_id}")
             
         except Exception as e:
-            self.logger.error(f"Failed to forward message to supervisor: {e}")
+            self.logger.error(f"Error enviando mensaje al supervisor: {e}")
     
     def send_message(self, platform: str, recipient: str, text: str) -> bool:
         """
@@ -491,7 +524,7 @@ class CommunicationGateway:
         """
         handler = self.handlers.get(platform.lower())
         if not handler:
-            self.logger.error(f"No handler for platform: {platform}")
+            self.logger.error(f"No hay handler para plataforma: {platform}")
             return False
         
         try:
@@ -500,18 +533,18 @@ class CommunicationGateway:
                 self.stats["messages_sent"] += 1
             return success
         except Exception as e:
-            self.logger.error(f"Send error on {platform}: {e}")
+            self.logger.error(f"Error en envío a {platform}: {e}")
             self.stats["errors"] += 1
             return False
     
     def start(self) -> bool:
         """Iniciar el gateway y todos los handlers"""
         if self.running:
-            self.logger.warning("Gateway already running")
+            self.logger.warning("Gateway ya está en ejecución")
             return False
         
         try:
-            self.logger.info("Starting communication gateway...")
+            self.logger.info("Iniciando gateway de comunicación...")
             self.stats["start_time"] = datetime.now()
             
             # Crear y registrar handlers según configuración
@@ -532,11 +565,11 @@ class CommunicationGateway:
                 handler.start()
             
             self.running = True
-            self.logger.info("Communication gateway started successfully")
+            self.logger.info("Gateway de comunicación iniciado correctamente")
             return True
             
         except Exception as e:
-            self.logger.error(f"Failed to start gateway: {e}")
+            self.logger.error(f"Error iniciando gateway: {e}")
             return False
     
     def stop(self):
@@ -544,18 +577,18 @@ class CommunicationGateway:
         if not self.running:
             return
         
-        self.logger.info("Stopping communication gateway...")
+        self.logger.info("Deteniendo gateway de comunicación...")
         
         for platform, handler in self.handlers.items():
             try:
                 handler.stop()
-                self.logger.info(f"Handler stopped: {platform}")
+                self.logger.info(f"Handler detenido: {platform}")
             except Exception as e:
-                self.logger.error(f"Error stopping {platform} handler: {e}")
+                self.logger.error(f"Error deteniendo handler {platform}: {e}")
         
         self.handlers.clear()
         self.running = False
-        self.logger.info("Communication gateway stopped")
+        self.logger.info("Gateway de comunicación detenido")
     
     def get_stats(self) -> Dict[str, Any]:
         """Obtener estadísticas del gateway"""
@@ -615,7 +648,7 @@ def setup_communication_gateway(config: Config = None) -> CommunicationGateway:
     def default_message_handler(message: Message):
         """Handler por defecto que loguea mensajes"""
         gateway.logger.info(
-            f"Default handler: [{message.platform.value}] "
+            f"Handler por defecto: [{message.platform.value}] "
             f"{message.sender}: {message.text[:100]}"
         )
     
@@ -630,7 +663,7 @@ def setup_communication_gateway(config: Config = None) -> CommunicationGateway:
 
 def main():
     """Función principal para pruebas"""
-    print("🚀 Testing SwarmIA Communication Gateway\n")
+    print("🚀 Probando Gateway de Comunicación de SwarmIA\n")
     
     config = Config()
     
@@ -643,20 +676,20 @@ def main():
     
     # Iniciar gateway
     if gateway.start():
-        print("✅ Gateway started successfully\n")
+        print("✅ Gateway iniciado correctamente\n")
         
         # Enviar mensaje de prueba
         gateway.send_message(
             platform="telegram",
             recipient="123456789",
-            text="Test message from SwarmIA Gateway"
+            text="Mensaje de prueba desde SwarmIA Gateway"
         )
         
         # Simular recepción de mensaje
         gateway.receive_message(
             platform="telegram",
             sender="user_123",
-            text="Hello from test user!",
+            text="¡Hola desde usuario de prueba!",
             username="test_user"
         )
         
@@ -665,18 +698,18 @@ def main():
         time.sleep(1)
         
         stats = gateway.get_stats()
-        print(f"\n📊 Gateway Stats:")
-        print(f"  Messages received: {stats['messages_received']}")
-        print(f"  Messages sent: {stats['messages_sent']}")
-        print(f"  Errors: {stats['errors']}")
+        print(f"\n📊 Estadísticas del Gateway:")
+        print(f"  Mensajes recibidos: {stats['messages_received']}")
+        print(f"  Mensajes enviados: {stats['messages_sent']}")
+        print(f"  Errores: {stats['errors']}")
         print(f"  Handlers: {stats['handlers']}")
         
         # Detener gateway
         gateway.stop()
-        print("\n✅ Gateway stopped")
+        print("\n✅ Gateway detenido")
         
     else:
-        print("❌ Failed to start gateway")
+        print("❌ Error al iniciar gateway")
 
 
 if __name__ == "__main__":
