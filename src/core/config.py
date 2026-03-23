@@ -81,6 +81,41 @@ class Config:
         self.REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
         self.REDIS_DB = int(os.getenv("REDIS_DB", "0"))
         
+        # ============================================================
+        # AGGRESSIVE AGENT CONFIGURATION - PENTESTING TOOLS
+        # ⚠️ SOLO PARA PRUEBAS AUTORIZADAS ⚠️
+        # ============================================================
+        # Habilitar agente agresivo (false por defecto por seguridad)
+        self.AGGRESSIVE_ENABLED = os.getenv("AGGRESSIVE_ENABLED", "false").lower() == "true"
+        
+        # Modo de operación: normal, aggressive, ultra, stealth
+        self.AGGRESSIVE_MODE = os.getenv("AGGRESSIVE_MODE", "normal").lower()
+        
+        # Intensidad de escaneo: light, normal, aggressive, ultra, stealth
+        self.AGGRESSIVE_INTENSITY = os.getenv("AGGRESSIVE_INTENSITY", "normal").lower()
+        
+        # Redes permitidas (obligatorio para activar)
+        self.AGGRESSIVE_ALLOWED_NETWORKS = os.getenv("AGGRESSIVE_ALLOWED_NETWORKS", "")
+        
+        # Límites de rendimiento
+        self.AGGRESSIVE_MAX_THREADS = int(os.getenv("AGGRESSIVE_MAX_THREADS", "50"))
+        self.AGGRESSIVE_TIMEOUT = int(os.getenv("AGGRESSIVE_TIMEOUT", "5"))
+        self.AGGRESSIVE_MAX_TARGETS = int(os.getenv("AGGRESSIVE_MAX_TARGETS", "100"))
+        
+        # SSH Brute Force
+        self.AGGRESSIVE_SSH_ENABLED = os.getenv("AGGRESSIVE_SSH_ENABLED", "true").lower() == "true"
+        
+        # Modo sigiloso
+        self.AGGRESSIVE_STEALTH = os.getenv("AGGRESSIVE_STEALTH", "false").lower() == "true"
+        self.AGGRESSIVE_DELAY_BETWEEN_REQUESTS = float(os.getenv("AGGRESSIVE_DELAY", "0"))
+        
+        # HTTP Attacks
+        self.AGGRESSIVE_HTTP_ENABLED = os.getenv("AGGRESSIVE_HTTP_ENABLED", "true").lower() == "true"
+        
+        # Exploits
+        self.AGGRESSIVE_CVE_CHECK = os.getenv("AGGRESSIVE_CVE_CHECK", "true").lower() == "true"
+        self.AGGRESSIVE_DEFAULT_CREDS = os.getenv("AGGRESSIVE_DEFAULT_CREDS", "true").lower() == "true"
+        
         # Cargar desde archivo si existe
         self._load_from_file(config_path)
     
@@ -100,6 +135,24 @@ class Config:
                 for key, value in data.items():
                     if hasattr(self, key):
                         setattr(self, key, value)
+                
+                # Cargar configuración específica del agente agresivo
+                if "aggressive" in data:
+                    agg = data["aggressive"]
+                    self.AGGRESSIVE_ENABLED = agg.get("enabled", self.AGGRESSIVE_ENABLED)
+                    self.AGGRESSIVE_MODE = agg.get("mode", self.AGGRESSIVE_MODE)
+                    self.AGGRESSIVE_INTENSITY = agg.get("intensity", self.AGGRESSIVE_INTENSITY)
+                    self.AGGRESSIVE_MAX_THREADS = agg.get("max_threads", self.AGGRESSIVE_MAX_THREADS)
+                    self.AGGRESSIVE_TIMEOUT = agg.get("timeout", self.AGGRESSIVE_TIMEOUT)
+                    self.AGGRESSIVE_STEALTH = agg.get("stealth_mode", self.AGGRESSIVE_STEALTH)
+                    
+                    # Redes permitidas (si viene como lista, convertir a string)
+                    if "allowed_networks" in agg:
+                        networks = agg["allowed_networks"]
+                        if isinstance(networks, list):
+                            self.AGGRESSIVE_ALLOWED_NETWORKS = ",".join(networks)
+                        else:
+                            self.AGGRESSIVE_ALLOWED_NETWORKS = str(networks)
                         
             except Exception as e:
                 print(f"⚠️ Error loading config file: {e}")
@@ -259,6 +312,26 @@ def show_config():
     if config.TELEGRAM_ENABLED:
         token_masked = config.TELEGRAM_BOT_TOKEN[:8] + "..." if config.TELEGRAM_BOT_TOKEN else "NOT SET"
         print(f"  Telegram Bot Token: {token_masked}")
+    
+    # ============================================================
+    # AGGRESSIVE AGENT CONFIGURATION
+    # ============================================================
+    print("\n⚔️ AGGRESSIVE AGENT:")
+    print(f"  Enabled: {'✓ Yes' if config.AGGRESSIVE_ENABLED else '✗ No'}")
+    if config.AGGRESSIVE_ENABLED:
+        print(f"  Mode: {config.AGGRESSIVE_MODE.upper()}")
+        print(f"  Intensity: {config.AGGRESSIVE_INTENSITY}")
+        print(f"  Max Threads: {config.AGGRESSIVE_MAX_THREADS}")
+        print(f"  Timeout: {config.AGGRESSIVE_TIMEOUT}s")
+        print(f"  Stealth Mode: {'✓' if config.AGGRESSIVE_STEALTH else '✗'}")
+        print(f"  SSH Brute Force: {'✓' if config.AGGRESSIVE_SSH_ENABLED else '✗'}")
+        print(f"  Allowed Networks: {config.AGGRESSIVE_ALLOWED_NETWORKS or 'NOT SET'}")
+        
+        # Validación de seguridad
+        if not config.AGGRESSIVE_ALLOWED_NETWORKS:
+            print(f"  ⚠️ WARNING: No networks allowed! Aggressive agent will be disabled.")
+        elif config.AGGRESSIVE_MODE == "ultra":
+            print(f"  🔥 ULTRA MODE ACTIVATED - MAXIMUM AGGRESSION 🔥")
     
     print("\n🔐 Security:")
     print(f"  JWT Algorithm: {config.JWT_ALGORITHM}")
