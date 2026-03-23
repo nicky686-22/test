@@ -1,4 +1,3 @@
-# ============================================================
 # SwarmIA - Python Dependencies
 # Sistema de Agentes Distribuidos v2.0
 # ============================================================
@@ -19,21 +18,30 @@ pyyaml>=6.0.1
 openai==1.3.0
 httpx==0.25.1
 aiohttp==3.9.1
-# llama-cpp-python requiere compilación - opcional
-# llama-cpp-python==0.2.26  # Descomentar para usar Llama local
+# llama-cpp-python==0.2.26  # Opcional - requiere compilación
 
 # ============================================================
 # Communication Gateways
 # ============================================================
 python-telegram-bot==20.6
-# pyrogram y tgcrypto para clientes MTProto (opcional)
-# pyrogram==2.0.106
-# tgcrypto==1.2.5
+# pyrogram==2.0.106  # Opcional
+# tgcrypto==1.2.5    # Opcional
+
+# ============================================================
+# Dashboard & UI
+# ============================================================
+jinja2==3.1.2
+markdown==3.5.1
+
+# ============================================================
+# QR Code Generation (WhatsApp)
+# ============================================================
+qrcode==7.4.2
+pillow==10.1.0
 
 # ============================================================
 # Aggressive Agent - Pentesting Tools (OPCIONALES)
 # ⚠️ SOLO PARA PRUEBAS AUTORIZADAS ⚠️
-# Descomentar para activar funcionalidades de pentesting
 # ============================================================
 # paramiko>=3.0.0
 # cryptography>=41.0.0
@@ -53,12 +61,6 @@ redis==5.0.1
 celery==5.3.4
 websockets==12.0
 psutil==5.9.6
-
-# ============================================================
-# Frontend / Templates
-# ============================================================
-jinja2==3.1.2
-markdown==3.5.1
 
 # ============================================================
 # Development & Testing
