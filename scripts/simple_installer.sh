@@ -76,10 +76,11 @@ else
     echo -e "${GREEN}[✓] Repository cloned successfully${NC}"
 fi
 
-# Instalar dependencias Python
+# Instalar dependencias Python (con --break-system-packages para Ubuntu 24.04)
 echo -e "${BLUE}[*] Installing Python dependencies...${NC}"
 if [ -f "requirements.txt" ]; then
-    pip3 install -r requirements.txt
+    # Para Ubuntu 24.04 que tiene externally-managed-environment
+    pip3 install --break-system-packages -r requirements.txt
     echo -e "${GREEN}[✓] Python dependencies installed${NC}"
 else
     echo -e "${YELLOW}[!] No requirements.txt found${NC}"
