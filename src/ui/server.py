@@ -214,7 +214,14 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
                 "username": credentials.username,
                 "redirect": "/change-password"
             })
-            response.set_cookie(key="session_token", value=token, httponly=True, max_age=86400)
+            response.set_cookie(
+                key="session_token",
+                value=token,
+                httponly=True,
+                max_age=86400,
+                samesite="lax",
+                path="/"
+            )
             return response
     else:
         correct_password = secrets.compare_digest(credentials.password, password_hash)
@@ -228,7 +235,14 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
         "message": "Login successful",
         "username": credentials.username
     })
-    response.set_cookie(key="session_token", value=token, httponly=True, max_age=86400, samesite="lax")
+    response.set_cookie(
+        key="session_token",
+        value=token,
+        httponly=True,
+        max_age=86400,
+        samesite="lax",
+        path="/"
+    )
     return response
 
 @app.get("/api/health")
