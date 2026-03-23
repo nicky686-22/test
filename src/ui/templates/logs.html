@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmIA - Logs del Sistema</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --debug: #8b5cf6;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+        
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .logo span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Page Header */
+        .page-header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .page-header p {
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 14px;
+        }
+        
+        /* Filters Bar */
+        .filters-bar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .filters-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .filter-select, .filter-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .filter-input {
+            width: 200px;
+        }
+        
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .btn-icon {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+        
+        /* File Tabs */
+        .file-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        
+        .file-tab {
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        
+        .file-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        .file-tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Log Container */
+        .log-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .log-header {
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .log-info {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .log-info code {
+            background: var(--bg-primary);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+        
+        .log-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .log-content {
+            height: 600px;
+            overflow-y: auto;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .log-line {
+            padding: 4px 16px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.3);
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        
+        .log-line:hover {
+            background: rgba(79, 70, 229, 0.1);
+        }
+        
+        /* Log Levels Colors */
+        .log-INFO { color: var(--info); }
+        .log-ERROR { color: var(--error); }
+        .log-WARNING { color: var(--warning); }
+        .log-DEBUG { color: var(--debug); }
+        .log-SUCCESS { color: var(--success); }
+        
+        .log-level-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 12px;
+            min-width: 70px;
+            text-align: center;
+        }
+        
+        .log-level-INFO { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+        .log-level-ERROR { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .log-level-WARNING { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .log-level-DEBUG { background: rgba(139, 92, 246, 0.2); color: var(--debug); }
+        .log-level-SUCCESS { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        
+        .log-timestamp {
+            color: var(--text-secondary);
+            margin-right: 16px;
+            font-size: 11px;
+        }
+        
+        /* Search Highlight */
+        .highlight {
+            background: rgba(245, 158, 11, 0.3);
+            border-radius: 2px;
+            padding: 0 2px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Alerts */
+        .alert {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Scrollbar */
+        .log-content::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        .log-content::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        
+        .log-content::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .filters-bar { flex-direction: column; align-items: stretch; }
+            .filters-group { flex-direction: column; }
+            .filter-input { width: 100%; }
+            .log-header { flex-direction: column; align-items: flex-start; }
+            .log-info { flex-wrap: wrap; }
+        }
+        
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+        
+        .auto-refresh input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .line-count {
+            background: var(--bg-primary);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            border: 1px solid var(--border);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <h1>SwarmIA <span>v2.0</span></h1>
+        </div>
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Volver al Dashboard
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-clipboard-list"></i> Logs del Sistema</h1>
+                <p>Visualización y análisis de registros del sistema</p>
+            </div>
+            <button class="btn-icon" onclick="refreshLogs()" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Actualizar
+            </button>
+        </div>
+        
+        <!-- Archivos de Log -->
+        <div class="file-tabs" id="fileTabs">
+            <button class="file-tab active" data-file="swarmia">swarmia.log</button>
+            <button class="file-tab" data-file="gateway">gateway.log</button>
+            <button class="file-tab" data-file="supervisor">supervisor.log</button>
+            <button class="file-tab" data-file="agents">agents.log</button>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filters-bar">
+            <div class="filters-group">
+                <select id="levelFilter" class="filter-select" onchange="filterLogs()">
+                    <option value="all">Todos los niveles</option>
+                    <option value="INFO">INFO</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="WARNING">WARNING</option>
+                    <option value="DEBUG">DEBUG</option>
+                    <option value="SUCCESS">SUCCESS</option>
+                </select>
+                
+                <input type="text" id="searchInput" class="filter-input" placeholder="Buscar en logs..." onkeyup="filterLogs()">
+                
+                <select id="linesLimit" class="filter-select" onchange="loadCurrentLog()">
+                    <option value="100">Últimas 100 líneas</option>
+                    <option value="500">Últimas 500 líneas</option>
+                    <option value="1000" selected>Últimas 1000 líneas</option>
+                    <option value="5000">Últimas 5000 líneas</option>
+                </select>
+            </div>
+            
+            <div class="filters-group">
+                <div class="auto-refresh">
+                    <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()">
+                    <label for="autoRefreshCheckbox">Auto-refrescar (5s)</label>
+                </div>
+                <button class="btn-icon" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Limpiar
+                </button>
+                <button class="btn-icon" onclick="downloadLog()">
+                    <i class="fas fa-download"></i> Descargar
+                </button>
+                <button class="btn-icon" onclick="showExportModal()">
+                    <i class="fas fa-filter"></i> Exportar filtrado
+                </button>
+            </div>
+        </div>
+        
+        <!-- Contenedor de Logs -->
+        <div class="log-container">
+            <div class="log-header">
+                <div class="log-info">
+                    <span><i class="fas fa-file-alt"></i> Archivo: <code id="currentFile">swarmia.log</code></span>
+                    <span><i class="fas fa-database"></i> Líneas: <span id="lineCount">0</span></span>
+                    <span><i class="fas fa-filter"></i> Mostrando: <span id="displayCount">0</span></span>
+                </div>
+                <div class="log-actions">
+                    <button class="btn-icon" onclick="scrollToTop()" title="Ir al inicio">
+                        <i class="fas fa-arrow-up"></i>
+                    </button>
+                    <button class="btn-icon" onclick="scrollToBottom()" title="Ir al final">
+                        <i class="fas fa-arrow-down"></i>
+                    </button>
+                    <button class="btn-icon" onclick="copyLogs()" title="Copiar logs">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="logContent" class="log-content">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Cargando logs...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Exportación -->
+    <div id="exportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-download"></i> Exportar Logs</h3>
+                <button class="modal-close" onclick="closeExportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Exportar logs filtrados actualmente</p>
+                <div style="margin: 16px 0;">
+                    <strong>Información:</strong>
+                    <ul style="margin-top: 8px; margin-left: 20px;">
+                        <li>Archivo: <span id="exportFileName"></span></li>
+                        <li>Líneas a exportar: <span id="exportLineCount"></span></li>
+                        <li>Filtros aplicados: <span id="exportFilters"></span></li>
+                    </ul>
+                </div>
+                <div class="form-group">
+                    <label>Formato de exportación:</label>
+                    <select id="exportFormat" style="width: 100%; padding: 8px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 6px; margin-top: 8px;">
+                        <option value="txt">Texto plano (.txt)</option>
+                        <option value="json">JSON (.json)</option>
+                        <option value="csv">CSV (.csv)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-icon" onclick="closeExportModal()">Cancelar</button>
+                <button class="btn-primary" onclick="exportFilteredLogs()">Exportar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="alertContainer"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        let currentFile = 'swarmia';
+        let rawLogs = [];
+        let filteredLogs = [];
+        let autoRefreshInterval = null;
+        
+        // Archivos disponibles
+        const logFiles = {
+            swarmia: { name: 'swarmia.log', display: 'SwarmIA Principal' },
+            gateway: { name: 'gateway.log', display: 'Gateway de Comunicación' },
+            supervisor: { name: 'supervisor.log', display: 'Supervisor' },
+            agents: { name: 'agents.log', display: 'Agentes' }
+        };
+        
+        // Cargar logs del archivo actual
+        async function loadCurrentLog() {
+            showLoading(true);
+            const lines = document.getElementById('linesLimit').value;
+            
+            try {
+                const response = await fetch(`/api/logs/${currentFile}?lines=${lines}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    rawLogs = data.lines || [];
+                    applyFilters();
+                    updateFileInfo();
+                } else {
+                    // Datos de ejemplo para desarrollo
+                    rawLogs = getMockLogs();
+                    applyFilters();
+                    updateFileInfo();
+                    showAlert('Usando datos de ejemplo - API no disponible', 'warning');
+                }
+            } catch (error) {
+                console.error('Error cargando logs:', error);
+                rawLogs = getMockLogs();
+                applyFilters();
+                updateFileInfo();
+                showAlert('Error cargando logs', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Datos de ejemplo para desarrollo
+        function getMockLogs() {
+            const logs = [];
+            const levels = ['INFO', 'ERROR', 'WARNING', 'DEBUG', 'SUCCESS'];
+            const messages = [
+                'Sistema iniciado correctamente',
+                'Agente de chat conectado',
+                'Mensaje procesado desde Telegram',
+                'Error de conexión con WhatsApp',
+                'Tarea completada exitosamente',
+                'Supervisor: nueva tarea asignada',
+                'Gateway: mensaje recibido',
+                'DeepSeek API: respuesta generada',
+                'Advertencia: alta carga en el sistema',
+                'Usuario autenticado correctamente'
+            ];
+            
+            for (let i = 0; i < 200; i++) {
+                const date = new Date(Date.now() - (i * 60000));
+                const level = levels[Math.floor(Math.random() * levels.length)];
+                const message = messages[Math.floor(Math.random() * messages.length)];
+                logs.push(`${date.toISOString()} - ${level} - [swarmia] - ${message} (ID: ${Math.floor(Math.random() * 10000)})`);
+            }
+            
+            return logs.reverse();
+        }
+        
+        // Aplicar filtros
+        function applyFilters() {
+            const level = document.getElementById('levelFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredLogs = rawLogs.filter(line => {
+                if (level !== 'all' && !line.includes(` - ${level} -`)) return false;
+                if (search && !line.toLowerCase().includes(search)) return false;
+                return true;
+            });
+            
+            renderLogs();
+            updateStats();
+        }
+        
+        // Renderizar logs
+        function renderLogs() {
+            const container = document.getElementById('logContent');
+            const search = document.getElementById('searchInput').value;
+            
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No se encontraron logs con los filtros aplicados</p>
+                        <small>Intenta con otros criterios de búsqueda</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredLogs.map(line => {
+                const parsed = parseLogLine(line);
+                const highlighted = search ? highlightText(line, search) : escapeHtml(line);
+                
+                return `
+                    <div class="log-line">
+                        <span class="log-level-badge log-level-${parsed.level}">${parsed.level}</span>
+                        <span class="log-timestamp">${parsed.timestamp}</span>
+                        <span class="log-${parsed.level}">${highlighted}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Parsear línea de log
+        function parseLogLine(line) {
+            const patterns = [
+                { regex: /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/i, level: 'INFO' },
+                { regex: /INFO/i, level: 'INFO' },
+                { regex: /ERROR/i, level: 'ERROR' },
+                { regex: /WARNING|WARN/i, level: 'WARNING' },
+                { regex: /DEBUG/i, level: 'DEBUG' },
+                { regex: /SUCCESS/i, level: 'SUCCESS' }
+            ];
+            
+            let timestamp = '';
+            let level = 'INFO';
+            
+            // Extraer timestamp
+            const timestampMatch = line.match(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/);
+            if (timestampMatch) timestamp = timestampMatch[0];
+            
+            // Extraer nivel
+            for (const pattern of patterns) {
+                if (pattern.regex.test(line)) {
+                    level = pattern.level;
+                    break;
+                }
+            }
+            
+            return { timestamp, level, message: line };
+        }
+        
+        // Resaltar texto
+        function highlightText(text, search) {
+            if (!search) return escapeHtml(text);
+            const regex = new RegExp(`(${escapeRegex(search)})`, 'gi');
+            return escapeHtml(text).replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        function escapeRegex(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Actualizar estadísticas
+        function updateStats() {
+            document.getElementById('lineCount').textContent = rawLogs.length;
+            document.getElementById('displayCount').textContent = filteredLogs.length;
+        }
+        
+        function updateFileInfo() {
+            const fileInfo = logFiles[currentFile] || logFiles.swarmia;
+            document.getElementById('currentFile').textContent = fileInfo.name;
+        }
+        
+        function filterLogs() {
+            applyFilters();
+        }
+        
+        function clearFilters() {
+            document.getElementById('levelFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+        
+        async function refreshLogs() {
+            const btn = document.getElementById('refreshBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+            btn.disabled = true;
+            
+            await loadCurrentLog();
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar';
+                btn.disabled = false;
+            }, 500);
+        }
+        
+        function scrollToTop() {
+            const container = document.getElementById('logContent');
+            container.scrollTop = 0;
+        }
+        
+        function scrollToBottom() {
+            const container = document.getElementById('logContent');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        async function copyLogs() {
+            const text = filteredLogs.join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showAlert('Logs copiados al portapapeles', 'success');
+            } catch (err) {
+                showAlert('Error al copiar logs', 'error');
+            }
+        }
+        
+        async function downloadLog() {
+            const text = filteredLogs.join('\n');
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentFile}_${new Date().toISOString().slice(0,19)}.log`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('Logs descargados correctamente', 'success');
+        }
+        
+        function showExportModal() {
+            document.getElementById('exportFileName').textContent = logFiles[currentFile]?.name || currentFile;
+            document.getElementById('exportLineCount').textContent = filteredLogs.length;
+            
+            const level = document.getElementById('levelFilter').value;
+            const search = document.getElementById('searchInput').value;
+            let filters = [];
+            if (level !== 'all') filters.push(`Nivel: ${level}`);
+            if (search) filters.push(`Búsqueda: "${search}"`);
+            document.getElementById('exportFilters').textContent = filters.length ? filters.join(', ') : 'Ninguno';
+            
+            document.getElementById('exportModal').style.display = 'flex';
+        }
+        
+        function closeExportModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+        
+        function exportFilteredLogs() {
+            const format = document.getElementById('exportFormat').value;
+            let content = '';
+            let filename = `${currentFile}_export_${new Date().toISOString().slice(0,19)}`;
+            
+            if (format === 'json') {
+                const logsData = filteredLogs.map(line => parseLogLine(line));
+                content = JSON.stringify(logsData, null, 2);
+                filename += '.json';
+            } else if (format === 'csv') {
+                const headers = 'timestamp,level,message\n';
+                const rows = filteredLogs.map(line => {
+                    const parsed = parseLogLine(line);
+                    return `"${parsed.timestamp}","${parsed.level}","${parsed.message.replace(/"/g, '""')}"`;
+                }).join('\n');
+                content = headers + rows;
+                filename += '.csv';
+            } else {
+                content = filteredLogs.join('\n');
+                filename += '.log';
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            closeExportModal();
+            showAlert(`Logs exportados como ${filename}`, 'success');
+        }
+        
+        function toggleAutoRefresh() {
+            const checkbox = document.getElementById('autoRefreshCheckbox');
+            if (checkbox.checked) {
+                autoRefreshInterval = setInterval(() => {
+                    loadCurrentLog();
+                }, 5000);
+                showAlert('Auto-refresco activado (cada 5 segundos)', 'success');
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                    showAlert('Auto-refresco desactivado', 'warning');
+                }
+            }
+        }
+        
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'}"></i> ${message}`;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+        
+        // Cambiar archivo de log
+        document.querySelectorAll('.file-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const file = this.getAttribute('data-file');
+                currentFile = file;
+                
+                // Actualizar tabs activos
+                document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Cargar nuevo archivo
+                loadCurrentLog();
+            });
+        });
+        
+        // Tecla Enter para buscar
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') filterLogs();
+        });
+        
+        // Cerrar modal con ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeExportModal();
+        });
+        
+        // Click fuera del modal
+        document.getElementById('exportModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('exportModal')) closeExportModal();
+        });
+        
+        // Inicializar
+        loadCurrentLog();
+        
+        // Limpiar al salir
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        });
+    </script>
+</body>
+</html>
