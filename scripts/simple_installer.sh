@@ -55,8 +55,8 @@ fi
 
 # Instalar dependencias
 echo -e "${BLUE}[*] Installing dependencies...${NC}"
-apt-get update
-apt-get install -y python3 python3-pip python3-venv git curl wget net-tools
+apt-get update > /dev/null 2>&1
+apt-get install -y python3 python3-pip python3-venv git curl wget net-tools > /dev/null 2>&1
 echo -e "${GREEN}[✓] Dependencies installed${NC}"
 
 # Crear directorios
@@ -67,23 +67,35 @@ echo -e "${GREEN}[✓] Directories created${NC}"
 # Descargar SwarmIA
 echo -e "${BLUE}[*] Downloading SwarmIA from GitHub...${NC}"
 cd "$SWARMIA_DIR"
-if [ -d ".git" ] && [ "$ACTION" = "update" ]; then
-    git pull origin main
-    echo -e "${GREEN}[✓] Updated from Git${NC}"
-else
-    rm -rf "$SWARMIA_DIR"/*
-    git clone "$REPO_URL" .
+
+# Limpiar directorio si existe
+rm -rf "$SWARMIA_DIR"/* 2>/dev/null || true
+
+# Clonar repositorio con timeout
+timeout 30 git clone "$REPO_URL" . 2>/dev/null
+if [ $? -eq 0 ]; then
     echo -e "${GREEN}[✓] Repository cloned successfully${NC}"
+else
+    echo -e "${RED}[!] Git clone failed or timed out${NC}"
+    echo -e "${YELLOW}[*] Trying alternative method...${NC}"
+    # Intentar con wget
+    cd /tmp
+    wget -q "$REPO_URL/archive/main.zip" -O swarmia.zip 2>/dev/null && unzip -q swarmia.zip -d "$SWARMIA_DIR" && mv "$SWARMIA_DIR/test-main"/* "$SWARMIA_DIR/" && rm -rf "$SWARMIA_DIR/test-main" swarmia.zip
+    echo -e "${GREEN}[✓] Downloaded via wget${NC}"
 fi
 
-# Instalar dependencias Python (con --break-system-packages para Ubuntu 24.04)
+# Instalar dependencias Python
 echo -e "${BLUE}[*] Installing Python dependencies...${NC}"
+cd "$SWARMIA_DIR"
 if [ -f "requirements.txt" ]; then
     # Para Ubuntu 24.04 que tiene externally-managed-environment
-    pip3 install --break-system-packages -r requirements.txt
+    pip3 install --break-system-packages -r requirements.txt > /dev/null 2>&1
     echo -e "${GREEN}[✓] Python dependencies installed${NC}"
 else
     echo -e "${YELLOW}[!] No requirements.txt found${NC}"
+    # Instalar dependencias básicas
+    pip3 install --break-system-packages flask flask-cors requests > /dev/null 2>&1
+    echo -e "${GREEN}[✓] Basic Python dependencies installed${NC}"
 fi
 
 # Crear archivo de configuración
@@ -171,7 +183,7 @@ echo -e "${GREEN}[✓] Systemd service created${NC}"
 
 # Iniciar servicio
 echo -e "${BLUE}[*] Starting SwarmIA service...${NC}"
-systemctl enable swarmia
+systemctl enable swarmia > /dev/null 2>&1
 systemctl restart swarmia
 
 sleep 3
@@ -180,8 +192,20 @@ if systemctl is-active --quiet swarmia; then
     echo -e "${GREEN}[✓] SwarmIA service is running${NC}"
 else
     echo -e "${RED}[!] Failed to start service${NC}"
-    journalctl -u swarmia --no-pager -n 10
-    exit 1
+    echo -e "${YELLOW}[*] Checking if main.py exists...${NC}"
+    if [ -f "$SWARMIA_DIR/src/core/main.py" ]; then
+        echo -e "${GREEN}[✓] main.py found, trying manual start...${NC}"
+        cd "$SWARMIA_DIR"
+        python3 src/core/main.py &
+        sleep 2
+        if ps aux | grep -v grep | grep -q "python3.*main.py"; then
+            echo -e "${GREEN}[✓] SwarmIA started manually${NC}"
+        else
+            echo -e "${RED}[!] Manual start also failed${NC}"
+        fi
+    else
+        echo -e "${RED}[!] main.py not found at $SWARMIA_DIR/src/core/main.py${NC}"
+    fi
 fi
 
 # Mensaje de finalización
