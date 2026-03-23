@@ -134,6 +134,9 @@ whatsapp_qr = None
 whatsapp_connected = False
 whatsapp_status = "disconnected"
 
+# Chat history storage
+chat_history_storage: Dict[str, List[Dict]] = {}
+
 # ============================================================
 # Authentication Functions
 # ============================================================
@@ -964,6 +967,111 @@ async def test_aggressive_config(request: Request, session: Dict = Depends(verif
             return {"success": False, "message": f"Faltan dependencias para modo ULTRA: {', '.join(missing)}"}
     
     return {"success": True, "message": f"✅ Configuración válida. Modo: {mode.upper()}"}
+
+# ============================================================
+# Chat Endpoints
+# ============================================================
+
+@app.post("/api/chat")
+async def chat_completion(request: Request, session: Dict = Depends(verify_session_token)):
+    """Send a message to the AI and get response"""
+    data = await request.json()
+    message = data.get("message", "")
+    session_id = data.get("session_id", "default")
+    
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    
+    # Inicializar historial de sesión si no existe
+    if session_id not in chat_history_storage:
+        chat_history_storage[session_id] = []
+    
+    # Guardar mensaje del usuario
+    user_msg = {
+        "role": "user",
+        "content": message,
+        "timestamp": datetime.now().isoformat()
+    }
+    chat_history_storage[session_id].append(user_msg)
+    dashboard_stats["messages_processed"] += 1
+    
+    try:
+        # Intentar usar el agente de chat real
+        from src.agents.chat import create_chat_agent
+        
+        chat_agent = create_chat_agent(supervisor, config)
+        
+        # Obtener historial reciente para contexto
+        history = chat_history_storage.get(session_id, [])
+        context = {
+            "session_id": session_id,
+            "user_id": session_id,
+            "history": history[-10:]  # últimos 10 mensajes para contexto
+        }
+        
+        # Procesar mensaje
+        response_text = chat_agent.process_message(message, context)
+        
+        # Guardar respuesta
+        ai_msg = {
+            "role": "ai",
+            "content": response_text,
+            "timestamp": datetime.now().isoformat()
+        }
+        chat_history_storage[session_id].append(ai_msg)
+        
+        return {"response": response_text, "success": True}
+        
+    except ImportError:
+        # Fallback si el agente no está disponible
+        fallback_response = f"Recibí tu mensaje: '{message}'. Soy SwarmIA, tu asistente IA. (Modo simulación)"
+        
+        ai_msg = {
+            "role": "ai",
+            "content": fallback_response,
+            "timestamp": datetime.now().isoformat()
+        }
+        chat_history_storage[session_id].append(ai_msg)
+        
+        return {"response": fallback_response, "success": True, "simulated": True}
+        
+    except Exception as e:
+        print(f"Error en chat agent: {e}")
+        error_response = f"Error procesando tu mensaje: {str(e)}"
+        
+        ai_msg = {
+            "role": "ai",
+            "content": error_response,
+            "timestamp": datetime.now().isoformat()
+        }
+        chat_history_storage[session_id].append(ai_msg)
+        
+        return {"response": error_response, "success": False, "error": str(e)}
+
+
+@app.get("/api/chat/history")
+async def get_chat_history(request: Request, session: Dict = Depends(verify_session_token)):
+    """Get chat history for a session"""
+    session_id = request.query_params.get("session", "default")
+    limit = int(request.query_params.get("limit", 50))
+    
+    history = chat_history_storage.get(session_id, [])
+    # Devolver los últimos 'limit' mensajes
+    recent = history[-limit:] if len(history) > limit else history
+    
+    return {"messages": recent, "total": len(history), "session": session_id}
+
+
+@app.post("/api/chat/clear")
+async def clear_chat_history(request: Request, session: Dict = Depends(verify_session_token)):
+    """Clear chat history for a session"""
+    data = await request.json()
+    session_id = data.get("session", "default")
+    
+    if session_id in chat_history_storage:
+        chat_history_storage[session_id] = []
+    
+    return {"success": True, "message": "Chat history cleared", "session": session_id}
 
 # ============================================================
 # Startup/Shutdown Events
