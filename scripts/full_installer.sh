@@ -481,7 +481,7 @@ show_config_summary() {
     if [ "$INTERACTIVE" = true ]; then
         read -p "Proceed with installation? (y/N): " confirm
         
-        if [[ $confirm != "y" && $confirm != "Y" ]]; then
+        if [[ $confirm != "y" && $confirm != "Y" ]; then
             echo -e "${YELLOW}[*] Installation cancelled${NC}"
             exit 0
         fi
@@ -520,4 +520,350 @@ execute_action() {
             
             if [ ! -d "$SWARMIA_DIR" ]; then
                 echo -e "${RED}[!] SwarmIA is not installed${NC}"
-                echo -e "${YELL
+                echo -e "${YELLOW}Please run the installer instead.${NC}"
+                exit 1
+            fi
+            
+            cd "$SWARMIA_DIR"
+            
+            if [ -d ".git" ]; then
+                echo -e "${BLUE}[*] Updating from Git repository...${NC}"
+                git pull origin main
+                echo -e "${GREEN}[✓] Updated from Git${NC}"
+            else
+                echo -e "${YELLOW}[*] No Git repository found, downloading fresh...${NC}"
+                rm -rf "$SWARMIA_DIR"/*
+                git clone "$REPO_URL" "$SWARMIA_DIR"
+                echo -e "${GREEN}[✓] Downloaded fresh copy${NC}"
+            fi
+            
+            restart_service
+            show_completion_message
+            ;;
+            
+        "reinstall")
+            echo -e "${GREEN}[*] Reinstalling SwarmIA...${NC}"
+            echo ""
+            
+            if [ ! -d "$SWARMIA_DIR" ]; then
+                echo -e "${RED}[!] SwarmIA is not installed${NC}"
+                echo -e "${YELLOW}Please run the installer instead.${NC}"
+                exit 1
+            fi
+            
+            echo -e "${YELLOW}[!] Backing up configuration...${NC}"
+            
+            # Backup configs
+            if [ -f "$CONFIG_DIR/config.yaml" ]; then
+                cp "$CONFIG_DIR/config.yaml" "/tmp/swarmia_config_backup.yaml"
+                echo -e "${GREEN}[✓] Configuration backed up${NC}"
+            fi
+            
+            echo -e "${BLUE}[*] Removing existing installation...${NC}"
+            systemctl stop swarmia 2>/dev/null || true
+            rm -rf "$SWARMIA_DIR"
+            
+            # Install fresh
+            install_dependencies
+            create_directories
+            download_swarmia
+            setup_python_environment
+            
+            # Restore config
+            if [ -f "/tmp/swarmia_config_backup.yaml" ]; then
+                cp "/tmp/swarmia_config_backup.yaml" "$CONFIG_DIR/config.yaml"
+                echo -e "${GREEN}[✓] Configuration restored${NC}"
+            fi
+            
+            create_systemd_service
+            start_service
+            show_completion_message
+            ;;
+            
+        "uninstall")
+            echo -e "${RED}[!] WARNING: This will completely remove SwarmIA${NC}"
+            echo ""
+            
+            if [ ! -d "$SWARMIA_DIR" ]; then
+                echo -e "${YELLOW}[!] SwarmIA is not installed${NC}"
+                exit 0
+            fi
+            
+            if [ "$INTERACTIVE" = true ]; then
+                read -p "Are you sure you want to uninstall SwarmIA? (y/N): " confirm
+                
+                if [[ $confirm != "y" && $confirm != "Y" ]]; then
+                    echo -e "${YELLOW}[*] Uninstall cancelled${NC}"
+                    exit 0
+                fi
+            fi
+            
+            echo -e "${BLUE}[*] Stopping service...${NC}"
+            systemctl stop swarmia 2>/dev/null || true
+            systemctl disable swarmia 2>/dev/null || true
+            
+            echo -e "${BLUE}[*] Removing files...${NC}"
+            rm -rf "$SWARMIA_DIR"
+            rm -rf "$CONFIG_DIR"
+            rm -rf "$LOGS_DIR"
+            rm -rf "$DATA_DIR"
+            
+            echo -e "${BLUE}[*] Removing systemd service...${NC}"
+            rm -f /etc/systemd/system/swarmia.service
+            
+            echo -e "${GREEN}[✓] SwarmIA completely uninstalled${NC}"
+            ;;
+            
+        "menu")
+            main_menu
+            execute_action
+            ;;
+    esac
+}
+
+# Instalar dependencias
+install_dependencies() {
+    print_section_banner "INSTALLING DEPENDENCIES"
+    
+    echo -e "${BLUE}[*] Updating package list...${NC}"
+    apt-get update
+    
+    # Python y pip
+    if ! command -v python3 &> /dev/null; then
+        echo -e "${YELLOW}[*] Installing Python3...${NC}"
+        apt-get install -y python3 python3-pip python3-venv
+    fi
+    
+    # Git
+    if ! command -v git &> /dev/null; then
+        echo -e "${YELLOW}[*] Installing Git...${NC}"
+        apt-get install -y git
+    fi
+    
+    # Otras dependencias
+    echo -e "${BLUE}[*] Installing other dependencies...${NC}"
+    apt-get install -y curl wget net-tools
+    
+    echo -e "${GREEN}[✓] Dependencies installed${NC}"
+}
+
+# Crear directorios
+create_directories() {
+    print_section_banner "CREATING DIRECTORIES"
+    
+    echo -e "${BLUE}[*] Creating directories...${NC}"
+    
+    mkdir -p "$SWARMIA_DIR"
+    mkdir -p "$CONFIG_DIR"
+    mkdir -p "$LOGS_DIR"
+    mkdir -p "$DATA_DIR"
+    mkdir -p "$DATA_DIR/uploads"
+    mkdir -p "$DATA_DIR/models"
+    
+    echo -e "${GREEN}[✓] Directories created${NC}"
+}
+
+# Descargar SwarmIA
+download_swarmia() {
+    print_section_banner "DOWNLOADING SWARMIA"
+    
+    echo -e "${BLUE}[*] Downloading SwarmIA from GitHub...${NC}"
+    
+    cd "$SWARMIA_DIR"
+    
+    if git clone "$REPO_URL" . 2>/dev/null; then
+        echo -e "${GREEN}[✓] Repository cloned successfully${NC}"
+    else
+        echo -e "${RED}[!] Git clone failed${NC}"
+        exit 1
+    fi
+}
+
+# Configurar entorno Python
+setup_python_environment() {
+    print_section_banner "SETTING UP PYTHON ENVIRONMENT"
+    
+    echo -e "${BLUE}[*] Installing Python dependencies...${NC}"
+    
+    cd "$SWARMIA_DIR"
+    
+    if [ -f "requirements.txt" ]; then
+        pip3 install -r requirements.txt
+        echo -e "${GREEN}[✓] Python dependencies installed${NC}"
+    else
+        echo -e "${YELLOW}[!] No requirements.txt found${NC}"
+    fi
+}
+
+# Crear archivo de configuración
+create_config_file() {
+    print_section_banner "CREATING CONFIGURATION FILE"
+    
+    echo -e "${BLUE}[*] Creating configuration file...${NC}"
+    
+    cat > "$CONFIG_DIR/config.yaml" << CONFIG_EOF
+# SwarmIA Configuration
+# Generated by installer on $(date)
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: $PORT
+  debug: false
+
+# AI Backend configuration
+ai:
+  backend: "$AI_BACKEND"
+  
+  deepseek:
+    api_key: "$DEEPSEEK_API_KEY"
+    model: "deepseek-chat"
+    base_url: "https://api.deepseek.com"
+  
+  llama:
+    model_path: "$LLAMA_MODEL_PATH"
+    n_ctx: 2048
+    n_gpu_layers: -1
+
+# Messaging platforms
+messaging:
+  platform: "$MESSAGING_PLATFORM"
+  
+  whatsapp:
+    phone_number: "$WHATSAPP_NUMBER"
+    session_path: "$DATA_DIR/whatsapp_session"
+  
+  telegram:
+    bot_token: "$TELEGRAM_BOT_TOKEN"
+    admin_ids: []
+
+# Database
+database:
+  path: "$DATA_DIR/swarmia.db"
+  type: "sqlite"
+
+# Logging
+logging:
+  level: "INFO"
+  file: "$LOGS_DIR/swarmia.log"
+  max_size_mb: 10
+  backup_count: 5
+
+# Security
+security:
+  api_key_enabled: false
+  cors_origins: ["*"]
+CONFIG_EOF
+    
+    echo -e "${GREEN}[✓] Configuration file created at $CONFIG_DIR/config.yaml${NC}"
+}
+
+# Crear servicio systemd
+create_systemd_service() {
+    print_section_banner "CREATING SYSTEMD SERVICE"
+    
+    echo -e "${BLUE}[*] Creating systemd service...${NC}"
+    
+    cat > /etc/systemd/system/swarmia.service << SERVICE_EOF
+[Unit]
+Description=SwarmIA AI System
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=$SWARMIA_DIR
+Environment="PYTHONPATH=$SWARMIA_DIR"
+Environment="SWARMIA_CONFIG=$CONFIG_DIR/config.yaml"
+ExecStart=/usr/bin/python3 $SWARMIA_DIR/src/core/main.py
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:$LOGS_DIR/swarmia.log
+StandardError=append:$LOGS_DIR/swarmia-error.log
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+    
+    systemctl daemon-reload
+    echo -e "${GREEN}[✓] Systemd service created${NC}"
+}
+
+# Iniciar servicio
+start_service() {
+    print_section_banner "STARTING SWARMIA SERVICE"
+    
+    echo -e "${BLUE}[*] Enabling and starting SwarmIA service...${NC}"
+    
+    systemctl enable swarmia
+    systemctl start swarmia
+    
+    sleep 3
+    
+    if systemctl is-active --quiet swarmia; then
+        echo -e "${GREEN}[✓] SwarmIA service is running${NC}"
+    else
+        echo -e "${RED}[!] Failed to start service${NC}"
+        echo -e "${YELLOW}Checking logs...${NC}"
+        journalctl -u swarmia --no-pager -n 10
+    fi
+}
+
+# Reiniciar servicio
+restart_service() {
+    echo -e "${BLUE}[*] Restarting SwarmIA service...${NC}"
+    systemctl restart swarmia
+    sleep 2
+    
+    if systemctl is-active --quiet swarmia; then
+        echo -e "${GREEN}[✓] Service restarted successfully${NC}"
+    else
+        echo -e "${RED}[!] Failed to restart service${NC}"
+    fi
+}
+
+# Mensaje de finalización
+show_completion_message() {
+    print_section_banner "INSTALLATION COMPLETE"
+    
+    local ip_address=$(hostname -I | awk '{print $1}')
+    
+    echo -e "${GREEN}✅ SwarmIA has been successfully installed!${NC}"
+    echo ""
+    echo -e "${CYAN}Access Information:${NC}"
+    echo -e "  Dashboard:    http://$ip_address:$PORT"
+    echo -e "  Health check: http://$ip_address:$PORT/health"
+    echo ""
+    echo -e "${CYAN}Service Management:${NC}"
+    echo -e "  Check status: systemctl status swarmia"
+    echo -e "  View logs:    journalctl -u swarmia -f"
+    echo -e "  Stop service: systemctl stop swarmia"
+    echo -e "  Start service: systemctl start swarmia"
+    echo ""
+    echo -e "${CYAN}Configuration Files:${NC}"
+    echo -e "  Main config:  $CONFIG_DIR/config.yaml"
+    echo -e "  Logs:         $LOGS_DIR/"
+    echo -e "  Data:         $DATA_DIR/"
+    echo ""
+    echo -e "${CYAN}Next Steps:${NC}"
+    echo -e "  1. Open the dashboard in your browser"
+    echo -e "  2. Configure additional settings if needed"
+    echo -e "  3. Check the logs for any issues"
+    echo ""
+    echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+}
+
+# Función principal
+main() {
+    check_root
+    
+    if [ "$ACTION" = "menu" ] && [ "$INTERACTIVE" = true ]; then
+        main_menu
+    fi
+    
+    execute_action
+}
+
+# Ejecutar
+main
