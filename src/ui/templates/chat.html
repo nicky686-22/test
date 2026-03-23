@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmIA - Chat</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --user-msg: #4f46e5;
+            --ai-msg: #2d3a4f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            display: flex;
+        }
+        
+        /* ============================================================
+           MENÚ LATERAL
+        ============================================================ */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .sidebar-logo p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+        
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Header superior */
+        .top-header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .user-info i {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+        
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
+        }
+        
+        /* Chat Container */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 24px;
+        }
+        
+        /* Chat Header */
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .chat-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .chat-header .chat-info {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--bg-primary);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-msg);
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message.ai {
+            align-self: flex-start;
+            background: var(--ai-msg);
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message.system {
+            align-self: center;
+            background: rgba(59, 130, 246, 0.2);
+            font-size: 12px;
+            color: var(--text-secondary);
+            max-width: 90%;
+            text-align: center;
+        }
+        
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        .message-content pre {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+        
+        /* Input Area */
+        .input-area {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .chat-input {
+            flex: 1;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+        
+        .chat-input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .send-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+        }
+        
+        .send-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .clear-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
+        }
+        
+        /* Typing indicator */
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--ai-msg);
+            border-radius: 12px;
+            width: fit-content;
+            margin-top: 8px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Scrollbar */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages-area::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+        
+        /* Empty state */
+        .empty-chat {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-chat i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-logo h2, .sidebar-logo p, .nav-item span {
+                display: none;
+            }
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            .nav-item i {
+                margin: 0;
+            }
+            .message {
+                max-width: 95%;
+            }
+            .chat-container {
+                padding: 16px;
+            }
+            .input-area {
+                flex-wrap: wrap;
+            }
+            .send-btn, .clear-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Menú Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><i class="fas fa-robot"></i> SwarmIA</h2>
+            <p>Sistema de Agentes IA</p>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" id="nav-dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/agents" class="nav-item" id="nav-agents">
+                <i class="fas fa-microchip"></i>
+                <span>Agentes</span>
+            </a>
+            <a href="/tasks" class="nav-item" id="nav-tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Tareas</span>
+            </a>
+            <a href="/chat" class="nav-item active" id="nav-chat">
+                <i class="fas fa-comment-dots"></i>
+                <span>Chat</span>
+            </a>
+            <a href="/config" class="nav-item" id="nav-config">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+            </a>
+            <a href="/logs" class="nav-item" id="nav-logs">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <i class="fas fa-code-branch"></i> v2.0.0
+        </div>
+    </div>
+    
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <!-- Header Superior -->
+        <div class="top-header">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">admin</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header">
+                <h1><i class="fas fa-comment-dots"></i> Asistente IA</h1>
+                <div class="chat-info">
+                    <span id="messageCount">0 mensajes</span>
+                    <span id="modelInfo">Modelo: Cargando...</span>
+                </div>
+            </div>
+            
+            <div class="messages-area" id="messagesArea">
+                <div class="empty-chat">
+                    <i class="fas fa-comment-dots"></i>
+                    <p>No hay mensajes aún</p>
+                    <small>Escribe un mensaje para comenzar a conversar con SwarmIA</small>
+                </div>
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <span style="margin-left: 8px;">SwarmIA está escribiendo...</span>
+            </div>
+            
+            <div class="input-area">
+                <textarea class="chat-input" id="chatInput" rows="2" placeholder="Escribe tu mensaje... (Enter para enviar, Shift+Enter para nueva línea)"></textarea>
+                <button class="send-btn" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+                <button class="clear-btn" id="clearBtn">
+                    <i class="fas fa-trash-alt"></i> Limpiar
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="alertContainer"></div>
+    
+    <script>
+        let sessionId = localStorage.getItem('swarmia_session_id') || generateSessionId();
+        let messageCount = 0;
+        let isSending = false;
+        
+        // Guardar session ID
+        localStorage.setItem('swarmia_session_id', sessionId);
+        
+        function generateSessionId() {
+            return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Cargar historial del chat
+        async function loadChatHistory() {
+            try {
+                const response = await fetch(`/api/chat/history?session=${sessionId}&limit=50`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const messages = data.messages || [];
+                    messages.forEach(msg => {
+                        addMessageToUI(msg.role, msg.content, msg.timestamp);
+                    });
+                    updateMessageCount(messages.length);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error('Error cargando historial:', error);
+            }
+        }
+        
+        // Obtener información del modelo
+        async function loadModelInfo() {
+            try {
+                const response = await fetch('/api/config');
+                if (response.ok) {
+                    const data = await response.json();
+                    const provider = data.ai?.provider || 'desconocido';
+                    const modelInfo = document.getElementById('modelInfo');
+                    if (provider === 'deepseek') {
+                        modelInfo.innerHTML = '<i class="fas fa-cloud"></i> DeepSeek API';
+                    } else if (provider === 'llama') {
+                        modelInfo.innerHTML = '<i class="fas fa-microchip"></i> Llama Local';
+                    } else {
+                        modelInfo.innerHTML = '<i class="fas fa-flask"></i> Modo Simulación';
+                    }
+                }
+            } catch (error) {
+                console.error('Error cargando modelo:', error);
+            }
+        }
+        
+        // Enviar mensaje
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || isSending) return;
+            
+            isSending = true;
+            input.disabled = true;
+            document.getElementById('sendBtn').disabled = true;
+            
+            // Limpiar input
+            input.value = '';
+            
+            // Mostrar mensaje del usuario
+            addMessageToUI('user', message);
+            updateMessageCount(++messageCount);
+            
+            // Mostrar indicador de escritura
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+                
+                hideTypingIndicator();
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addMessageToUI('ai', data.response);
+                    updateMessageCount(++messageCount);
+                } else {
+                    const error = await response.json();
+                    addMessageToUI('system', `Error: ${error.detail || 'No se pudo procesar el mensaje'}`);
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessageToUI('system', `Error de conexión: ${error.message}`);
+            } finally {
+                isSending = false;
+                input.disabled = false;
+                document.getElementById('sendBtn').disabled = false;
+                input.focus();
+            }
+        }
+        
+        // Agregar mensaje al UI
+        function addMessageToUI(role, content, timestamp = null) {
+            const messagesArea = document.getElementById('messagesArea');
+            
+            // Remover empty state si existe
+            if (messagesArea.querySelector('.empty-chat')) {
+                messagesArea.innerHTML = '';
+            }
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const time = timestamp ? new Date(timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+            
+            let displayName = '';
+            let icon = '';
+            if (role === 'user') {
+                displayName = 'Tú';
+                icon = '<i class="fas fa-user"></i>';
+            } else if (role === 'ai') {
+                displayName = 'SwarmIA';
+                icon = '<i class="fas fa-robot"></i>';
+            } else {
+                displayName = 'Sistema';
+                icon = '<i class="fas fa-info-circle"></i>';
+            }
+            
+            // Escapar HTML para evitar XSS
+            const safeContent = escapeHtml(content);
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <span>${icon} ${displayName}</span>
+                    <span>${time}</span>
+                </div>
+                <div class="message-content">${formatMessage(safeContent)}</div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            scrollToBottom();
+        }
+        
+        // Formatear mensaje (detectar código, enlaces, etc)
+        function formatMessage(content) {
+            // Detectar bloques de código
+            content = content.replace(/```(\w*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                return `<pre><code class="language-${lang}">${escapeHtml(code.trim())}</code></pre>`;
+            });
+            
+            // Detectar enlaces
+            content = content.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--info);">$1</a>');
+            
+            // Convertir saltos de línea a <br>
+            content = content.replace(/\n/g, '<br>');
+            
+            return content;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function showTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'flex';
+            scrollToBottom();
+        }
+        
+        function hideTypingIndicator() {
+            document.getElementById('typingIndicator').style.display = 'none';
+        }
+        
+        function updateMessageCount(count) {
+            document.getElementById('messageCount').textContent = `${count} mensajes`;
+        }
+        
+        function scrollToBottom() {
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+        
+        async function clearChat() {
+            if (confirm('¿Estás seguro de que quieres borrar todo el historial de conversación?')) {
+                try {
+                    const response = await fetch(`/api/chat/clear?session=${sessionId}`, { method: 'POST' });
+                    if (response.ok) {
+                        document.getElementById('messagesArea').innerHTML = `
+                            <div class="empty-chat">
+                                <i class="fas fa-comment-dots"></i>
+                                <p>Chat limpiado</p>
+                                <small>Escribe un mensaje para comenzar una nueva conversación</small>
+                            </div>
+                        `;
+                        messageCount = 0;
+                        updateMessageCount(0);
+                        addMessageToUI('system', 'Historial de conversación limpiado');
+                    }
+                } catch (error) {
+                    console.error('Error limpiando chat:', error);
+                }
+            }
+        }
+        
+        function logout() {
+            document.cookie = "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = '/login';
+        }
+        
+        // Event Listeners
+        document.getElementById('sendBtn').addEventListener('click', sendMessage);
+        document.getElementById('clearBtn').addEventListener('click', clearChat);
+        
+        document.getElementById('chatInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Auto-resize textarea
+        document.getElementById('chatInput').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+        
+        // Inicializar
+        loadChatHistory();
+        loadModelInfo();
+        
+        // Auto-focus
+        document.getElementById('chatInput').focus();
+    </script>
+</body>
+</html>
