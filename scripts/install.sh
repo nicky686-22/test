@@ -1,3 +1,4 @@
+
 #!/bin/bash
 # SwarmIA Universal Installer - Ultimate Version
 
@@ -25,15 +26,27 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
-# Descargar y ejecutar el instalador ultimate
-echo -e "${BLUE}[*] Downloading ultimate installer...${NC}"
-TEMP_SCRIPT="/tmp/swarmia_ultimate_$(date +%s).sh"
+# Verificar curl
+if ! command -v curl >/dev/null 2>&1; then
+    echo -e "${RED}[!] curl not found. Please install curl.${NC}"
+    exit 1
+fi
 
-curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/install_ultimate.sh -o "$TEMP_SCRIPT"
+# Descargar lógica real de instalación
+echo -e "${BLUE}[*] Downloading installation script...${NC}"
+TEMP_SCRIPT="/tmp/swarmia_core_$(date +%s).sh"
+
+curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/swarmia_core.sh -o "$TEMP_SCRIPT"
+
+if [[ ! -s "$TEMP_SCRIPT" ]]; then
+    echo -e "${RED}[!] Download failed. File is empty.${NC}"
+    exit 1
+fi
+
 chmod +x "$TEMP_SCRIPT"
 
-echo -e "${GREEN}[✓] Ultimate installer ready${NC}"
+echo -e "${GREEN}[✓] Core installer ready${NC}"
 echo ""
 
-# Ejecutar
-exec "$TEMP_SCRIPT"
+# Ejecutar de forma segura
+bash "$TEMP_SCRIPT"
