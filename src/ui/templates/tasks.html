@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwarmIA - Tasks Management</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --critical: #dc2626;
+            --high: #f97316;
+            --normal: #3b82f6;
+            --low: #10b981;
+            --background: #0f172a;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: var(--primary);
+        }
+        
+        .logo h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .logo span {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        
+        /* Page Header */
+        .page-header {
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .page-header p {
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 14px;
+        }
+        
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        /* Filters */
+        .filters-bar {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .filters-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-select, .filter-input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        
+        .filter-select:focus, .filter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .search-box input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            width: 250px;
+        }
+        
+        .btn-icon {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-icon:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Tasks Table */
+        .tasks-table-container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .tasks-table th {
+            text-align: left;
+            padding: 14px 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .tasks-table th:hover {
+            color: var(--primary);
+        }
+        
+        .tasks-table th i {
+            margin-left: 6px;
+            font-size: 10px;
+        }
+        
+        .tasks-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        
+        .tasks-table tr:hover {
+            background: rgba(79, 70, 229, 0.05);
+        }
+        
+        /* Task Status Badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .status-completed { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .status-running { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+        .status-pending { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .status-failed { background: rgba(239, 68, 68, 0.2); color: var(--error); }
+        .status-cancelled { background: rgba(148, 163, 184, 0.2); color: var(--text-secondary); }
+        
+        /* Priority Badges */
+        .priority-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .priority-critical { background: rgba(220, 38, 38, 0.2); color: var(--critical); }
+        .priority-high { background: rgba(249, 115, 22, 0.2); color: var(--high); }
+        .priority-normal { background: rgba(59, 130, 246, 0.2); color: var(--normal); }
+        .priority-low { background: rgba(16, 185, 129, 0.2); color: var(--low); }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .action-btn.retry:hover { color: var(--success); }
+        .action-btn.cancel:hover { color: var(--error); }
+        .action-btn.view:hover { color: var(--info); }
+        
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 24px;
+        }
+        
+        .page-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .page-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .page-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid var(--border);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-header h3 {
+            font-size: 18px;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .modal-body {
+            margin-bottom: 24px;
+        }
+        
+        .modal-body pre {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        /* Alerts */
+        .alert {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+        }
+        
+        .alert-error {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .filters-bar { flex-direction: column; align-items: stretch; }
+            .search-box input { width: 100%; }
+            .tasks-table th, .tasks-table td { padding: 10px 12px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
+        code {
+            font-family: monospace;
+            font-size: 11px;
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .refresh-indicator {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-robot"></i>
+            <h1>SwarmIA <span>v2.0</span></h1>
+        </div>
+        <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="container">
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-tasks"></i> Task Management</h1>
+                <p>Monitor and manage all system tasks</p>
+            </div>
+            <button class="btn-icon" onclick="refreshTasks()" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTasks">0</div>
+                <div class="stat-label">Total Tasks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingTasks">0</div>
+                <div class="stat-label">Pending</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="runningTasks">0</div>
+                <div class="stat-label">Running</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedTasks">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="failedTasks">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgDuration">0s</div>
+                <div class="stat-label">Avg Duration</div>
+            </div>
+        </div>
+        
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filters-group">
+                <select id="statusFilter" class="filter-select" onchange="filterTasks()">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="running">Running</option>
+                    <option value="completed">Completed</option>
+                    <option value="failed">Failed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                
+                <select id="priorityFilter" class="filter-select" onchange="filterTasks()">
+                    <option value="all">All Priorities</option>
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="normal">Normal</option>
+                    <option value="low">Low</option>
+                </select>
+                
+                <select id="typeFilter" class="filter-select" onchange="filterTasks()">
+                    <option value="all">All Types</option>
+                    <option value="process_message">Process Message</option>
+                    <option value="complete_conversation">Complete Conversation</option>
+                    <option value="analyze_sentiment">Analyze Sentiment</option>
+                    <option value="execute_action">Execute Action</option>
+                </select>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by ID or description..." onkeyup="filterTasks()">
+                <button class="btn-icon" onclick="clearFilters()">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </div>
+        
+        <!-- Tasks Table -->
+        <div class="tasks-table-container">
+            <table class="tasks-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortBy('id')">Task ID <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('type')">Type <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('description')">Description <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('priority')">Priority <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('status')">Status <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('agent')">Agent <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('created')">Created <i class="fas fa-sort"></i></th>
+                        <th onclick="sortBy('duration')">Duration <i class="fas fa-sort"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tasksTableBody">
+                    <tr>
+                        <td colspan="9" class="empty-state">
+                            <i class="fas fa-spinner fa-spin"></i> Loading tasks...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+    </div>
+    
+    <!-- Task Detail Modal -->
+    <div id="taskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> Task Details</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="taskModalBody">
+                Loading...
+            </div>
+            <div class="modal-actions">
+                <button class="btn-icon" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="alertContainer"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <script>
+        let allTasks = [];
+        let filteredTasks = [];
+        let currentPage = 1;
+        let itemsPerPage = 20;
+        let currentSort = { field: 'created', direction: 'desc' };
+        
+        // Load tasks from API
+        async function loadTasks() {
+            showLoading(true);
+            try {
+                const response = await fetch('/api/tasks?limit=500');
+                if (response.ok) {
+                    const data = await response.json();
+                    allTasks = data.tasks || [];
+                    applyFilters();
+                    updateStats();
+                } else {
+                    throw new Error('Failed to load tasks');
+                }
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                showAlert('Error loading tasks', 'error');
+                document.getElementById('tasksTableBody').innerHTML = `
+                    <tr><td colspan="9" class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i><br>
+                        Failed to load tasks. Please try again.
+                    </td></tr>
+                `;
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Update statistics
+        function updateStats() {
+            const stats = {
+                total: allTasks.length,
+                pending: allTasks.filter(t => t.status === 'pending').length,
+                running: allTasks.filter(t => t.status === 'running').length,
+                completed: allTasks.filter(t => t.status === 'completed').length,
+                failed: allTasks.filter(t => t.status === 'failed').length
+            };
+            
+            // Calculate average duration for completed tasks
+            const completedTasks = allTasks.filter(t => t.status === 'completed' && t.duration);
+            const avgDuration = completedTasks.length > 0 
+                ? Math.round(completedTasks.reduce((sum, t) => sum + parseFloat(t.duration || 0), 0) / completedTasks.length)
+                : 0;
+            
+            document.getElementById('totalTasks').textContent = stats.total;
+            document.getElementById('pendingTasks').textContent = stats.pending;
+            document.getElementById('runningTasks').textContent = stats.running;
+            document.getElementById('completedTasks').textContent = stats.completed;
+            document.getElementById('failedTasks').textContent = stats.failed;
+            document.getElementById('avgDuration').textContent = avgDuration > 0 ? `${avgDuration}s` : 'N/A';
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const status = document.getElementById('statusFilter').value;
+            const priority = document.getElementById('priorityFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredTasks = allTasks.filter(task => {
+                if (status !== 'all' && task.status !== status) return false;
+                if (priority !== 'all' && task.priority?.toLowerCase() !== priority) return false;
+                if (type !== 'all' && task.type !== type) return false;
+                if (search) {
+                    const idMatch = task.id?.toLowerCase().includes(search);
+                    const descMatch = task.description?.toLowerCase().includes(search);
+                    if (!idMatch && !descMatch) return false;
+                }
+                return true;
+            });
+            
+            // Apply sorting
+            sortTasks();
+            
+            currentPage = 1;
+            renderTable();
+            renderPagination();
+        }
+        
+        // Sort tasks
+        function sortTasks() {
+            filteredTasks.sort((a, b) => {
+                let aVal = a[currentSort.field];
+                let bVal = b[currentSort.field];
+                
+                if (currentSort.field === 'created') {
+                    aVal = new Date(a.created_at || 0);
+                    bVal = new Date(b.created_at || 0);
+                }
+                
+                if (aVal === undefined) aVal = '';
+                if (bVal === undefined) bVal = '';
+                
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+        
+        // Sort by field
+        function sortBy(field) {
+            if (currentSort.field === field) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.field = field;
+                currentSort.direction = 'desc';
+            }
+            sortTasks();
+            renderTable();
+        }
+        
+        // Render table
+        function renderTable() {
+            const tbody = document.getElementById('tasksTableBody');
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageTasks = filteredTasks.slice(start, end);
+            
+            if (pageTasks.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="9" class="empty-state">
+                        <i class="fas fa-inbox"></i><br>
+                        No tasks found
+                    </td></tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = pageTasks.map(task => `
+                <tr>
+                    <td><code>${task.id?.substring(0, 12)}...</code></td>
+                    <td>${task.type || 'N/A'}</td>
+                    <td>${task.description || task.type || 'No description'}</td>
+                    <td>${getPriorityBadge(task.priority)}</td>
+                    <td>${getStatusBadge(task.status)}</td>
+                    <td>${task.agent_type || task.assigned_agent || 'Pending'}</td>
+                    <td>${formatDate(task.created_at)}</td>
+                    <td>${formatDuration(task.duration)}</td>
+                    <td class="action-buttons">
+                        <button class="action-btn view" onclick="viewTaskDetails('${task.id}')" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${task.status === 'running' ? `
+                            <button class="action-btn cancel" onclick="cancelTask('${task.id}')" title="Cancel Task">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        ` : ''}
+                        ${task.status === 'failed' ? `
+                            <button class="action-btn retry" onclick="retryTask('${task.id}')" title="Retry Task">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        // Get priority badge HTML
+        function getPriorityBadge(priority) {
+            const p = (priority || 'normal').toLowerCase();
+            const icons = { critical: '🔴', high: '🟠', normal: '🔵', low: '🟢' };
+            return `<span class="priority-badge priority-${p}">${icons[p] || '⚪'} ${priority || 'NORMAL'}</span>`;
+        }
+        
+        // Get status badge HTML
+        function getStatusBadge(status) {
+            const s = (status || 'pending').toLowerCase();
+            const icons = { completed: '✓', running: '⏳', pending: '⏰', failed: '✗', cancelled: '⊘' };
+            return `<span class="status-badge status-${s}">${icons[s] || '●'} ${status || 'PENDING'}</span>`;
+        }
+        
+        // Format date
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            return date.toLocaleDateString();
+        }
+        
+        // Format duration
+        function formatDuration(duration) {
+            if (!duration) return 'N/A';
+            if (typeof duration === 'number') {
+                if (duration < 1) return `${Math.round(duration * 1000)}ms`;
+                if (duration < 60) return `${Math.round(duration)}s`;
+                return `${Math.floor(duration / 60)}m ${Math.round(duration % 60)}s`;
+            }
+            return duration;
+        }
+        
+        // Render pagination
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            if (currentPage > 1) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})">← Prev</button>`;
+            }
+            
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            if (currentPage < totalPages) {
+                html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})">Next →</button>`;
+            }
+            
+            pagination.innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            renderTable();
+            renderPagination();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        function filterTasks() {
+            applyFilters();
+        }
+        
+        function clearFilters() {
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('priorityFilter').value = 'all';
+            document.getElementById('typeFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            applyFilters();
+        }
+        
+        // Refresh tasks
+        async function refreshTasks() {
+            const btn = document.getElementById('refreshBtn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            btn.disabled = true;
+            
+            await loadTasks();
+            
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh';
+                btn.disabled = false;
+            }, 500);
+        }
+        
+        // View task details
+        async function viewTaskDetails(taskId) {
+            showLoading(true);
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`);
+                if (response.ok) {
+                    const task = await response.json();
+                    const modalBody = document.getElementById('taskModalBody');
+                    modalBody.innerHTML = `
+                        <div style="margin-bottom: 16px;">
+                            <strong>Task ID:</strong> <code>${task.id}</code>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Type:</strong> ${task.type}
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Description:</strong> ${task.description || task.type}
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Priority:</strong> ${getPriorityBadge(task.priority)}
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Status:</strong> ${getStatusBadge(task.status)}
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Agent:</strong> ${task.assigned_agent || 'Not assigned'}
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong>Created:</strong> ${new Date(task.created_at).toLocaleString()}
+                        </div>
+                        ${task.started_at ? `<div style="margin-bottom: 16px;"><strong>Started:</strong> ${new Date(task.started_at).toLocaleString()}</div>` : ''}
+                        ${task.completed_at ? `<div style="margin-bottom: 16px;"><strong>Completed:</strong> ${new Date(task.completed_at).toLocaleString()}</div>` : ''}
+                        ${task.duration ? `<div style="margin-bottom: 16px;"><strong>Duration:</strong> ${formatDuration(task.duration)}</div>` : ''}
+                        ${task.error ? `<div style="margin-bottom: 16px;"><strong>Error:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${task.error}</pre></div>` : ''}
+                        ${task.result ? `<div style="margin-bottom: 16px;"><strong>Result:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${JSON.stringify(task.result, null, 2)}</pre></div>` : ''}
+                        <div style="margin-bottom: 16px;">
+                            <strong>Data:</strong> <pre style="background: var(--bg-primary); padding: 8px; border-radius: 6px; margin-top: 4px;">${JSON.stringify(task.data, null, 2)}</pre>
+                        </div>
+                    `;
+                    document.getElementById('taskModal').style.display = 'flex';
+                } else {
+                    throw new Error('Task not found');
+                }
+            } catch (error) {
+                showAlert('Error loading task details', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Cancel task
+        async function cancelTask(taskId) {
+            if (!confirm('Are you sure you want to cancel this task?')) return;
+            
+            showLoading(true);
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' });
+                if (response.ok) {
+                    showAlert('Task cancelled successfully', 'success');
+                    await loadTasks();
+                } else {
+                    throw new Error('Failed to cancel task');
+                }
+            } catch (error) {
+                showAlert('Error cancelling task', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Retry task
+        async function retryTask(taskId) {
+            if (!confirm('Retry this failed task?')) return;
+            
+            showLoading(true);
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/retry`, { method: 'POST' });
+                if (response.ok) {
+                    showAlert('Task queued for retry', 'success');
+                    await loadTasks();
+                } else {
+                    throw new Error('Failed to retry task');
+                }
+            } catch (error) {
+                showAlert('Error retrying task', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Show alert
+        function showAlert(message, type) {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+            container.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+        
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+        
+        function closeModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+        
+        // Auto-refresh every 10 seconds
+        let autoRefreshInterval;
+        
+        function startAutoRefresh() {
+            autoRefreshInterval = setInterval(() => {
+                loadTasks();
+            }, 10000);
+        }
+        
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+        }
+        
+        // Initialize
+        loadTasks();
+        startAutoRefresh();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', stopAutoRefresh);
+        
+        // Close modal on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+        
+        // Click outside modal to close
+        document.getElementById('taskModal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('taskModal')) closeModal();
+        });
+    </script>
+</body>
+</html>
