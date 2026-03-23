@@ -5,12 +5,18 @@ FastAPI-based dashboard with admin authentication and real-time monitoring
 """
 
 import os
+import sys
 import json
 import secrets
 import asyncio
+import socket
+import sqlite3
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pathlib import Path
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from fastapi import FastAPI, Request, Response, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
@@ -19,27 +25,77 @@ from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-import sqlite3
 
 # Import project modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.config import Config
-from core.supervisor import Supervisor, TaskPriority
-from models.database import get_db_connection, init_database
+from src.core.config import Config
+from src.core.supervisor import Supervisor, TaskPriority, create_supervisor
 
-# Initialize FastAPI app
+# ============================================================
+# Database Functions (simplified)
+# ============================================================
+
+DB_PATH = Path(__file__).parent.parent.parent / "data" / "swarmia.db"
+
+def get_db_connection():
+    """Get database connection"""
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_database():
+    """Initialize database tables"""
+    with get_db_connection() as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                password_changed INTEGER DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS system_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_type TEXT NOT NULL,
+                message TEXT,
+                user TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        conn.commit()
+
+# ============================================================
+# FastAPI App Initialization
+# ============================================================
+
+# Configuración
+config = Config()
+
+# FastAPI app
 app = FastAPI(
     title="SwarmIA Dashboard",
-    description="Elegant dashboard for SwarmIA - The Enhanced OpenClaw",
-    version="1.0.0",
-    docs_url="/api/docs" if Config.DEBUG else None,
-    redoc_url="/api/redoc" if Config.DEBUG else None
+    description="Elegant dashboard for SwarmIA - The Enhanced AI Assistant",
+    version="2.0.0",
+    docs_url="/api/docs" if config.SERVER_DEBUG else None,
+    redoc_url="/api/redoc" if config.SERVER_DEBUG else None
 )
 
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if Config.DEBUG else ["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_origins=["*"] if config.SERVER_DEBUG else ["http://localhost:8080", "http://127.0.0.1:8080"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,13 +106,21 @@ security = HTTPBasic()
 
 # Templates and static files
 BASE_DIR = Path(__file__).parent
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+TEMPLATES_DIR = BASE_DIR / "templates"
+STATIC_DIR = BASE_DIR / "static"
+
+# Crear directorios si no existen
+TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
+templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Global state
-supervisor = Supervisor()
-config = Config()
+supervisor = create_supervisor(config)
 active_sessions: Dict[str, Dict] = {}
+
+# Dashboard stats
 dashboard_stats = {
     "total_tasks": 0,
     "completed_tasks": 0,
@@ -66,42 +130,44 @@ dashboard_stats = {
     "errors_count": 0
 }
 
-# Authentication functions
+# ============================================================
+# Authentication Functions
+# ============================================================
+
 def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(security)):
-    """Verify admin credentials and force password change if still default"""
+    """Verify admin credentials"""
     correct_username = secrets.compare_digest(credentials.username, "admin")
     
-    # Check if password has been changed from default
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT password_changed FROM users WHERE username = ?", ("admin",))
+        cursor.execute("SELECT password_hash, password_changed FROM users WHERE username = ?", ("admin",))
         result = cursor.fetchone()
         
-        password_changed = result[0] if result else False
-        default_password = "admin" if not password_changed else None
+        if not result:
+            # Create default admin
+            cursor.execute(
+                "INSERT INTO users (username, password_hash, password_changed) VALUES (?, ?, ?)",
+                ("admin", "admin", 0)
+            )
+            conn.commit()
+            password_hash = "admin"
+            password_changed = 0
+        else:
+            password_hash = result["password_hash"]
+            password_changed = result["password_changed"]
     
-    if default_password:
-        correct_password = secrets.compare_digest(credentials.password, default_password)
-        if correct_password:
-            # First login with default password - force change
+    # Check password
+    if password_changed == 0:
+        # First login with default password
+        correct_password = secrets.compare_digest(credentials.password, "admin")
+        if correct_username and correct_password:
             raise HTTPException(
                 status_code=status.HTTP_307_TEMPORARY_REDIRECT,
                 detail="Password change required",
                 headers={"Location": "/change-password"}
             )
     else:
-        # Check against stored hash
-        with get_db_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT password_hash FROM users WHERE username = ?", ("admin",))
-            result = cursor.fetchone()
-            if result:
-                stored_hash = result[0]
-                # In production, use proper password hashing (bcrypt, argon2)
-                # For MVP, using simple comparison
-                correct_password = secrets.compare_digest(credentials.password, stored_hash)
-            else:
-                correct_password = False
+        correct_password = secrets.compare_digest(credentials.password, password_hash)
     
     if not (correct_username and correct_password):
         raise HTTPException(
@@ -109,6 +175,7 @@ def verify_admin_credentials(credentials: HTTPBasicCredentials = Depends(securit
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Basic"},
         )
+    
     return credentials.username
 
 def create_session_token(username: str) -> str:
@@ -134,7 +201,6 @@ def verify_session_token(request: Request):
     active_sessions[token]["last_activity"] = datetime.now()
     return active_sessions[token]
 
-# Cleanup old sessions periodically
 async def cleanup_sessions():
     """Remove sessions older than 24 hours"""
     while True:
@@ -147,22 +213,27 @@ async def cleanup_sessions():
         for token in expired_tokens:
             del active_sessions[token]
 
+# ============================================================
 # Routes
+# ============================================================
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, session: Dict = Depends(verify_session_token)):
     """Main dashboard page"""
-    # Get system stats
+    # Get stats from supervisor
+    supervisor_stats = supervisor.get_stats() if supervisor else {}
+    
     stats = {
         "uptime": str(datetime.now() - dashboard_stats["system_uptime"]).split('.')[0],
-        "active_tasks": supervisor.get_active_task_count(),
-        "completed_tasks": dashboard_stats["completed_tasks"],
-        "agents_online": len(supervisor.get_available_agents()),
+        "active_tasks": supervisor_stats.get("queue_size", 0),
+        "completed_tasks": supervisor_stats.get("tasks_completed", 0),
+        "agents_online": supervisor_stats.get("agents_registered", 0),
         "messages_today": dashboard_stats["messages_processed"],
-        "system_load": os.getloadavg()[0] if hasattr(os, 'getloadavg') else 0.0
+        "system_load": 0.0
     }
     
     # Get recent tasks
-    recent_tasks = supervisor.get_recent_tasks(limit=10)
+    tasks = supervisor.get_tasks(limit=5) if supervisor else []
     
     return templates.TemplateResponse(
         "dashboard.html",
@@ -170,8 +241,11 @@ async def dashboard(request: Request, session: Dict = Depends(verify_session_tok
             "request": request,
             "username": session["username"],
             "stats": stats,
-            "recent_tasks": recent_tasks,
-            "config": config.get_public_config()
+            "recent_tasks": tasks,
+            "config": {
+                "version": "2.0.0",
+                "server_port": config.SERVER_PORT
+            }
         }
     )
 
@@ -185,7 +259,6 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
     """API login endpoint"""
     username = verify_admin_credentials(credentials)
     
-    # Create session token
     token = create_session_token(username)
     
     response = JSONResponse({
@@ -194,12 +267,11 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
         "username": username
     })
     
-    # Set session cookie (secure in production)
     response.set_cookie(
         key="session_token",
         value=token,
         httponly=True,
-        max_age=86400,  # 24 hours
+        max_age=86400,
         samesite="lax"
     )
     
@@ -207,24 +279,32 @@ async def api_login(credentials: HTTPBasicCredentials = Depends(security)):
 
 @app.get("/change-password", response_class=HTMLResponse)
 async def change_password_page(request: Request):
-    """Password change page (forced on first login)"""
+    """Password change page"""
     return templates.TemplateResponse("change_password.html", {"request": request})
 
 @app.post("/api/change-password")
 async def api_change_password(
     request: Request,
-    current_password: str,
-    new_password: str,
-    confirm_password: str
+    current_password: str = None,
+    new_password: str = None,
+    confirm_password: str = None
 ):
     """Change password API"""
+    # Get data from request body
+    data = await request.json()
+    current_password = data.get("current_password")
+    new_password = data.get("new_password")
+    confirm_password = data.get("confirm_password")
+    
+    if not all([current_password, new_password, confirm_password]):
+        raise HTTPException(status_code=400, detail="All fields are required")
+    
     if new_password != confirm_password:
         raise HTTPException(status_code=400, detail="New passwords don't match")
     
     if len(new_password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
     
-    # Verify current password
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("SELECT password_hash, password_changed FROM users WHERE username = 'admin'")
@@ -233,7 +313,7 @@ async def api_change_password(
         if not result:
             raise HTTPException(status_code=500, detail="User not found")
         
-        stored_hash, password_changed = result
+        stored_hash = result["password_hash"]
         
         # Check current password
         if not secrets.compare_digest(current_password, stored_hash):
@@ -254,101 +334,54 @@ async def api_change_password(
 @app.get("/config", response_class=HTMLResponse)
 async def config_page(request: Request, session: Dict = Depends(verify_session_token)):
     """Configuration page"""
-    ai_config = config.get_ai_config()
-    communication_config = config.get_communication_config()
-    
     return templates.TemplateResponse(
         "config.html",
         {
             "request": request,
             "username": session["username"],
-            "ai_config": ai_config,
-            "communication_config": communication_config,
-            "available_models": config.get_available_models()
+            "ai_config": {
+                "provider": config.AI_DEFAULT_PROVIDER,
+                "deepseek_enabled": bool(config.DEEPSEEK_API_KEY),
+                "llama_enabled": bool(config.LLAMA_MODEL_PATH)
+            },
+            "communication_config": {
+                "whatsapp_enabled": config.WHATSAPP_ENABLED,
+                "telegram_enabled": config.TELEGRAM_ENABLED
+            },
+            "available_models": ["deepseek", "llama"]
         }
     )
-
-@app.post("/api/config/ai")
-async def update_ai_config(
-    request: Request,
-    ai_type: str,
-    api_key: Optional[str] = None,
-    model_path: Optional[str] = None,
-    model_name: Optional[str] = None
-):
-    """Update AI configuration"""
-    session = verify_session_token(request)
-    
-    if ai_type not in ["deepseek", "llama"]:
-        raise HTTPException(status_code=400, detail="Invalid AI type")
-    
-    config.update_ai_config(ai_type, {
-        "api_key": api_key,
-        "model_path": model_path,
-        "model_name": model_name,
-        "enabled": True
-    })
-    
-    return {"success": True, "message": f"{ai_type.capitalize()} configuration updated"}
-
-@app.post("/api/config/communication")
-async def update_communication_config(
-    request: Request,
-    platform: str,
-    enabled: bool,
-    config_data: Dict[str, Any]
-):
-    """Update communication platform configuration"""
-    session = verify_session_token(request)
-    
-    if platform not in ["whatsapp", "telegram"]:
-        raise HTTPException(status_code=400, detail="Invalid platform")
-    
-    config.update_communication_config(platform, {
-        "enabled": enabled,
-        **config_data
-    })
-    
-    return {"success": True, "message": f"{platform.capitalize()} configuration updated"}
 
 @app.get("/agents", response_class=HTMLResponse)
 async def agents_page(request: Request, session: Dict = Depends(verify_session_token)):
     """Agents monitoring page"""
-    agents = supervisor.get_agent_status()
+    agents = supervisor.get_agents() if supervisor else []
     
     return templates.TemplateResponse(
         "agents.html",
         {
             "request": request,
             "username": session["username"],
-            "agents": agents,
-            "agent_types": supervisor.get_agent_types()
+            "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
+            "agent_types": ["chat", "aggressive"]
         }
     )
 
 @app.get("/api/agents/status")
 async def get_agents_status(request: Request):
-    """Get real-time agent status (WebSocket compatible)"""
+    """Get real-time agent status"""
     session = verify_session_token(request)
     
-    agents = supervisor.get_agent_status()
-    return {"agents": agents, "timestamp": datetime.now().isoformat()}
-
-@app.post("/api/agents/{agent_type}/restart")
-async def restart_agent(agent_type: str, request: Request):
-    """Restart a specific agent"""
-    session = verify_session_token(request)
-    
-    success = supervisor.restart_agent(agent_type)
-    if not success:
-        raise HTTPException(status_code=404, detail=f"Agent type '{agent_type}' not found")
-    
-    return {"success": True, "message": f"Agent '{agent_type}' restarted"}
+    agents = supervisor.get_agents() if supervisor else []
+    return {
+        "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
+        "timestamp": datetime.now().isoformat()
+    }
 
 @app.get("/tasks", response_class=HTMLResponse)
 async def tasks_page(request: Request, session: Dict = Depends(verify_session_token)):
     """Tasks monitoring page"""
-    tasks = supervisor.get_all_tasks(limit=50)
+    tasks = supervisor.get_tasks(limit=50) if supervisor else []
     
     return templates.TemplateResponse(
         "tasks.html",
@@ -356,7 +389,7 @@ async def tasks_page(request: Request, session: Dict = Depends(verify_session_to
             "request": request,
             "username": session["username"],
             "tasks": tasks,
-            "task_priorities": TaskPriority.__members__
+            "task_priorities": {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3, "BACKGROUND": 4}
         }
     )
 
@@ -365,15 +398,28 @@ async def get_recent_tasks(request: Request, limit: int = 20):
     """Get recent tasks"""
     session = verify_session_token(request)
     
-    tasks = supervisor.get_recent_tasks(limit=limit)
-    return {"tasks": tasks}
+    tasks = supervisor.get_tasks(limit=limit) if supervisor else []
+    
+    # Convert to dict for JSON serialization
+    tasks_data = []
+    for task in tasks:
+        tasks_data.append({
+            "id": task.id,
+            "type": task.type,
+            "status": task.status.value,
+            "priority": task.priority.name,
+            "created_at": task.created_at.isoformat() if task.created_at else None,
+            "completed_at": task.completed_at.isoformat() if task.completed_at else None
+        })
+    
+    return {"tasks": tasks_data}
 
 @app.post("/api/tasks/{task_id}/cancel")
 async def cancel_task(task_id: str, request: Request):
     """Cancel a running task"""
     session = verify_session_token(request)
     
-    success = supervisor.cancel_task(task_id)
+    success = supervisor.cancel_task(task_id) if supervisor else False
     if not success:
         raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found or not cancellable")
     
@@ -382,7 +428,7 @@ async def cancel_task(task_id: str, request: Request):
 @app.get("/logs", response_class=HTMLResponse)
 async def logs_page(request: Request, session: Dict = Depends(verify_session_token)):
     """System logs page"""
-    log_files = config.get_log_files()
+    log_files = ["swarmia.log", "gateway.log", "supervisor.log"]
     
     return templates.TemplateResponse(
         "logs.html",
@@ -397,9 +443,6 @@ async def logs_page(request: Request, session: Dict = Depends(verify_session_tok
 async def get_log_file(log_file: str, request: Request, lines: int = 100):
     """Get log file contents"""
     session = verify_session_token(request)
-    
-    if log_file not in config.get_log_files():
-        raise HTTPException(status_code=404, detail="Log file not found")
     
     log_path = config.LOGS_DIR / log_file
     if not log_path.exists():
@@ -417,26 +460,16 @@ async def get_system_stats(request: Request):
     """Get system statistics"""
     session = verify_session_token(request)
     
+    supervisor_stats = supervisor.get_stats() if supervisor else {}
+    
     return {
-        "dashboard_stats": dashboard_stats,
-        "supervisor_stats": supervisor.get_stats(),
-        "config_stats": config.get_stats(),
+        "dashboard_stats": {
+            "uptime": str(datetime.now() - dashboard_stats["system_uptime"]).split('.')[0],
+            "messages_processed": dashboard_stats["messages_processed"],
+            "errors_count": dashboard_stats["errors_count"]
+        },
+        "supervisor_stats": supervisor_stats,
         "timestamp": datetime.now().isoformat()
-    }
-
-@app.post("/api/system/restart")
-async def restart_system(request: Request):
-    """Restart SwarmIA system (soft restart)"""
-    session = verify_session_token(request)
-    
-    # This would trigger a system restart in production
-    # For now, just log and return success
-    config.log_system_event("SYSTEM_RESTART", f"Restart initiated by {session['username']}")
-    
-    return {
-        "success": True,
-        "message": "System restart initiated",
-        "restart_time": datetime.now().isoformat()
     }
 
 @app.get("/api/health")
@@ -445,20 +478,16 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "swarmia-dashboard",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "timestamp": datetime.now().isoformat(),
-        "uptime": str(datetime.now() - dashboard_stats["system_uptime"]),
-        "active_sessions": len(active_sessions),
-        "active_tasks": supervisor.get_active_task_count()
+        "uptime": str(datetime.now() - dashboard_stats["system_uptime"]).split('.')[0],
+        "active_sessions": len(active_sessions)
     }
 
 @app.get("/api/network/info")
 async def network_info():
     """Get network information for external access"""
-    import socket
-    
     try:
-        # Get local IP
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
@@ -468,12 +497,16 @@ async def network_info():
     
     return {
         "local_ip": local_ip,
-        "port": config.DASHBOARD_PORT,
-        "dashboard_url": f"http://{local_ip}:{config.DASHBOARD_PORT}",
-        "api_url": f"http://{local_ip}:{config.DASHBOARD_PORT}/api",
+        "port": config.SERVER_PORT,
+        "dashboard_url": f"http://{local_ip}:{config.SERVER_PORT}",
+        "api_url": f"http://{local_ip}:{config.SERVER_PORT}/api",
         "external_access_required": True,
-        "instructions": f"Access dashboard at http://{local_ip}:{config.DASHBOARD_PORT} or http://YOUR_EXTERNAL_IP:{config.DASHBOARD_PORT}"
+        "instructions": f"Access dashboard at http://{local_ip}:{config.SERVER_PORT}"
     }
+
+# ============================================================
+# Startup/Shutdown Events
+# ============================================================
 
 @app.on_event("startup")
 async def startup_event():
@@ -484,37 +517,58 @@ async def startup_event():
     # Create default admin user if not exists
     with get_db_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT OR IGNORE INTO users (username, password_hash, password_changed, created_at)
-            VALUES ('admin', 'admin', 0, datetime('now'))
-        """)
-        conn.commit()
+        cursor.execute("SELECT COUNT(*) as count FROM users WHERE username = 'admin'")
+        result = cursor.fetchone()
+        
+        if result["count"] == 0:
+            cursor.execute(
+                "INSERT INTO users (username, password_hash, password_changed) VALUES (?, ?, ?)",
+                ("admin", "admin", 0)
+            )
+            conn.commit()
     
     # Start session cleanup task
     asyncio.create_task(cleanup_sessions())
     
     # Log startup
-    config.log_system_event("DASHBOARD_START", f"Dashboard started on port {config.DASHBOARD_PORT}")
+    print(f"✅ Dashboard initialized on port {config.SERVER_PORT}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    config.log_system_event("DASHBOARD_STOP", "Dashboard shutting down")
+    print("🛑 Dashboard shutting down")
+
+# ============================================================
+# Main Entry Point
+# ============================================================
 
 def main():
     """Main entry point for dashboard server"""
-    print(f"🚀 Starting SwarmIA Dashboard on port {config.DASHBOARD_PORT}")
-    print(f"📊 Dashboard URL: http://localhost:{config.DASHBOARD_PORT}")
-    print(f"🔧 API Docs: http://localhost:{config.DASHBOARD_PORT}/api/docs")
-    print(f"👤 Default credentials: admin / admin (change required on first login)")
-    print(f"📡 Network info: http://localhost:{config.DASHBOARD_PORT}/api/network/info")
+    port = config.SERVER_PORT
+    
+    print(f"""
+╔══════════════════════════════════════════════════════════════╗
+║                 🚀 SwarmIA Dashboard Server                  ║
+║                         v2.0.0                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+📊 Dashboard URL: http://localhost:{port}
+📡 Network: http://{config.get_local_ip()}:{port}
+🔧 API Docs: http://localhost:{port}/api/docs (debug mode)
+👤 Default credentials: admin / admin (change on first login)
+
+💡 Keyboard shortcuts:
+   Ctrl+Shift+T - Cambiar tema
+   Ctrl+Shift+E - Exportar historial
+   Ctrl+Shift+V - Comandos de voz
+""")
     
     uvicorn.run(
-        "server:app",
-        host="0.0.0.0",  # Listen on all interfaces
-        port=config.DASHBOARD_PORT,
-        reload=config.DEBUG,
-        log_level="info" if config.DEBUG else "warning"
+        "src.ui.server:app",
+        host="0.0.0.0",
+        port=port,
+        reload=config.SERVER_DEBUG,
+        log_level="info" if config.SERVER_DEBUG else "warning"
     )
 
 
