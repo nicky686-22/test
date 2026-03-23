@@ -4,21 +4,40 @@
 
 set -e
 
-echo "🚀 SwarmIA Bootstrap Installer"
+# Colores
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+echo -e "${BLUE}🚀 SwarmIA Bootstrap Installer${NC}"
 echo "==============================="
 echo ""
 
-# Download the full installer
+# Verificar curl
+if ! command -v curl >/dev/null 2>&1; then
+    echo -e "${RED}[!] curl not found. Please install curl.${NC}"
+    exit 1
+fi
+
+# Descargar el instalador completo
 echo "📥 Downloading SwarmIA installer..."
-curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/full_installer.sh -o /tmp/swarmia_full_installer.sh
+TEMP_SCRIPT="/tmp/swarmia_full_installer.sh"
 
-# Make it executable
-chmod +x /tmp/swarmia_full_installer.sh
+curl -sSL https://raw.githubusercontent.com/nicky686-22/test/main/scripts/full_installer.sh -o "$TEMP_SCRIPT"
 
-echo "✅ Installer downloaded"
+# Validar descarga
+if [[ ! -s "$TEMP_SCRIPT" ]]; then
+    echo -e "${RED}[!] Download failed. File is empty.${NC}"
+    exit 1
+fi
+
+chmod +x "$TEMP_SCRIPT"
+
+echo -e "${GREEN}✅ Installer downloaded${NC}"
 echo ""
 echo "🔧 Running interactive installer..."
 echo ""
 
-# Run the installer
-sudo /tmp/swarmia_full_installer.sh
+# Ejecutar de forma segura
+bash "$TEMP_SCRIPT"
