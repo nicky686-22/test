@@ -265,7 +265,18 @@ async def network_info():
 # Protected Routes (require authentication)
 # ============================================================
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
+async def root(request: Request):
+    """Root endpoint - redirect to dashboard or login"""
+    # Verificar si hay sesión
+    token = request.cookies.get("session_token")
+    if token and token in active_sessions:
+        # Redirigir al dashboard
+        return RedirectResponse(url="/dashboard", status_code=303)
+    # Redirigir al login
+    return RedirectResponse(url="/login", status_code=303)
+
+@app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, session: Dict = Depends(verify_session_token)):
     """Main dashboard page"""
     supervisor_stats = supervisor.get_stats() if supervisor else {}
