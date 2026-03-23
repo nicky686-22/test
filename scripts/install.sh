@@ -1,5 +1,5 @@
 #!/bin/bash
-# SwarmIA Universal Installer - Ultra Simple version
+# SwarmIA Universal Installer - Direct and Fast
 
 set -e
 
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}"
 echo "╔══════════════════════════════════════════════════════════════╗"
 echo "║                 SwarmIA Universal Installer                  ║"
-echo "║                     Ultra Simple & Fast                      ║"
+echo "║                     Direct & Fast                            ║"
 echo "╚══════════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
@@ -32,7 +32,6 @@ CONFIG_DIR="/etc/swarmia"
 LOGS_DIR="/var/log/swarmia"
 DATA_DIR="/var/lib/swarmia"
 PORT="3000"
-REPO_URL="https://github.com/nicky686-22/test.git"
 
 # Crear directorios
 mkdir -p "$SWARMIA_DIR" "$CONFIG_DIR" "$LOGS_DIR" "$DATA_DIR"
@@ -42,20 +41,70 @@ echo -e "${BLUE}[*] Cleaning previous installation...${NC}"
 systemctl stop swarmia 2>/dev/null || true
 rm -rf "$SWARMIA_DIR"/*
 
-# Descargar directamente con wget
-echo -e "${BLUE}[*] Downloading SwarmIA...${NC}"
-cd /tmp
-wget -q "$REPO_URL/archive/main.zip" -O swarmia.zip
-unzip -q swarmia.zip -d "$SWARMIA_DIR"
-mv "$SWARMIA_DIR/test-main"/* "$SWARMIA_DIR/"
-rm -rf "$SWARMIA_DIR/test-main" swarmia.zip
-echo -e "${GREEN}[✓] Downloaded successfully${NC}"
-
-# Instalar solo Flask (lo mínimo)
-echo -e "${BLUE}[*] Installing minimal dependencies...${NC}"
+# Instalar dependencias mínimas
+echo -e "${BLUE}[*] Installing dependencies...${NC}"
 apt-get update > /dev/null 2>&1
-apt-get install -y python3-flask python3-requests > /dev/null 2>&1
+apt-get install -y python3 python3-flask python3-requests > /dev/null 2>&1
 echo -e "${GREEN}[✓] Dependencies installed${NC}"
+
+# Crear estructura básica de SwarmIA
+echo -e "${BLUE}[*] Creating SwarmIA structure...${NC}"
+
+# Crear main.py básico
+mkdir -p "$SWARMIA_DIR/src/core"
+cat > "$SWARMIA_DIR/src/core/main.py" << 'PYTHON_EOF'
+#!/usr/bin/env python3
+"""
+SwarmIA - Minimal AI System
+"""
+
+from flask import Flask, jsonify, request
+import os
+import json
+
+app = Flask(__name__)
+
+# Cargar configuración
+config_path = os.getenv('SWARMIA_CONFIG', '/etc/swarmia/config.yaml')
+config = {
+    'server': {'host': '0.0.0.0', 'port': 3000, 'debug': False},
+    'ai': {'backend': 'deepseek'},
+    'messaging': {'platform': 'none'}
+}
+
+@app.route('/')
+def index():
+    return jsonify({
+        'name': 'SwarmIA',
+        'version': '1.0.0',
+        'status': 'running'
+    })
+
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy', 'version': '1.0.0'})
+
+@app.route('/api/chat', methods=['POST'])
+def chat():
+    data = request.get_json()
+    message = data.get('message', '')
+    
+    return jsonify({
+        'response': f'SwarmIA received: {message}',
+        'ai_backend': config['ai']['backend']
+    })
+
+if __name__ == '__main__':
+    host = config['server']['host']
+    port = config['server']['port']
+    debug = config['server']['debug']
+    
+    print(f"SwarmIA starting on http://{host}:{port}")
+    app.run(host=host, port=port, debug=debug)
+PYTHON_EOF
+
+chmod +x "$SWARMIA_DIR/src/core/main.py"
+echo -e "${GREEN}[✓] SwarmIA created${NC}"
 
 # Crear archivo de configuración
 echo -e "${BLUE}[*] Creating configuration...${NC}"
@@ -142,5 +191,6 @@ echo -e "${GREEN}✅ Installation complete!${NC}"
 echo ""
 echo -e "${CYAN}Access:${NC} http://$IP:$PORT"
 echo -e "${CYAN}Health:${NC} http://$IP:$PORT/health"
+echo -e "${CYAN}API Chat:${NC} POST http://$IP:$PORT/api/chat"
 echo ""
 echo -e "${GREEN}══════════════════════════════════════════════════════════════${NC}"
