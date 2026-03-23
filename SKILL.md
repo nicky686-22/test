@@ -1,6 +1,6 @@
 # SwarmIA - Sistema de Asistentes IA Distribuidos
 
-Sistema de asistentes IA con procesamiento por prioridades, múltiples proveedores de IA y dashboard elegante.
+Sistema de asistentes IA con procesamiento por prioridades, múltiples proveedores de IA Nicky68622
 
 ### Descripción
 
