@@ -1,3 +1,4 @@
+
 #!/bin/bash
 # SwarmIA Core Installer - Versión Estable con manejo de errores
 
@@ -14,6 +15,7 @@ echo -e "${CYAN}[*] Iniciando instalación de SwarmIA Core...${NC}"
 echo ""
 
 INSTALL_DIR="/opt/swarmia"
+PYTHON_VERSION=""
 
 # ============================================
 # FUNCIÓN: Verificar versión de Python
