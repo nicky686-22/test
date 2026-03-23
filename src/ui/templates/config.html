@@ -1004,4 +1004,263 @@
             toggleWhatsAppConfig(this.checked);
         });
         
-        document.getElementById('telegramEnabled').addEventListener
+        document.getElementById('telegramEnabled').addEventListener('change', function() {
+            toggleTelegramConfig(this.checked);
+        });
+        
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabId = this.getAttribute('data-tab');
+                
+                // Update active tab button
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show selected tab content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+                document.getElementById(`tab-${tabId}`).style.display = 'block';
+            });
+        });
+        
+        // Load config on page load
+        loadConfig();
+        
+        // Check for unsaved changes before leaving
+        let formChanged = false;
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('change', () => { formChanged = true; });
+        });
+        
+        window.addEventListener('beforeunload', (e) => {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+        
+        // Save indicator for each section
+        function markSaved(section) {
+            const btn = document.querySelector(`[onclick*="${section}"]`);
+            if (btn) {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Saved!';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }
+        }
+        
+        // Override save functions to mark saved
+        const originalSaveAI = saveAIConfig;
+        window.saveAIConfig = async function() {
+            await originalSaveAI();
+            markSaved('saveAIConfig');
+            formChanged = false;
+        };
+        
+        const originalSaveWhatsApp = saveWhatsAppConfig;
+        window.saveWhatsAppConfig = async function() {
+            await originalSaveWhatsApp();
+            markSaved('saveWhatsAppConfig');
+            formChanged = false;
+        };
+        
+        const originalSaveTelegram = saveTelegramConfig;
+        window.saveTelegramConfig = async function() {
+            await originalSaveTelegram();
+            markSaved('saveTelegramConfig');
+            formChanged = false;
+        };
+        
+        const originalSaveSystem = saveSystemConfig;
+        window.saveSystemConfig = async function() {
+            await originalSaveSystem();
+            markSaved('saveSystemConfig');
+            formChanged = false;
+        };
+        
+        // Helper to show loading state
+        function setButtonLoading(btnId, isLoading) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                if (isLoading) {
+                    btn.dataset.originalText = btn.innerHTML;
+                    btn.innerHTML = '<span class="spinner"></span> Loading...';
+                    btn.disabled = true;
+                } else {
+                    btn.innerHTML = btn.dataset.originalText || btn.innerHTML;
+                    btn.disabled = false;
+                }
+            }
+        }
+        
+        // Export configuration as JSON
+        async function exportConfig() {
+            try {
+                const response = await fetch('/api/config/export');
+                if (response.ok) {
+                    const data = await response.json();
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `swarmia_config_${new Date().toISOString().slice(0,19)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showAlert('Configuration exported successfully!', 'success');
+                }
+            } catch (error) {
+                showAlert('Error exporting configuration', 'error');
+            }
+        }
+        
+        // Import configuration
+        async function importConfig() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = async (event) => {
+                    try {
+                        const config = JSON.parse(event.target.result);
+                        const response = await fetch('/api/config/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(config)
+                        });
+                        
+                        if (response.ok) {
+                            showAlert('Configuration imported successfully! Reloading...', 'success');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            throw new Error('Import failed');
+                        }
+                    } catch (error) {
+                        showAlert('Invalid configuration file', 'error');
+                    }
+                };
+                reader.readAsText(file);
+            };
+            input.click();
+        }
+        
+        // Add export/import buttons to page
+        function addExportImportButtons() {
+            const container = document.querySelector('.page-header');
+            if (container) {
+                const btnGroup = document.createElement('div');
+                btnGroup.style.marginTop = '16px';
+                btnGroup.style.display = 'flex';
+                btnGroup.style.gap = '12px';
+                btnGroup.innerHTML = `
+                    <button class="btn-secondary" onclick="exportConfig()">
+                        <i class="fas fa-download"></i> Export Config
+                    </button>
+                    <button class="btn-secondary" onclick="importConfig()">
+                        <i class="fas fa-upload"></i> Import Config
+                    </button>
+                `;
+                container.appendChild(btnGroup);
+            }
+        }
+        
+        // Add restart service button to system tab
+        function addRestartButton() {
+            const systemTab = document.getElementById('tab-system');
+            if (systemTab) {
+                const restartCard = document.createElement('div');
+                restartCard.className = 'config-card';
+                restartCard.style.marginTop = '24px';
+                restartCard.style.borderColor = 'var(--warning)';
+                restartCard.innerHTML = `
+                    <h2><i class="fas fa-power-off"></i> Service Management</h2>
+                    <div class="description">Restart SwarmIA services to apply changes</div>
+                    <div class="form-actions">
+                        <button class="btn-primary" onclick="restartService()" style="background: linear-gradient(90deg, #f59e0b, #d97706);">
+                            <i class="fas fa-sync-alt"></i> Restart SwarmIA
+                        </button>
+                        <button class="btn-secondary btn-danger" onclick="restartAndReboot()">
+                            <i class="fas fa-redo-alt"></i> Restart & Reboot
+                        </button>
+                    </div>
+                `;
+                systemTab.appendChild(restartCard);
+            }
+        }
+        
+        // Restart service
+        async function restartService() {
+            if (confirm('Restart SwarmIA services? This will temporarily interrupt the dashboard and agents.')) {
+                showAlert('Restarting SwarmIA services...', 'warning');
+                try {
+                    const response = await fetch('/api/system/restart', { method: 'POST' });
+                    if (response.ok) {
+                        showAlert('Restart initiated. Dashboard will reconnect shortly.', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 5000);
+                    } else {
+                        throw new Error('Restart failed');
+                    }
+                } catch (error) {
+                    showAlert('Error restarting services', 'error');
+                }
+            }
+        }
+        
+        // Restart and reboot system
+        async function restartAndReboot() {
+            if (confirm('WARNING: This will restart the entire system! All services will be interrupted. Continue?')) {
+                showAlert('System reboot initiated...', 'warning');
+                try {
+                    const response = await fetch('/api/system/reboot', { method: 'POST' });
+                    if (response.ok) {
+                        showAlert('System is rebooting. Dashboard will reconnect in a few minutes.', 'success');
+                    } else {
+                        throw new Error('Reboot failed');
+                    }
+                } catch (error) {
+                    showAlert('Error initiating reboot', 'error');
+                }
+            }
+        }
+        
+        // Add version info
+        function addVersionInfo() {
+            const container = document.querySelector('.container');
+            if (container) {
+                const versionBar = document.createElement('div');
+                versionBar.style.marginTop = '32px';
+                versionBar.style.padding = '16px';
+                versionBar.style.textAlign = 'center';
+                versionBar.style.borderTop = '1px solid var(--border)';
+                versionBar.style.color = 'var(--text-secondary)';
+                versionBar.style.fontSize = '12px';
+                versionBar.innerHTML = `
+                    <i class="fas fa-code-branch"></i> SwarmIA v2.0.0 | 
+                    <i class="fas fa-heart" style="color: #ef4444;"></i> Enhanced AI Assistant |
+                    <i class="fas fa-shield-alt"></i> Secure by default
+                `;
+                container.appendChild(versionBar);
+            }
+        }
+        
+        // Initialize all UI enhancements
+        addExportImportButtons();
+        addRestartButton();
+        addVersionInfo();
+        
+        // Log that config page is ready
+        console.log('Configuration page loaded successfully');
+    </script>
+</body>
+</html>
