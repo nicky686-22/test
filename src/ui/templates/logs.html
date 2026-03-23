@@ -33,58 +33,135 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.5;
+            display: flex;
         }
         
-        /* Header */
-        .header {
+        /* ============================================================
+           MENÚ LATERAL
+        ============================================================ */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-logo h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--info));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .sidebar-logo p {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .sidebar-nav {
+            flex: 1;
+            padding: 0 12px;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        
+        .nav-item:hover {
+            background: rgba(79, 70, 229, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            font-size: 18px;
+        }
+        
+        .nav-item span {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-x: auto;
+        }
+        
+        /* Header superior */
+        .top-header {
             background: var(--bg-secondary);
             border-bottom: 1px solid var(--border);
             padding: 0 24px;
             height: 64px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-end;
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 99;
         }
         
-        .logo {
+        .user-info {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
         
-        .logo i {
-            font-size: 28px;
-            color: var(--primary);
-        }
-        
-        .logo h1 {
+        .user-info i {
             font-size: 20px;
-            font-weight: 600;
+            color: var(--text-secondary);
         }
         
-        .logo span {
-            font-size: 12px;
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
             color: var(--text-secondary);
-            margin-left: 8px;
-        }
-        
-        .back-link {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 8px;
+            cursor: pointer;
             transition: all 0.2s;
         }
         
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-primary);
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+            color: var(--error);
         }
         
         /* Container */
@@ -416,6 +493,19 @@
         
         /* Responsive */
         @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar-logo h2, .sidebar-logo p, .nav-item span {
+                display: none;
+            }
+            .nav-item {
+                justify-content: center;
+                padding: 12px;
+            }
+            .nav-item i {
+                margin: 0;
+            }
             .container { padding: 16px; }
             .filters-bar { flex-direction: column; align-items: stretch; }
             .filters-group { flex-direction: column; }
@@ -491,99 +581,139 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            <i class="fas fa-robot"></i>
-            <h1>SwarmIA <span>v2.0</span></h1>
+    <!-- Menú Lateral -->
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <h2><i class="fas fa-robot"></i> SwarmIA</h2>
+            <p>Sistema de Agentes IA</p>
         </div>
-        <a href="/" class="back-link">
-            <i class="fas fa-arrow-left"></i>
-            Volver al Dashboard
-        </a>
+        <div class="sidebar-nav">
+            <a href="/" class="nav-item" id="nav-dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="/agents" class="nav-item" id="nav-agents">
+                <i class="fas fa-microchip"></i>
+                <span>Agentes</span>
+            </a>
+            <a href="/tasks" class="nav-item" id="nav-tasks">
+                <i class="fas fa-tasks"></i>
+                <span>Tareas</span>
+            </a>
+            <a href="/chat" class="nav-item" id="nav-chat">
+                <i class="fas fa-comment-dots"></i>
+                <span>Chat</span>
+            </a>
+            <a href="/config" class="nav-item" id="nav-config">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+            </a>
+            <a href="/logs" class="nav-item active" id="nav-logs">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Logs</span>
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <i class="fas fa-code-branch"></i> v2.0.0
+        </div>
     </div>
     
-    <div class="container">
-        <div class="page-header">
-            <div>
-                <h1><i class="fas fa-clipboard-list"></i> Logs del Sistema</h1>
-                <p>Visualización y análisis de registros del sistema</p>
+    <!-- Contenido Principal -->
+    <div class="main-content">
+        <!-- Header Superior -->
+        <div class="top-header">
+            <div class="user-info">
+                <i class="fas fa-user-circle"></i>
+                <span id="username">admin</span>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
             </div>
-            <button class="btn-icon" onclick="refreshLogs()" id="refreshBtn">
-                <i class="fas fa-sync-alt"></i> Actualizar
-            </button>
         </div>
         
-        <!-- Archivos de Log -->
-        <div class="file-tabs" id="fileTabs">
-            <button class="file-tab active" data-file="swarmia">swarmia.log</button>
-            <button class="file-tab" data-file="gateway">gateway.log</button>
-            <button class="file-tab" data-file="supervisor">supervisor.log</button>
-            <button class="file-tab" data-file="agents">agents.log</button>
-        </div>
-        
-        <!-- Filtros -->
-        <div class="filters-bar">
-            <div class="filters-group">
-                <select id="levelFilter" class="filter-select" onchange="filterLogs()">
-                    <option value="all">Todos los niveles</option>
-                    <option value="INFO">INFO</option>
-                    <option value="ERROR">ERROR</option>
-                    <option value="WARNING">WARNING</option>
-                    <option value="DEBUG">DEBUG</option>
-                    <option value="SUCCESS">SUCCESS</option>
-                </select>
-                
-                <input type="text" id="searchInput" class="filter-input" placeholder="Buscar en logs..." onkeyup="filterLogs()">
-                
-                <select id="linesLimit" class="filter-select" onchange="loadCurrentLog()">
-                    <option value="100">Últimas 100 líneas</option>
-                    <option value="500">Últimas 500 líneas</option>
-                    <option value="1000" selected>Últimas 1000 líneas</option>
-                    <option value="5000">Últimas 5000 líneas</option>
-                </select>
+        <div class="container">
+            <div class="page-header">
+                <div>
+                    <h1><i class="fas fa-clipboard-list"></i> Logs del Sistema</h1>
+                    <p>Visualización y análisis de registros del sistema</p>
+                </div>
+                <button class="btn-icon" onclick="refreshLogs()" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
             </div>
             
-            <div class="filters-group">
-                <div class="auto-refresh">
-                    <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()">
-                    <label for="autoRefreshCheckbox">Auto-refrescar (5s)</label>
-                </div>
-                <button class="btn-icon" onclick="clearFilters()">
-                    <i class="fas fa-times"></i> Limpiar
-                </button>
-                <button class="btn-icon" onclick="downloadLog()">
-                    <i class="fas fa-download"></i> Descargar
-                </button>
-                <button class="btn-icon" onclick="showExportModal()">
-                    <i class="fas fa-filter"></i> Exportar filtrado
-                </button>
+            <!-- Archivos de Log -->
+            <div class="file-tabs" id="fileTabs">
+                <button class="file-tab active" data-file="swarmia">swarmia.log</button>
+                <button class="file-tab" data-file="gateway">gateway.log</button>
+                <button class="file-tab" data-file="supervisor">supervisor.log</button>
+                <button class="file-tab" data-file="agents">agents.log</button>
             </div>
-        </div>
-        
-        <!-- Contenedor de Logs -->
-        <div class="log-container">
-            <div class="log-header">
-                <div class="log-info">
-                    <span><i class="fas fa-file-alt"></i> Archivo: <code id="currentFile">swarmia.log</code></span>
-                    <span><i class="fas fa-database"></i> Líneas: <span id="lineCount">0</span></span>
-                    <span><i class="fas fa-filter"></i> Mostrando: <span id="displayCount">0</span></span>
+            
+            <!-- Filtros -->
+            <div class="filters-bar">
+                <div class="filters-group">
+                    <select id="levelFilter" class="filter-select" onchange="filterLogs()">
+                        <option value="all">Todos los niveles</option>
+                        <option value="INFO">INFO</option>
+                        <option value="ERROR">ERROR</option>
+                        <option value="WARNING">WARNING</option>
+                        <option value="DEBUG">DEBUG</option>
+                        <option value="SUCCESS">SUCCESS</option>
+                    </select>
+                    
+                    <input type="text" id="searchInput" class="filter-input" placeholder="Buscar en logs..." onkeyup="filterLogs()">
+                    
+                    <select id="linesLimit" class="filter-select" onchange="loadCurrentLog()">
+                        <option value="100">Últimas 100 líneas</option>
+                        <option value="500">Últimas 500 líneas</option>
+                        <option value="1000" selected>Últimas 1000 líneas</option>
+                        <option value="5000">Últimas 5000 líneas</option>
+                    </select>
                 </div>
-                <div class="log-actions">
-                    <button class="btn-icon" onclick="scrollToTop()" title="Ir al inicio">
-                        <i class="fas fa-arrow-up"></i>
+                
+                <div class="filters-group">
+                    <div class="auto-refresh">
+                        <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()">
+                        <label for="autoRefreshCheckbox">Auto-refrescar (5s)</label>
+                    </div>
+                    <button class="btn-icon" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Limpiar
                     </button>
-                    <button class="btn-icon" onclick="scrollToBottom()" title="Ir al final">
-                        <i class="fas fa-arrow-down"></i>
+                    <button class="btn-icon" onclick="downloadLog()">
+                        <i class="fas fa-download"></i> Descargar
                     </button>
-                    <button class="btn-icon" onclick="copyLogs()" title="Copiar logs">
-                        <i class="fas fa-copy"></i>
+                    <button class="btn-icon" onclick="showExportModal()">
+                        <i class="fas fa-filter"></i> Exportar filtrado
                     </button>
                 </div>
             </div>
-            <div id="logContent" class="log-content">
-                <div class="empty-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <p>Cargando logs...</p>
+            
+            <!-- Contenedor de Logs -->
+            <div class="log-container">
+                <div class="log-header">
+                    <div class="log-info">
+                        <span><i class="fas fa-file-alt"></i> Archivo: <code id="currentFile">swarmia.log</code></span>
+                        <span><i class="fas fa-database"></i> Líneas: <span id="lineCount">0</span></span>
+                        <span><i class="fas fa-filter"></i> Mostrando: <span id="displayCount">0</span></span>
+                    </div>
+                    <div class="log-actions">
+                        <button class="btn-icon" onclick="scrollToTop()" title="Ir al inicio">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                        <button class="btn-icon" onclick="scrollToBottom()" title="Ir al final">
+                            <i class="fas fa-arrow-down"></i>
+                        </button>
+                        <button class="btn-icon" onclick="copyLogs()" title="Copiar logs">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="logContent" class="log-content">
+                    <div class="empty-state">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Cargando logs...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -633,7 +763,6 @@
         let filteredLogs = [];
         let autoRefreshInterval = null;
         
-        // Archivos disponibles
         const logFiles = {
             swarmia: { name: 'swarmia.log', display: 'SwarmIA Principal' },
             gateway: { name: 'gateway.log', display: 'Gateway de Comunicación' },
@@ -641,64 +770,44 @@
             agents: { name: 'agents.log', display: 'Agentes' }
         };
         
-        // Cargar logs del archivo actual
+        // Cargar logs del archivo actual (SIN MOCK DATA)
         async function loadCurrentLog() {
             showLoading(true);
             const lines = document.getElementById('linesLimit').value;
             
             try {
                 const response = await fetch(`/api/logs/${currentFile}?lines=${lines}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    rawLogs = data.lines || [];
-                    applyFilters();
-                    updateFileInfo();
-                } else {
-                    // Datos de ejemplo para desarrollo
-                    rawLogs = getMockLogs();
-                    applyFilters();
-                    updateFileInfo();
-                    showAlert('Usando datos de ejemplo - API no disponible', 'warning');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-            } catch (error) {
-                console.error('Error cargando logs:', error);
-                rawLogs = getMockLogs();
+                const data = await response.json();
+                rawLogs = data.lines || [];
                 applyFilters();
                 updateFileInfo();
-                showAlert('Error cargando logs', 'error');
+            } catch (error) {
+                console.error('Error cargando logs:', error);
+                rawLogs = [];
+                applyFilters();
+                updateFileInfo();
+                showAlert('Error al cargar logs: ' + error.message, 'error');
+                
+                // Mostrar error en el contenedor
+                const container = document.getElementById('logContent');
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Error al cargar logs</p>
+                        <small>${error.message}</small>
+                        <button class="btn-icon" onclick="refreshLogs()" style="margin-top: 16px;">
+                            <i class="fas fa-sync-alt"></i> Reintentar
+                        </button>
+                    </div>
+                `;
             } finally {
                 showLoading(false);
             }
         }
         
-        // Datos de ejemplo para desarrollo
-        function getMockLogs() {
-            const logs = [];
-            const levels = ['INFO', 'ERROR', 'WARNING', 'DEBUG', 'SUCCESS'];
-            const messages = [
-                'Sistema iniciado correctamente',
-                'Agente de chat conectado',
-                'Mensaje procesado desde Telegram',
-                'Error de conexión con WhatsApp',
-                'Tarea completada exitosamente',
-                'Supervisor: nueva tarea asignada',
-                'Gateway: mensaje recibido',
-                'DeepSeek API: respuesta generada',
-                'Advertencia: alta carga en el sistema',
-                'Usuario autenticado correctamente'
-            ];
-            
-            for (let i = 0; i < 200; i++) {
-                const date = new Date(Date.now() - (i * 60000));
-                const level = levels[Math.floor(Math.random() * levels.length)];
-                const message = messages[Math.floor(Math.random() * messages.length)];
-                logs.push(`${date.toISOString()} - ${level} - [swarmia] - ${message} (ID: ${Math.floor(Math.random() * 10000)})`);
-            }
-            
-            return logs.reverse();
-        }
-        
-        // Aplicar filtros
         function applyFilters() {
             const level = document.getElementById('levelFilter').value;
             const search = document.getElementById('searchInput').value.toLowerCase();
@@ -713,7 +822,6 @@
             updateStats();
         }
         
-        // Renderizar logs
         function renderLogs() {
             const container = document.getElementById('logContent');
             const search = document.getElementById('searchInput').value;
@@ -743,36 +851,22 @@
             }).join('');
         }
         
-        // Parsear línea de log
         function parseLogLine(line) {
-            const patterns = [
-                { regex: /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/i, level: 'INFO' },
-                { regex: /INFO/i, level: 'INFO' },
-                { regex: /ERROR/i, level: 'ERROR' },
-                { regex: /WARNING|WARN/i, level: 'WARNING' },
-                { regex: /DEBUG/i, level: 'DEBUG' },
-                { regex: /SUCCESS/i, level: 'SUCCESS' }
-            ];
-            
             let timestamp = '';
             let level = 'INFO';
             
-            // Extraer timestamp
             const timestampMatch = line.match(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/);
             if (timestampMatch) timestamp = timestampMatch[0];
             
-            // Extraer nivel
-            for (const pattern of patterns) {
-                if (pattern.regex.test(line)) {
-                    level = pattern.level;
-                    break;
-                }
-            }
+            if (line.includes('ERROR')) level = 'ERROR';
+            else if (line.includes('WARNING')) level = 'WARNING';
+            else if (line.includes('DEBUG')) level = 'DEBUG';
+            else if (line.includes('SUCCESS')) level = 'SUCCESS';
+            else if (line.includes('INFO')) level = 'INFO';
             
             return { timestamp, level, message: line };
         }
         
-        // Resaltar texto
         function highlightText(text, search) {
             if (!search) return escapeHtml(text);
             const regex = new RegExp(`(${escapeRegex(search)})`, 'gi');
@@ -789,7 +883,6 @@
             return div.innerHTML;
         }
         
-        // Actualizar estadísticas
         function updateStats() {
             document.getElementById('lineCount').textContent = rawLogs.length;
             document.getElementById('displayCount').textContent = filteredLogs.length;
@@ -800,9 +893,7 @@
             document.getElementById('currentFile').textContent = fileInfo.name;
         }
         
-        function filterLogs() {
-            applyFilters();
-        }
+        function filterLogs() { applyFilters(); }
         
         function clearFilters() {
             document.getElementById('levelFilter').value = 'all';
@@ -814,9 +905,7 @@
             const btn = document.getElementById('refreshBtn');
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
             btn.disabled = true;
-            
             await loadCurrentLog();
-            
             setTimeout(() => {
                 btn.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar';
                 btn.disabled = false;
@@ -824,8 +913,7 @@
         }
         
         function scrollToTop() {
-            const container = document.getElementById('logContent');
-            container.scrollTop = 0;
+            document.getElementById('logContent').scrollTop = 0;
         }
         
         function scrollToBottom() {
@@ -902,7 +990,6 @@
             a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-            
             closeExportModal();
             showAlert(`Logs exportados como ${filename}`, 'success');
         }
@@ -910,9 +997,7 @@
         function toggleAutoRefresh() {
             const checkbox = document.getElementById('autoRefreshCheckbox');
             if (checkbox.checked) {
-                autoRefreshInterval = setInterval(() => {
-                    loadCurrentLog();
-                }, 5000);
+                autoRefreshInterval = setInterval(() => loadCurrentLog(), 5000);
                 showAlert('Auto-refresco activado (cada 5 segundos)', 'success');
             } else {
                 if (autoRefreshInterval) {
@@ -927,7 +1012,8 @@
             const container = document.getElementById('alertContainer');
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
-            alert.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'}"></i> ${message}`;
+            const icon = type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle';
+            alert.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
             container.appendChild(alert);
             setTimeout(() => alert.remove(), 3000);
         }
@@ -936,40 +1022,36 @@
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
         }
         
+        function logout() {
+            document.cookie = "session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            window.location.href = '/login';
+        }
+        
         // Cambiar archivo de log
         document.querySelectorAll('.file-tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const file = this.getAttribute('data-file');
                 currentFile = file;
-                
-                // Actualizar tabs activos
                 document.querySelectorAll('.file-tab').forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                
-                // Cargar nuevo archivo
                 loadCurrentLog();
             });
         });
         
-        // Tecla Enter para buscar
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') filterLogs();
         });
         
-        // Cerrar modal con ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeExportModal();
         });
         
-        // Click fuera del modal
         document.getElementById('exportModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('exportModal')) closeExportModal();
         });
         
-        // Inicializar
         loadCurrentLog();
         
-        // Limpiar al salir
         window.addEventListener('beforeunload', () => {
             if (autoRefreshInterval) clearInterval(autoRefreshInterval);
         });
