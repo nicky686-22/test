@@ -1,6 +1,6 @@
 #!/bin/bash
 # SwarmIA Core Installer
-# Lógica real de instalación
+# Lógica real de instalación con entorno virtual
 
 set -e
 
@@ -19,20 +19,25 @@ echo ""
 echo -e "${BLUE}[*] Verificando dependencias...${NC}"
 
 MISSING=""
-for cmd in python3 git pip3; do
+for cmd in python3 git; do
     if ! command -v $cmd >/dev/null 2>&1; then
         MISSING="$MISSING $cmd"
     fi
 done
+
+# Verificar python3-venv
+if ! python3 -c "import venv" 2>/dev/null; then
+    MISSING="$MISSING python3-venv"
+fi
 
 if [[ -n "$MISSING" ]]; then
     echo -e "${YELLOW}[!] Instalando dependencias faltantes:${NC}$MISSING"
     
     if command -v apt >/dev/null 2>&1; then
         apt update
-        apt install -y python3 python3-pip git
+        apt install -y python3 python3-venv git
     elif command -v yum >/dev/null 2>&1; then
-        yum install -y python3 python3-pip git
+        yum install -y python3 python3-virtualenv git
     else
         echo -e "${RED}[!] No se pudo instalar dependencias automáticamente${NC}"
         exit 1
@@ -56,13 +61,21 @@ else
     git clone https://github.com/nicky686-22/test.git "$INSTALL_DIR"
 fi
 
-# Instalar dependencias Python
+cd "$INSTALL_DIR"
+
+# Crear entorno virtual
+echo -e "${BLUE}[*] Creando entorno virtual...${NC}"
+python3 -m venv venv
+
+# Instalar dependencias Python en el entorno virtual
 echo -e "${BLUE}[*] Instalando dependencias Python...${NC}"
+"$INSTALL_DIR/venv/bin/pip" install --upgrade pip
+
 if [[ -f "$INSTALL_DIR/requirements.txt" ]]; then
-    pip3 install -r "$INSTALL_DIR/requirements.txt"
+    "$INSTALL_DIR/venv/bin/pip" install -r "$INSTALL_DIR/requirements.txt"
 else
     echo -e "${YELLOW}[!] requirements.txt no encontrado, instalando mínimos...${NC}"
-    pip3 install flask flask-socketio python-dotenv requests
+    "$INSTALL_DIR/venv/bin/pip" install flask flask-socketio python-dotenv requests
 fi
 
 # Crear directorios adicionales
@@ -101,10 +114,13 @@ fi
 
 # Archivo .env por defecto
 if [[ ! -f "$INSTALL_DIR/.env" ]]; then
+    echo -e "${BLUE}[*] Creando archivo .env...${NC}"
     cat > "$INSTALL_DIR/.env" << 'EOF'
 FLASK_SECRET_KEY=changeme
 ADMIN_USER=admin
 ADMIN_PASSWORD_HASH=8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918
+SWARMIA_HOST=0.0.0.0
+SWARMIA_PORT=8080
 EOF
 fi
 
@@ -125,7 +141,8 @@ After=network.target
 Type=simple
 User=$(logname 2>/dev/null || echo $SUDO_USER || echo "root")
 WorkingDirectory=$INSTALL_DIR
-ExecStart=/usr/bin/python3 $INSTALL_DIR/src/main.py
+Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/main.py
 Restart=always
 RestartSec=10
 
@@ -135,13 +152,14 @@ EOF
 
     systemctl daemon-reload
     systemctl enable swarmia.service
-    echo -e "${GREEN}[✓] Servicio creado${NC}"
+    systemctl start swarmia.service
+    echo -e "${GREEN}[✓] Servicio creado e iniciado${NC}"
 fi
 
 # Script de arranque
 cat > /usr/local/bin/swarmia << 'EOF'
 #!/bin/bash
-cd /opt/swarmia && python3 src/main.py "$@"
+cd /opt/swarmia && /opt/swarmia/venv/bin/python src/main.py "$@"
 EOF
 chmod +x /usr/local/bin/swarmia
 
@@ -155,8 +173,9 @@ echo -e "${CYAN}🌐 Dashboard: ${YELLOW}http://localhost:8080${NC}"
 echo -e "${CYAN}🔑 Credenciales: ${YELLOW}admin / admin${NC}"
 echo ""
 echo -e "${BLUE}Comandos útiles:${NC}"
-echo -e "  ${GREEN}swarmia${NC}              - Iniciar manualmente"
-echo -e "  ${GREEN}systemctl start swarmia${NC}  - Iniciar servicio"
-echo -e "  ${GREEN}systemctl status swarmia${NC} - Ver estado"
+echo -e "  ${GREEN}swarmia${NC}                   - Iniciar manualmente"
+echo -e "  ${GREEN}systemctl start swarmia${NC}   - Iniciar servicio"
+echo -e "  ${GREEN}systemctl status swarmia${NC}  - Ver estado"
+echo -e "  ${GREEN}journalctl -u swarmia -f${NC}  - Ver logs en tiempo real"
 echo ""
 echo -e "${YELLOW}[!] IMPORTANTE: Cambia las credenciales en el primer acceso${NC}"
