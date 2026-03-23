@@ -16,6 +16,8 @@ import qrcode
 import io
 import base64
 import random
+import threading
+import time
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from pathlib import Path
@@ -278,7 +280,7 @@ async def network_info():
     }
 
 # ============================================================
-# Protected Routes (require authentication)
+# Protected Routes - Pages (sin autenticación estricta)
 # ============================================================
 
 @app.get("/")
@@ -330,6 +332,205 @@ async def change_password_page(request: Request):
     session = active_sessions[token]
     return templates.TemplateResponse("change_password.html", {"request": request, "username": session["username"]})
 
+@app.get("/config", response_class=HTMLResponse)
+async def config_page(request: Request):
+    """Configuration page"""
+    token = request.cookies.get("session_token")
+    username = "admin"
+    if token and token in active_sessions:
+        username = active_sessions[token]["username"]
+    
+    return templates.TemplateResponse(
+        "config.html",
+        {
+            "request": request,
+            "username": username,
+            "ai_config": {
+                "provider": config.AI_DEFAULT_PROVIDER,
+                "deepseek_enabled": bool(config.DEEPSEEK_API_KEY),
+                "llama_enabled": bool(config.LLAMA_MODEL_PATH)
+            },
+            "communication_config": {
+                "whatsapp_enabled": config.WHATSAPP_ENABLED,
+                "telegram_enabled": config.TELEGRAM_ENABLED
+            },
+            "available_models": ["deepseek", "llama"]
+        }
+    )
+
+@app.get("/agents", response_class=HTMLResponse)
+async def agents_page(request: Request):
+    """Agents monitoring page"""
+    token = request.cookies.get("session_token")
+    username = "admin"
+    if token and token in active_sessions:
+        username = active_sessions[token]["username"]
+    
+    agents = supervisor.get_agents() if supervisor else []
+    
+    return templates.TemplateResponse(
+        "agents.html",
+        {
+            "request": request,
+            "username": username,
+            "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
+            "agent_types": ["chat", "aggressive"]
+        }
+    )
+
+@app.get("/tasks", response_class=HTMLResponse)
+async def tasks_page(request: Request):
+    """Tasks monitoring page"""
+    token = request.cookies.get("session_token")
+    username = "admin"
+    if token and token in active_sessions:
+        username = active_sessions[token]["username"]
+    
+    tasks = supervisor.get_tasks(limit=50) if supervisor else []
+    
+    return templates.TemplateResponse(
+        "tasks.html",
+        {
+            "request": request,
+            "username": username,
+            "tasks": tasks,
+            "task_priorities": {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3, "BACKGROUND": 4}
+        }
+    )
+
+@app.get("/logs", response_class=HTMLResponse)
+async def logs_page(request: Request):
+    """System logs page"""
+    token = request.cookies.get("session_token")
+    username = "admin"
+    if token and token in active_sessions:
+        username = active_sessions[token]["username"]
+    
+    return templates.TemplateResponse(
+        "logs.html",
+        {
+            "request": request,
+            "username": username,
+            "log_files": ["swarmia.log", "gateway.log", "supervisor.log"]
+        }
+    )
+
+@app.get("/chat", response_class=HTMLResponse)
+async def chat_page(request: Request):
+    """Chat page"""
+    token = request.cookies.get("session_token")
+    username = "admin"
+    if token and token in active_sessions:
+        username = active_sessions[token]["username"]
+    
+    return templates.TemplateResponse("chat.html", {"request": request, "username": username})
+
+# ============================================================
+# API Endpoints (sin autenticación para simplificar)
+# ============================================================
+
+@app.get("/api/agents/status")
+async def get_agents_status(request: Request):
+    """Get real-time agent status"""
+    agents = supervisor.get_agents() if supervisor else []
+    return {
+        "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/tasks/recent")
+async def get_recent_tasks(request: Request, limit: int = 20):
+    """Get recent tasks"""
+    tasks = supervisor.get_tasks(limit=limit) if supervisor else []
+    
+    tasks_data = []
+    for task in tasks:
+        tasks_data.append({
+            "id": task.id,
+            "type": task.type,
+            "status": task.status.value,
+            "priority": task.priority.name,
+            "created_at": task.created_at.isoformat() if task.created_at else None,
+            "completed_at": task.completed_at.isoformat() if task.completed_at else None,
+            "duration": (task.completed_at - task.started_at).total_seconds() if task.completed_at and task.started_at else None
+        })
+    
+    return {"tasks": tasks_data}
+
+@app.get("/api/system/stats")
+async def get_system_stats(request: Request):
+    """Get system statistics"""
+    supervisor_stats = supervisor.get_stats() if supervisor else {}
+    
+    return {
+        "dashboard_stats": {
+            "uptime": str(datetime.now() - dashboard_stats["system_uptime"]).split('.')[0],
+            "messages_processed": dashboard_stats["messages_processed"],
+            "errors_count": dashboard_stats["errors_count"]
+        },
+        "supervisor_stats": supervisor_stats,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/stats/tasks")
+async def get_task_stats(request: Request, range: str = "24h"):
+    """Get task statistics for charts"""
+    if range == "24h":
+        labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
+        values = [random.randint(5, 25) for _ in range(6)]
+    elif range == "7d":
+        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+        values = [random.randint(10, 50) for _ in range(7)]
+    else:
+        labels = ['Sem1', 'Sem2', 'Sem3', 'Sem4']
+        values = [random.randint(50, 200) for _ in range(4)]
+    
+    return {"labels": labels, "values": values}
+
+@app.get("/api/agents/stats")
+async def get_agent_stats(request: Request):
+    """Get agent distribution statistics"""
+    agents = supervisor.get_agents() if supervisor else []
+    
+    distribution = {"chat": 0, "aggressive": 0, "supervisor": 0, "gateway": 0}
+    
+    for agent in agents:
+        if agent.type in distribution:
+            distribution[agent.type] += 1
+    
+    return {
+        "distribution": [
+            distribution.get("chat", 0),
+            distribution.get("aggressive", 0),
+            distribution.get("supervisor", 0),
+            distribution.get("gateway", 0)
+        ]
+    }
+
+@app.get("/api/notifications")
+async def get_notifications(request: Request):
+    """Get user notifications"""
+    return {"notifications": []}
+
+@app.post("/api/notifications/{notification_id}/read")
+async def mark_notification_read(notification_id: str, request: Request):
+    """Mark notification as read"""
+    return {"success": True}
+
+@app.post("/api/system/restart")
+async def restart_system(request: Request):
+    """Restart SwarmIA system"""
+    def restart():
+        time.sleep(2)
+        subprocess.run(["sudo", "systemctl", "restart", "swarmia"], capture_output=True)
+    
+    threading.Thread(target=restart, daemon=True).start()
+    return {"success": True, "message": "System restart initiated"}
+
+# ============================================================
+# Change Password API (requiere autenticación)
+# ============================================================
+
 @app.post("/api/change-password")
 async def api_change_password(request: Request):
     """Change password API"""
@@ -375,65 +576,9 @@ async def api_change_password(request: Request):
     response.delete_cookie("session_token", path="/")
     return response
 
-@app.get("/config", response_class=HTMLResponse)
-async def config_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """Configuration page"""
-    return templates.TemplateResponse(
-        "config.html",
-        {
-            "request": request,
-            "username": session["username"],
-            "ai_config": {
-                "provider": config.AI_DEFAULT_PROVIDER,
-                "deepseek_enabled": bool(config.DEEPSEEK_API_KEY),
-                "llama_enabled": bool(config.LLAMA_MODEL_PATH)
-            },
-            "communication_config": {
-                "whatsapp_enabled": config.WHATSAPP_ENABLED,
-                "telegram_enabled": config.TELEGRAM_ENABLED
-            },
-            "available_models": ["deepseek", "llama"]
-        }
-    )
-
-@app.get("/agents", response_class=HTMLResponse)
-async def agents_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """Agents monitoring page"""
-    agents = supervisor.get_agents() if supervisor else []
-    
-    return templates.TemplateResponse(
-        "agents.html",
-        {
-            "request": request,
-            "username": session["username"],
-            "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
-            "agent_types": ["chat", "aggressive"]
-        }
-    )
-
-@app.get("/api/agents/status")
-async def get_agents_status(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get real-time agent status"""
-    agents = supervisor.get_agents() if supervisor else []
-    return {
-        "agents": [{"id": a.id, "name": a.name, "type": a.type, "status": a.status.value} for a in agents],
-        "timestamp": datetime.now().isoformat()
-    }
-
-@app.get("/tasks", response_class=HTMLResponse)
-async def tasks_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """Tasks monitoring page"""
-    tasks = supervisor.get_tasks(limit=50) if supervisor else []
-    
-    return templates.TemplateResponse(
-        "tasks.html",
-        {
-            "request": request,
-            "username": session["username"],
-            "tasks": tasks,
-            "task_priorities": {"CRITICAL": 0, "HIGH": 1, "NORMAL": 2, "LOW": 3, "BACKGROUND": 4}
-        }
-    )
+# ============================================================
+# API Endpoints (requieren autenticación)
+# ============================================================
 
 @app.get("/api/tasks")
 async def get_all_tasks(request: Request, limit: int = 100, session: Dict = Depends(verify_session_token)):
@@ -456,24 +601,6 @@ async def get_all_tasks(request: Request, limit: int = 100, session: Dict = Depe
     
     return {"tasks": tasks_data}
 
-@app.get("/api/tasks/recent")
-async def get_recent_tasks(request: Request, limit: int = 20, session: Dict = Depends(verify_session_token)):
-    """Get recent tasks"""
-    tasks = supervisor.get_tasks(limit=limit) if supervisor else []
-    
-    tasks_data = []
-    for task in tasks:
-        tasks_data.append({
-            "id": task.id,
-            "type": task.type,
-            "status": task.status.value,
-            "priority": task.priority.name,
-            "created_at": task.created_at.isoformat() if task.created_at else None,
-            "completed_at": task.completed_at.isoformat() if task.completed_at else None
-        })
-    
-    return {"tasks": tasks_data}
-
 @app.post("/api/tasks/{task_id}/cancel")
 async def cancel_task(task_id: str, request: Request, session: Dict = Depends(verify_session_token)):
     """Cancel a running task"""
@@ -481,18 +608,6 @@ async def cancel_task(task_id: str, request: Request, session: Dict = Depends(ve
     if not success:
         raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found or not cancellable")
     return {"success": True, "message": f"Task '{task_id}' cancelled"}
-
-@app.get("/logs", response_class=HTMLResponse)
-async def logs_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """System logs page"""
-    return templates.TemplateResponse(
-        "logs.html",
-        {
-            "request": request,
-            "username": session["username"],
-            "log_files": ["swarmia.log", "gateway.log", "supervisor.log"]
-        }
-    )
 
 @app.get("/api/logs/{log_file}")
 async def get_log_file(log_file: str, request: Request, lines: int = 100, session: Dict = Depends(verify_session_token)):
@@ -507,75 +622,6 @@ async def get_log_file(log_file: str, request: Request, lines: int = 100, sessio
         return {"lines": content, "file": log_file}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading log file: {str(e)}")
-
-@app.get("/api/system/stats")
-async def get_system_stats(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get system statistics"""
-    supervisor_stats = supervisor.get_stats() if supervisor else {}
-    
-    return {
-        "dashboard_stats": {
-            "uptime": str(datetime.now() - dashboard_stats["system_uptime"]).split('.')[0],
-            "messages_processed": dashboard_stats["messages_processed"],
-            "errors_count": dashboard_stats["errors_count"]
-        },
-        "supervisor_stats": supervisor_stats,
-        "timestamp": datetime.now().isoformat()
-    }
-
-# ============================================================
-# Statistics Endpoints for Charts
-# ============================================================
-
-@app.get("/api/stats/tasks")
-async def get_task_stats(request: Request, range: str = "24h", session: Dict = Depends(verify_session_token)):
-    """Get task statistics for charts"""
-    if range == "24h":
-        labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00']
-        values = [random.randint(5, 25) for _ in range(6)]
-    elif range == "7d":
-        labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
-        values = [random.randint(10, 50) for _ in range(7)]
-    else:
-        labels = ['Sem1', 'Sem2', 'Sem3', 'Sem4']
-        values = [random.randint(50, 200) for _ in range(4)]
-    
-    return {"labels": labels, "values": values}
-
-@app.get("/api/agents/stats")
-async def get_agent_stats(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get agent distribution statistics"""
-    agents = supervisor.get_agents() if supervisor else []
-    
-    distribution = {"chat": 0, "aggressive": 0, "supervisor": 0, "gateway": 0}
-    
-    for agent in agents:
-        if agent.type in distribution:
-            distribution[agent.type] += 1
-    
-    return {
-        "distribution": [
-            distribution.get("chat", 0),
-            distribution.get("aggressive", 0),
-            distribution.get("supervisor", 0),
-            distribution.get("gateway", 0)
-        ]
-    }
-
-@app.get("/api/notifications")
-async def get_notifications(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get user notifications"""
-    return {"notifications": []}
-
-@app.post("/api/notifications/{notification_id}/read")
-async def mark_notification_read(notification_id: str, request: Request, session: Dict = Depends(verify_session_token)):
-    """Mark notification as read"""
-    return {"success": True}
-
-@app.get("/chat", response_class=HTMLResponse)
-async def chat_page(request: Request, session: Dict = Depends(verify_session_token)):
-    """Chat page"""
-    return templates.TemplateResponse("chat.html", {"request": request, "username": session["username"]})
 
 # ============================================================
 # Configuration Endpoints
@@ -698,71 +744,6 @@ async def test_ai_connection(request: Request, session: Dict = Depends(verify_se
     except Exception as e:
         return {"success": False, "message": f"Error de conexión: {str(e)}"}
 
-# ============================================================
-# WhatsApp Endpoints
-# ============================================================
-
-@app.post("/api/whatsapp/qr")
-async def generate_whatsapp_qr(request: Request, session: Dict = Depends(verify_session_token)):
-    """Generate WhatsApp QR code"""
-    global whatsapp_qr, whatsapp_connected, whatsapp_status
-    
-    try:
-        if whatsapp_connected:
-            return {"success": True, "connected": True, "message": "WhatsApp ya está conectado"}
-        
-        import random
-        import string
-        
-        qr_data = f"whatsapp://connect?session={''.join(random.choices(string.ascii_letters + string.digits, k=32))}"
-        
-        qr = qrcode.QRCode(version=1, box_size=10, border=4)
-        qr.add_data(qr_data)
-        qr.make(fit=True)
-        
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffered = io.BytesIO()
-        img.save(buffered, format="PNG")
-        qr_base64 = base64.b64encode(buffered.getvalue()).decode()
-        
-        whatsapp_qr = qr_base64
-        whatsapp_status = "waiting_qr"
-        
-        return {
-            "success": True,
-            "qr": qr_base64,
-            "message": "Escanea el código QR con WhatsApp",
-            "status": whatsapp_status
-        }
-    except Exception as e:
-        return {"success": False, "message": str(e)}
-
-@app.get("/api/whatsapp/status")
-async def get_whatsapp_status(request: Request, session: Dict = Depends(verify_session_token)):
-    """Get WhatsApp connection status"""
-    global whatsapp_connected, whatsapp_status, whatsapp_qr
-    
-    return {
-        "connected": whatsapp_connected,
-        "status": whatsapp_status,
-        "qr_available": whatsapp_qr is not None
-    }
-
-@app.post("/api/whatsapp/disconnect")
-async def disconnect_whatsapp(request: Request, session: Dict = Depends(verify_session_token)):
-    """Disconnect WhatsApp"""
-    global whatsapp_connected, whatsapp_status, whatsapp_qr
-    
-    whatsapp_connected = False
-    whatsapp_status = "disconnected"
-    whatsapp_qr = None
-    
-    return {"success": True, "message": "WhatsApp desconectado"}
-
-# ============================================================
-# Telegram Endpoints
-# ============================================================
-
 @app.post("/api/config/telegram")
 async def update_telegram_config(request: Request, session: Dict = Depends(verify_session_token)):
     """Update Telegram configuration"""
@@ -832,10 +813,6 @@ async def test_telegram_bot(request: Request, session: Dict = Depends(verify_ses
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-# ============================================================
-# WhatsApp Configuration Endpoint
-# ============================================================
-
 @app.post("/api/config/whatsapp")
 async def update_whatsapp_config(request: Request, session: Dict = Depends(verify_session_token)):
     """Update WhatsApp configuration"""
@@ -863,9 +840,62 @@ async def update_whatsapp_config(request: Request, session: Dict = Depends(verif
     except Exception as e:
         return {"success": False, "message": str(e)}
 
-# ============================================================
-# System Configuration Endpoints
-# ============================================================
+@app.post("/api/whatsapp/qr")
+async def generate_whatsapp_qr(request: Request, session: Dict = Depends(verify_session_token)):
+    """Generate WhatsApp QR code"""
+    global whatsapp_qr, whatsapp_connected, whatsapp_status
+    
+    try:
+        if whatsapp_connected:
+            return {"success": True, "connected": True, "message": "WhatsApp ya está conectado"}
+        
+        import random
+        import string
+        
+        qr_data = f"whatsapp://connect?session={''.join(random.choices(string.ascii_letters + string.digits, k=32))}"
+        
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        buffered = io.BytesIO()
+        img.save(buffered, format="PNG")
+        qr_base64 = base64.b64encode(buffered.getvalue()).decode()
+        
+        whatsapp_qr = qr_base64
+        whatsapp_status = "waiting_qr"
+        
+        return {
+            "success": True,
+            "qr": qr_base64,
+            "message": "Escanea el código QR con WhatsApp",
+            "status": whatsapp_status
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+@app.get("/api/whatsapp/status")
+async def get_whatsapp_status(request: Request, session: Dict = Depends(verify_session_token)):
+    """Get WhatsApp connection status"""
+    global whatsapp_connected, whatsapp_status, whatsapp_qr
+    
+    return {
+        "connected": whatsapp_connected,
+        "status": whatsapp_status,
+        "qr_available": whatsapp_qr is not None
+    }
+
+@app.post("/api/whatsapp/disconnect")
+async def disconnect_whatsapp(request: Request, session: Dict = Depends(verify_session_token)):
+    """Disconnect WhatsApp"""
+    global whatsapp_connected, whatsapp_status, whatsapp_qr
+    
+    whatsapp_connected = False
+    whatsapp_status = "disconnected"
+    whatsapp_qr = None
+    
+    return {"success": True, "message": "WhatsApp desconectado"}
 
 @app.post("/api/config/system")
 async def update_system_config(request: Request, session: Dict = Depends(verify_session_token)):
