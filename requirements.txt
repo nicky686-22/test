@@ -11,7 +11,7 @@ uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-dotenv==1.0.0
 click==8.1.7
-pyyaml==6.0
+pyyaml>=6.0.1
 
 # ============================================================
 # AI/ML Models
