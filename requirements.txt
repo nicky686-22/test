@@ -12,6 +12,8 @@ python-dotenv==1.0.0
 click==8.1.7
 pyyaml>=6.0.1
 
+
+pip install requests beautifulsoup4 aiohttp
 pip install schedule
 pip install psutil
 # ============================================================
