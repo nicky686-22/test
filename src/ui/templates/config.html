@@ -1406,8 +1406,8 @@
                 
                 if (response.ok && data.success) {
                     showAlert('✅ Configuración IA guardada correctamente', 'success');
-                    // 🔄 RECARGAR LA CONFIGURACIÓN DESPUÉS DE GUARDAR
-                    await loadConfig();
+                    formChanged = false;  // ← RESETEAR EL FLAG AQUÍ
+                    await loadConfig();   // Recargar para sincronizar
                 } else {
                     throw new Error(data.message || 'Error al guardar');
                 }
@@ -1737,7 +1737,7 @@
         // Inicializar
         loadConfig();
         
-        let formChanged = false;
+
         document.querySelectorAll('input, select, textarea').forEach(input => {
             input.addEventListener('change', () => { formChanged = true; });
         });
