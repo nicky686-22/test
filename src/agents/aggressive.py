@@ -14,7 +14,7 @@ import os
 import sys
 import time
 import json
-import logging          # <--- AGREGAR ESTA LÍNEA
+import logging
 import socket
 import ipaddress
 import threading
@@ -33,6 +33,11 @@ from collections import defaultdict
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 sys.path.insert(0, project_root)
+
+# Import base classes
+from src.core.agente import Agente, TipoAgente, ResultadoTarea, EstadoAgente
+from src.core.config import Config
+from src.core.supervisor import Supervisor, TaskPriority
 
 # Optional imports with fallbacks
 try:
@@ -56,9 +61,6 @@ try:
 except ImportError:
     CRYPTO_AVAILABLE = False
 
-from src.core.config import Config
-from src.core.supervisor import Supervisor, TaskPriority
-
 
 # ============================================================
 # Enums and Data Classes
@@ -66,11 +68,11 @@ from src.core.supervisor import Supervisor, TaskPriority
 
 class ScanIntensity(Enum):
     """Intensidad de escaneo"""
-    LIGHT = "light"      # Rápido, pocos puertos
-    NORMAL = "normal"    # Balanceado
-    AGGRESSIVE = "aggressive"  # Agresivo, muchos puertos
-    ULTRA = "ultra"      # Máximo, todos los puertos
-    STEALTH = "stealth"  # Modo sigiloso (evita detección)
+    LIGHT = "light"
+    NORMAL = "normal"
+    AGGRESSIVE = "aggressive"
+    ULTRA = "ultra"
+    STEALTH = "stealth"
 
 
 class AttackVector(Enum):
@@ -104,7 +106,7 @@ class Vulnerability:
     """Vulnerabilidad encontrada"""
     name: str
     cve_id: Optional[str]
-    severity: str  # CRITICAL, HIGH, MEDIUM, LOW
+    severity: str
     description: str
     affected_services: List[str]
     exploit_available: bool
@@ -140,10 +142,10 @@ DEFAULT_WORDLISTS = {
 
 
 # ============================================================
-# Ultra Aggressive Agent
+# Ultra Aggressive Agent (hereda de Agente)
 # ============================================================
 
-class AggressiveAgent:
+class AggressiveAgent(Agente):
     """
     ULTRA AGGRESSIVE Agent for advanced penetration testing
     ⚠️ CONTAINS OFFENSIVE SECURITY TOOLS ⚠️
@@ -157,14 +159,20 @@ class AggressiveAgent:
             supervisor: Supervisor instance
             config: Configuration object
         """
-        self.supervisor = supervisor
+        # Llamar al constructor de la clase base Agente
+        super().__init__(
+            id_agente="aggressive",
+            nombre="Agente Aggressive",
+            tipo=TipoAgente.AGGRESSIVE,
+            supervisor=supervisor,
+            version="2.0.0"
+        )
         self.config = config
-        self.logger = self._setup_logger()
         
         # Ultra aggressive configuration
         self.aggressive_config = {
             "enabled": False,
-            "mode": "normal",  # normal, aggressive, ultra, stealth
+            "mode": "normal",
             "intensity": ScanIntensity.NORMAL.value,
             "max_threads": 50,
             "timeout": 5,
@@ -179,7 +187,7 @@ class AggressiveAgent:
                 "normal": [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5432, 5900, 6379, 8080, 8443, 8888, 9200, 27017],
                 "aggressive": list(range(1, 1025)) + [3306, 3389, 5432, 5900, 6379, 8080, 8443, 8888, 9200, 27017, 50000],
                 "ultra": list(range(1, 65535)),
-                "stealth": [22, 80, 443, 8080, 8443]  # Puertos comunes, evita detección
+                "stealth": [22, 80, 443, 8080, 8443]
             },
             "ssh": {
                 "timeout": 10,
@@ -231,6 +239,9 @@ class AggressiveAgent:
         self.vulnerabilities: List[Vulnerability] = []
         self.exploit_results: List[ExploitResult] = []
         
+        # Registrar capacidades
+        self._registrar_capacidades()
+        
         self.logger.warning("=" * 70)
         self.logger.warning("⚠️ ULTRA AGGRESSIVE AGENT INITIALIZED ⚠️")
         self.logger.warning("This agent contains OFFENSIVE security tools")
@@ -239,6 +250,80 @@ class AggressiveAgent:
         
         # Check dependencies
         self._check_dependencies()
+    
+    def _registrar_capacidades(self):
+        """Registrar capacidades del agente"""
+        self.registrar_capacidad(
+            nombre="escanear_puertos",
+            descripcion="Escanea puertos abiertos en un objetivo",
+            parametros=["objetivo", "puertos"],
+            ejemplos=["escanear google.com", "nmap 192.168.1.1"],
+            nivel_riesgo="alto"
+        )
+        self.registrar_capacidad(
+            nombre="escanear_red",
+            descripcion="Escanea una red completa",
+            parametros=["red"],
+            ejemplos=["escanear red 192.168.1.0/24"],
+            nivel_riesgo="alto"
+        )
+        self.registrar_capacidad(
+            nombre="bruteforce_ssh",
+            descripcion="Ataque de fuerza bruta SSH",
+            parametros=["objetivo", "usuario"],
+            ejemplos=["probar ssh en 192.168.1.10"],
+            nivel_riesgo="critico"
+        )
+        self.registrar_capacidad(
+            nombre="detectar_vulnerabilidades",
+            descripcion="Detecta vulnerabilidades conocidas",
+            parametros=["objetivo"],
+            ejemplos=["buscar vulnerabilidades en localhost"],
+            nivel_riesgo="alto"
+        )
+    
+    async def ejecutar(self, tarea: Dict[str, Any]) -> ResultadoTarea:
+        """
+        Ejecuta una tarea - método requerido por la clase base Agente
+        """
+        descripcion = tarea.get("descripcion", "")
+        
+        if "puertos" in descripcion.lower() or "nmap" in descripcion.lower():
+            resultado = self.port_scan(self._extraer_objetivo(descripcion))
+            return ResultadoTarea(
+                exito=True,
+                datos=resultado,
+                metadatos={"tipo": "port_scan"}
+            )
+        elif "red" in descripcion.lower():
+            resultado = self.full_recon(self._extraer_objetivo(descripcion))
+            return ResultadoTarea(
+                exito=True,
+                datos=resultado,
+                metadatos={"tipo": "network_scan"}
+            )
+        elif "ssh" in descripcion.lower() and ("bruto" in descripcion.lower() or "fuerza" in descripcion.lower()):
+            resultado = self.bruteforce(self._extraer_objetivo(descripcion), "ssh")
+            return ResultadoTarea(
+                exito=resultado.get("success", False),
+                datos=resultado,
+                metadatos={"tipo": "ssh_bruteforce"}
+            )
+        elif "vulnerabilidad" in descripcion.lower() or "cve" in descripcion.lower():
+            resultado = self.vuln_scan(self._extraer_objetivo(descripcion))
+            return ResultadoTarea(
+                exito=True,
+                datos=resultado,
+                metadatos={"tipo": "vuln_scan"}
+            )
+        else:
+            return ResultadoTarea(exito=False, error="No sé cómo manejar esa tarea")
+    
+    def _extraer_objetivo(self, descripcion: str) -> str:
+        """Extrae el objetivo de la descripción"""
+        import re
+        match = re.search(r"(?:escanear|scan|nmap|red|ssh)\s+([^\s]+)", descripcion.lower())
+        return match.group(1) if match else "localhost"
     
     def _setup_logger(self) -> logging.Logger:
         """Setup logger"""
@@ -618,7 +703,7 @@ class AggressiveAgent:
         if not banner:
             return None
         
-        # Common version patterns
+        import re
         patterns = {
             "SSH": r"SSH-[\d\.]+-([^\s]+)",
             "Apache": r"Apache/([\d\.]+)",
@@ -626,7 +711,6 @@ class AggressiveAgent:
             "OpenSSH": r"OpenSSH[_\s]([\d\.]+)"
         }
         
-        import re
         for service_name, pattern in patterns.items():
             if service_name in banner or service_name.lower() in banner.lower():
                 match = re.search(pattern, banner, re.IGNORECASE)
@@ -646,7 +730,6 @@ class AggressiveAgent:
             Guessed operating system
         """
         try:
-            # Simple TTL-based fingerprinting
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(2)
             sock.connect((target, 80))
@@ -682,7 +765,6 @@ class AggressiveAgent:
         for service in services:
             port = service.get("port")
             service_name = service.get("service", "").lower()
-            version = service.get("version")
             
             # Check vulnerability database
             if port in self.vulnerability_db:
@@ -791,11 +873,9 @@ class AggressiveAgent:
             results["error"] = "paramiko not installed"
             return results
         
-        # Get wordlists
         usernames = [username] if username else self.aggressive_config["wordlists"]["usernames"]
         passwords = self.aggressive_config["wordlists"]["passwords"]
         
-        # Try common combinations first
         for user in usernames[:10]:
             for pwd in passwords[:50]:
                 results["attempts"] += 1
@@ -907,9 +987,6 @@ class AggressiveAgent:
             success=False,
             details={}
         )
-        
-        # Placeholder for actual exploits
-        # In production, this would integrate with Metasploit, custom exploits, etc.
         
         self.stats["successful_exploits"] += 1 if result.success else 0
         
@@ -1042,6 +1119,7 @@ class AggressiveAgent:
             worker.join(timeout=2)
         
         self._worker_threads.clear()
+        self.estado = EstadoAgente.DETENIDO
         self.logger.info("🔥 Ultra aggressive agent stopped")
 
 
