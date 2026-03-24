@@ -964,8 +964,8 @@ Sistema: {sys_uptime}
             # 1. PRIMERO BUSCAR UN AGENTE QUE PUEDA MANEJAR ESTA TAREA
             agente = None
             for agent in self.agents.values():
-                # Verificar por tipo de tarea en capacidades
-                if task.type in agent.capabilities:
+                # Usar la propiedad capabilities
+                if hasattr(agent, 'capabilities') and task.type in agent.capabilities:
                     agente = agent
                     break
                 # Verificar si el agente tiene método can_handle
