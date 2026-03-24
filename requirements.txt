@@ -14,15 +14,17 @@ pyyaml>=6.0.1
 beautifulsoup4 aiohttp
 
 
+pip install SpeechRecognition
+pip install pyttsx3
+pip install openai-whisper
+pip install gTTS
+pip install pyaudio
+
+# sudo apt-get install portaudio19-dev python3-pyaudio
 
 pip install chromadb
-
-
 pip install sentence-transformers
-
 pip install tiktoken
-
-# Para numpy (operaciones vectoriales)
 pip install numpy
 
 
