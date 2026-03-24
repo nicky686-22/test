@@ -1400,14 +1400,18 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                if (response.ok) {
-                    showAlert('Configuración IA guardada correctamente', 'success');
-                    currentConfig.ai = config;
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    showAlert('✅ Configuración IA guardada correctamente', 'success');
+                    // 🔄 RECARGAR LA CONFIGURACIÓN DESPUÉS DE GUARDAR
+                    await loadConfig();
                 } else {
-                    throw new Error('Error al guardar');
+                    throw new Error(data.message || 'Error al guardar');
                 }
             } catch (error) {
-                showAlert('Error guardando configuración IA', 'error');
+                console.error('Error:', error);
+                showAlert('❌ Error guardando configuración IA: ' + error.message, 'error');
             }
         }
         
