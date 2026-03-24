@@ -1221,10 +1221,9 @@ async def clear_chat_history(request: Request):
 # ============================================================
 # Startup/Shutdown Events
 # ============================================================
-
 @app.on_event("startup")
 async def startup_event():
-    """Initialize on startup"""
+    """Initialize on startup - Registra todos los agentes de SwarmIA"""
     global supervisor
     
     init_database()
@@ -1246,29 +1245,215 @@ async def startup_event():
         supervisor = create_supervisor(config)
         print("✅ Supervisor creado")
     
-    # Registrar agente de chat
+    # ============================================================
+    # REGISTRAR TODOS LOS AGENTES DE SWARMIA
+    # ============================================================
+    
+    print("\n" + "="*60)
+    print("📦 REGISTRANDO AGENTES DE SWARMIA")
+    print("="*60)
+    
+    # 1. AGENTE CHAT
     try:
         from src.agents.chat import create_chat_agent
-        
-        # Crear el agente
         chat_agent = create_chat_agent(supervisor, config)
-        print("✅ Chat agent creado")
-        
-        # REGISTRARLO EXPLÍCITAMENTE en el supervisor
         supervisor.register_agent(chat_agent)
-        print("✅ Chat agent registrado en supervisor")
-        
-        # Mostrar estadísticas del supervisor
-        stats = supervisor.get_stats()
-        print(f"📊 Agentes registrados: {stats.get('agents_registered', 0)}")
-        
+        print("✅ [1/20] Agente Chat registrado")
     except Exception as e:
-        print(f"❌ Error registrando agente de chat: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"❌ [1/20] Error Agente Chat: {e}")
+    
+    # 2. AGENTE SISTEMA
+    try:
+        from src.agents.sistema import crear_agente_sistema
+        sistema_agent = crear_agente_sistema(supervisor, config)
+        supervisor.register_agent(sistema_agent)
+        print("✅ [2/20] Agente Sistema registrado")
+    except Exception as e:
+        print(f"⚠️ [2/20] Agente Sistema no disponible: {e}")
+    
+    # 3. AGENTE ARCHIVOS
+    try:
+        from src.agents.archivos import crear_agente_archivos
+        archivos_agent = crear_agente_archivos(supervisor, config)
+        supervisor.register_agent(archivos_agent)
+        print("✅ [3/20] Agente Archivos registrado")
+    except Exception as e:
+        print(f"⚠️ [3/20] Agente Archivos no disponible: {e}")
+    
+    # 4. AGENTE RED
+    try:
+        from src.agents.red import crear_agente_red
+        red_agent = crear_agente_red(supervisor, config)
+        supervisor.register_agent(red_agent)
+        print("✅ [4/20] Agente Red registrado")
+    except Exception as e:
+        print(f"⚠️ [4/20] Agente Red no disponible: {e}")
+    
+    # 5. AGENTE SEGURIDAD
+    try:
+        from src.agents.seguridad import crear_agente_seguridad
+        seguridad_agent = crear_agente_seguridad(supervisor, config)
+        supervisor.register_agent(seguridad_agent)
+        print("✅ [5/20] Agente Seguridad registrado")
+    except Exception as e:
+        print(f"⚠️ [5/20] Agente Seguridad no disponible: {e}")
+    
+    # 6. AGENTE AGGRESSIVE (Pentesting)
+    try:
+        from src.agents.aggressive import create_aggressive_agent
+        aggressive_agent = create_aggressive_agent(supervisor, config)
+        supervisor.register_agent(aggressive_agent)
+        aggressive_agent.start()
+        print("✅ [6/20] Agente Aggressive registrado")
+    except Exception as e:
+        print(f"⚠️ [6/20] Agente Aggressive no disponible: {e}")
+    
+    # 7. AGENTE SSH
+    try:
+        from src.agents.ssh import crear_agente_ssh
+        ssh_agent = crear_agente_ssh(supervisor, config)
+        supervisor.register_agent(ssh_agent)
+        print("✅ [7/20] Agente SSH registrado")
+    except Exception as e:
+        print(f"⚠️ [7/20] Agente SSH no disponible: {e}")
+    
+    # 8. AGENTE MONITOR
+    try:
+        from src.agents.monitor import crear_agente_monitor
+        monitor_agent = crear_agente_monitor(supervisor, config)
+        supervisor.register_agent(monitor_agent)
+        print("✅ [8/20] Agente Monitor registrado")
+    except Exception as e:
+        print(f"⚠️ [8/20] Agente Monitor no disponible: {e}")
+    
+    # 9. AGENTE PAQUETES
+    try:
+        from src.agents.paquetes import crear_agente_paquetes
+        paquetes_agent = crear_agente_paquetes(supervisor, config)
+        supervisor.register_agent(paquetes_agent)
+        print("✅ [9/20] Agente Paquetes registrado")
+    except Exception as e:
+        print(f"⚠️ [9/20] Agente Paquetes no disponible: {e}")
+    
+    # 10. AGENTE AUTOMATIZACION
+    try:
+        from src.agents.automatizacion import crear_agente_automatizacion
+        automatizacion_agent = crear_agente_automatizacion(supervisor, config)
+        supervisor.register_agent(automatizacion_agent)
+        print("✅ [10/20] Agente Automatización registrado")
+    except Exception as e:
+        print(f"⚠️ [10/20] Agente Automatización no disponible: {e}")
+    
+    # 11. AGENTE WORKFLOWS
+    try:
+        from src.agents.workflows import crear_agente_workflows
+        workflows_agent = crear_agente_workflows(supervisor, config)
+        supervisor.register_agent(workflows_agent)
+        print("✅ [11/20] Agente Workflows registrado")
+    except Exception as e:
+        print(f"⚠️ [11/20] Agente Workflows no disponible: {e}")
+    
+    # 12. AGENTE WEB
+    try:
+        from src.agents.web import crear_agente_web
+        web_agent = crear_agente_web(supervisor, config)
+        supervisor.register_agent(web_agent)
+        print("✅ [12/20] Agente Web registrado")
+    except Exception as e:
+        print(f"⚠️ [12/20] Agente Web no disponible: {e}")
+    
+    # 13. AGENTE BASE DE DATOS
+    try:
+        from src.agents.base_datos import crear_agente_base_datos
+        bd_agent = crear_agente_base_datos(supervisor, config)
+        supervisor.register_agent(bd_agent)
+        print("✅ [13/20] Agente Base de Datos registrado")
+    except Exception as e:
+        print(f"⚠️ [13/20] Agente Base de Datos no disponible: {e}")
+    
+    # 14. AGENTE NOTIFICACIONES
+    try:
+        from src.agents.notificaciones import crear_agente_notificaciones
+        notificaciones_agent = crear_agente_notificaciones(supervisor, config)
+        supervisor.register_agent(notificaciones_agent)
+        print("✅ [14/20] Agente Notificaciones registrado")
+    except Exception as e:
+        print(f"⚠️ [14/20] Agente Notificaciones no disponible: {e}")
+    
+    # 15. AGENTE CLOUD
+    try:
+        from src.agents.cloud import crear_agente_cloud
+        cloud_agent = crear_agente_cloud(supervisor, config)
+        supervisor.register_agent(cloud_agent)
+        print("✅ [15/20] Agente Cloud registrado")
+    except Exception as e:
+        print(f"⚠️ [15/20] Agente Cloud no disponible: {e}")
+    
+    # 16. AGENTE DOCKER
+    try:
+        from src.agents.docker import crear_agente_docker
+        docker_agent = crear_agente_docker(supervisor, config)
+        supervisor.register_agent(docker_agent)
+        print("✅ [16/20] Agente Docker registrado")
+    except Exception as e:
+        print(f"⚠️ [16/20] Agente Docker no disponible: {e}")
+    
+    # 17. AGENTE CI/CD
+    try:
+        from src.agents.ci_cd import crear_agente_ci_cd
+        cicd_agent = crear_agente_ci_cd(supervisor, config)
+        supervisor.register_agent(cicd_agent)
+        print("✅ [17/20] Agente CI/CD registrado")
+    except Exception as e:
+        print(f"⚠️ [17/20] Agente CI/CD no disponible: {e}")
+    
+    # 18. AGENTE API
+    try:
+        from src.agents.api import crear_agente_api
+        api_agent = crear_agente_api(supervisor, config)
+        supervisor.register_agent(api_agent)
+        print("✅ [18/20] Agente API registrado")
+    except Exception as e:
+        print(f"⚠️ [18/20] Agente API no disponible: {e}")
+    
+    # 19. AGENTE RAG (Memoria)
+    try:
+        from src.agents.rag import crear_agente_rag
+        rag_agent = crear_agente_rag(supervisor, config)
+        supervisor.register_agent(rag_agent)
+        print("✅ [19/20] Agente RAG registrado")
+    except Exception as e:
+        print(f"⚠️ [19/20] Agente RAG no disponible: {e}")
+    
+    # 20. AGENTE VOZ
+    try:
+        from src.agents.voz import crear_agente_voz
+        voz_agent = crear_agente_voz(supervisor, config)
+        supervisor.register_agent(voz_agent)
+        print("✅ [20/20] Agente Voz registrado")
+    except Exception as e:
+        print(f"⚠️ [20/20] Agente Voz no disponible: {e}")
+    
+    # ============================================================
+    # RESUMEN FINAL
+    # ============================================================
+    print("\n" + "="*60)
+    try:
+        stats = supervisor.get_stats()
+        print(f"📊 TOTAL AGENTES REGISTRADOS: {stats.get('agents_registered', 0)}")
+        
+        # Listar agentes registrados
+        if hasattr(supervisor, 'get_agents'):
+            agentes = supervisor.get_agents()
+            print("\n📋 Agentes activos:")
+            for agente in agentes:
+                print(f"   🟢 {agente.nombre} ({agente.id})")
+    except Exception as e:
+        print(f"⚠️ No se pudieron obtener estadísticas: {e}")
+    print("="*60)
     
     asyncio.create_task(cleanup_sessions())
-    print(f"✅ Dashboard initialized on port {config.SERVER_PORT}")
+    print(f"\n✅ Dashboard initialized on port {config.SERVER_PORT}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
