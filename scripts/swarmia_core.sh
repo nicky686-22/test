@@ -1,4 +1,3 @@
-
 #!/bin/bash
 # SwarmIA Core Installer - Versión Estable con manejo de errores
 
@@ -139,6 +138,114 @@ EOF
 }
 
 # ============================================
+# FUNCIÓN: Crear estructura utils
+# ============================================
+setup_utils() {
+    echo -e "${BLUE}[*] Creando estructura src/utils/...${NC}"
+    
+    mkdir -p "$INSTALL_DIR/src/utils"
+    
+    cat > "$INSTALL_DIR/src/utils/__init__.py" << 'EOF'
+#!/usr/bin/env python3
+"""Utilidades de SwarmIA"""
+
+from src.utils.env_manager import EnvManager
+
+__all__ = ['EnvManager']
+EOF
+    
+    cat > "$INSTALL_DIR/src/utils/env_manager.py" << 'EOF'
+#!/usr/bin/env python3
+"""
+Gestor del archivo .env para SwarmIA
+Permite leer y escribir variables de entorno de forma segura
+"""
+
+import os
+from pathlib import Path
+from typing import Dict, Optional, Any
+
+
+class EnvManager:
+    """Gestor del archivo .env"""
+    
+    def __init__(self, env_path: Optional[Path] = None):
+        if env_path is None:
+            env_path = Path(__file__).parent.parent.parent / ".env"
+        self.env_path = env_path
+        self._cargar()
+    
+    def _cargar(self):
+        """Cargar variables del .env"""
+        self.variables = {}
+        if self.env_path.exists():
+            with open(self.env_path, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        key, value = line.split('=', 1)
+                        self.variables[key] = value
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """Obtener variable"""
+        return self.variables.get(key, default)
+    
+    def set(self, key: str, value: str) -> bool:
+        """Establecer variable"""
+        self.variables[key] = value
+        return self._guardar()
+    
+    def set_multiple(self, valores: Dict[str, str]) -> bool:
+        """Establecer múltiples variables"""
+        self.variables.update(valores)
+        return self._guardar()
+    
+    def _guardar(self) -> bool:
+        """Guardar variables al archivo .env"""
+        try:
+            lineas = []
+            if self.env_path.exists():
+                with open(self.env_path, 'r') as f:
+                    lineas = f.readlines()
+            
+            keys_actualizadas = set()
+            for i, linea in enumerate(lineas):
+                if linea.strip() and not linea.strip().startswith('#') and '=' in linea:
+                    key = linea.split('=')[0].strip()
+                    if key in self.variables:
+                        lineas[i] = f"{key}={self.variables[key]}\n"
+                        keys_actualizadas.add(key)
+            
+            for key, value in self.variables.items():
+                if key not in keys_actualizadas:
+                    lineas.append(f"{key}={value}\n")
+            
+            with open(self.env_path, 'w') as f:
+                f.writelines(lineas)
+            
+            return True
+        except Exception as e:
+            print(f"Error guardando .env: {e}")
+            return False
+    
+    def recargar(self):
+        """Recargar variables después de cambios externos"""
+        self._cargar()
+    
+    def mostrar_diferencias(self, otras: Dict[str, str]) -> Dict[str, tuple]:
+        """Mostrar diferencias entre actual y otras"""
+        diferencias = {}
+        for key, value in otras.items():
+            actual = self.variables.get(key)
+            if actual != value:
+                diferencias[key] = (actual, value)
+        return diferencias
+EOF
+    
+    echo -e "${GREEN}[✓] src/utils/ creado correctamente${NC}"
+}
+
+# ============================================
 # INICIO DE LA INSTALACIÓN
 # ============================================
 
@@ -180,11 +287,14 @@ fi
 # 5. Configurar archivos
 setup_config
 
-# 6. Permisos
+# 6. Crear estructura utils
+setup_utils
+
+# 7. Permisos
 chown -R $(logname 2>/dev/null || echo $SUDO_USER || echo "root"): "$INSTALL_DIR" 2>/dev/null || true
 chmod +x "$INSTALL_DIR/src/main.py" 2>/dev/null || true
 
-# 7. Crear servicio systemd
+# 8. Crear servicio systemd
 if command -v systemctl >/dev/null 2>&1; then
     echo -e "${BLUE}[*] Creando servicio systemd...${NC}"
     
@@ -198,7 +308,7 @@ Type=simple
 User=root
 WorkingDirectory=$INSTALL_DIR
 Environment="PATH=$INSTALL_DIR/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/core/main.py
+ExecStart=$INSTALL_DIR/venv/bin/python $INSTALL_DIR/src/ui/server.py
 Restart=always
 RestartSec=10
 
@@ -212,14 +322,14 @@ EOF
     echo -e "${GREEN}[✓] Servicio creado e iniciado${NC}"
 fi
 
-# 8. Crear comando global
+# 9. Crear comando global
 cat > /usr/local/bin/swarmia << 'EOF'
 #!/bin/bash
-cd /opt/swarmia && /opt/swarmia/venv/bin/python src/core/main.py "$@"
+cd /opt/swarmia && /opt/swarmia/venv/bin/python src/ui/server.py "$@"
 EOF
 chmod +x /usr/local/bin/swarmia
 
-# 9. Mostrar resultado
+# 10. Mostrar resultado
 echo ""
 echo -e "${GREEN}╔══════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║                    INSTALACIÓN COMPLETADA                    ║${NC}"
