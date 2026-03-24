@@ -1,3 +1,4 @@
+# ============================================================
 # SwarmIA - Python Dependencies
 # Sistema de Agentes Distribuidos v2.0
 # ============================================================
@@ -10,52 +11,95 @@ uvicorn[standard]==0.24.0
 pydantic==2.5.0
 python-dotenv==1.0.0
 click==8.1.7
-pyyaml>=6.0.1
-beautifulsoup4 aiohttp
+pyyaml==6.0.1
 
+# ============================================================
+# Web & HTTP
+# ============================================================
+requests==2.31.0
+aiohttp==3.9.1
+beautifulsoup4==4.12.2
 
-pip install SpeechRecognition
-pip install pyttsx3
-pip install openai-whisper
-pip install gTTS
-pip install pyaudio
+# ============================================================
+# Database
+# ============================================================
+pymysql==1.1.0
+psycopg2-binary==2.9.9
+pymongo==4.6.0
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
 
-# sudo apt-get install portaudio19-dev python3-pyaudio
+# ============================================================
+# Cloud Storage
+# ============================================================
+boto3==1.34.0
+google-api-python-client==2.108.0
+google-auth-httplib2==0.1.1
+google-auth-oauthlib==1.1.0
+dropbox==11.36.2
 
-pip install chromadb
-pip install sentence-transformers
-pip install tiktoken
-pip install numpy
+# ============================================================
+# Docker & Containers
+# ============================================================
+docker==6.1.3
 
+# ============================================================
+# Notifications & Messaging
+# ============================================================
+python-telegram-bot==20.6
+discord.py==2.3.2
 
-pip install pydantic
-pip install fastapi uvicorn
-pip install pyyaml
-pip install docker
-pip install requests pip install pymysql
-pip install boto3
-pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
-pip install psycopg2-binary
-pip install dropbox
-pip install pymongo
-pip install python-telegram-bot
-pip install discord.py
-pip install schedule
-pip install psutil
+# ============================================================
+# RAG & Memory (Vector Database)
+# ============================================================
+chromadb==0.4.22
+sentence-transformers==2.2.2
+tiktoken==0.5.1
+numpy==1.24.3
+
+# ============================================================
+# Voice Recognition & TTS
+# ============================================================
+SpeechRecognition==3.10.1
+pyttsx3==2.90
+openai-whisper==20231117
+gTTS==2.3.2
+pyaudio==0.2.11
+
+# ============================================================
+# CI/CD & Git
+# ============================================================
+GitPython==3.1.40
+
+# ============================================================
+# Security & SSH
+# ============================================================
+paramiko==3.3.1
+cryptography==41.0.7
+scp==0.14.5
+
+# ============================================================
+# QR Code (WhatsApp)
+# ============================================================
+qrcode==7.4.2
+pillow==10.1.0
+
+# ============================================================
+# Scheduling & Automation
+# ============================================================
+schedule==1.2.0
+celery==5.3.4
+
+# ============================================================
+# Monitoring & System
+# ============================================================
+psutil==5.9.6
+
 # ============================================================
 # AI/ML Models
 # ============================================================
 openai==1.3.0
 httpx==0.25.1
-aiohttp==3.9.1
-# llama-cpp-python==0.2.26  # Opcional - requiere compilación
-
-# ============================================================
-# Communication Gateways
-# ============================================================
-python-telegram-bot==20.6
-# pyrogram==2.0.106  # Opcional
-# tgcrypto==1.2.5    # Opcional
 
 # ============================================================
 # Dashboard & UI
@@ -64,33 +108,10 @@ jinja2==3.1.2
 markdown==3.5.1
 
 # ============================================================
-# QR Code Generation (WhatsApp)
-# ============================================================
-qrcode==7.4.2
-pillow==10.1.0
-
-# ============================================================
-# Aggressive Agent - Pentesting Tools (OPCIONALES)
-# ⚠️ SOLO PARA PRUEBAS AUTORIZADAS ⚠️
-# ============================================================
-# paramiko>=3.0.0
-# cryptography>=41.0.0
-# requests>=2.31.0
-
-# ============================================================
-# Database
-# ============================================================
-sqlalchemy==2.0.23
-alembic==1.12.1
-aiosqlite==0.19.0
-
-# ============================================================
-# Utilities & Caching
+# Utilities
 # ============================================================
 redis==5.0.1
-celery==5.3.4
 websockets==12.0
-psutil==5.9.6
 
 # ============================================================
 # Development & Testing
