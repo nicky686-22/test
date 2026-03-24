@@ -120,8 +120,16 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 # Global state
-supervisor = create_supervisor(config)
+supervisor = None
 active_sessions: Dict[str, Dict] = {}
+dashboard_stats = {
+    "total_tasks": 0,
+    "completed_tasks": 0,
+    "active_agents": 0,
+    "system_uptime": datetime.now(),
+    "messages_processed": 0,
+    "errors_count": 0
+}
 
 dashboard_stats = {
     "total_tasks": 0,
