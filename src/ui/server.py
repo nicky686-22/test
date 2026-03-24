@@ -1217,6 +1217,8 @@ async def clear_chat_history(request: Request):
 @app.on_event("startup")
 async def startup_event():
     """Initialize on startup"""
+    global supervisor
+    
     init_database()
     
     with get_db_connection() as conn:
@@ -1230,6 +1232,25 @@ async def startup_event():
                 ("admin", "admin", 0)
             )
             conn.commit()
+    
+    # Crear supervisor si no existe
+    if supervisor is None:
+        supervisor = create_supervisor(config)
+        print("✅ Supervisor creado")
+    
+    # Registrar agente de chat
+    try:
+        from src.agents.chat import create_chat_agent
+        
+        chat_agent = create_chat_agent(supervisor, config)
+        print("✅ Chat agent creado y registrado")
+        
+        # Mostrar estadísticas del supervisor
+        stats = supervisor.get_stats()
+        print(f"📊 Agentes registrados: {stats.get('agents_registered', 0)}")
+        
+    except Exception as e:
+        print(f"❌ Error registrando agente de chat: {e}")
     
     asyncio.create_task(cleanup_sessions())
     print(f"✅ Dashboard initialized on port {config.SERVER_PORT}")
