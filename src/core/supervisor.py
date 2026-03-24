@@ -932,13 +932,16 @@ Sistema: {sys_uptime}
     
     def _worker_loop(self):
         """Loop principal de procesamiento de tareas"""
+        self.logger.info("🟢 WORKER LOOP INICIADO - ESPERANDO TAREAS...")
         while self.running:
             try:
                 priority, timestamp, task_id = self.task_queue.get(timeout=1)
+                self.logger.info(f"📦 WORKER OBTUVO TAREA: {task_id}")
                 
                 with self.lock:
                     task = self.tasks.get(task_id)
                     if not task or task.status != TaskStatus.PENDING:
+                        self.logger.warning(f"⚠️ Tarea {task_id} no válida: status={task.status if task else 'None'}")
                         continue
                 
                 self._process_task(task)
@@ -946,7 +949,7 @@ Sistema: {sys_uptime}
             except queue.Empty:
                 continue
             except Exception as e:
-                self.logger.error(f"Error en worker: {e}")
+                self.logger.error(f"❌ Error en worker: {e}", exc_info=True)
     
     def _process_task(self, task: Task):
         """Procesar una tarea con handler real"""
