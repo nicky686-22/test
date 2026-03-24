@@ -1254,13 +1254,22 @@ async def startup_event():
     print("="*60)
     
     # 1. AGENTE CHAT
+    # Registrar agente de chat
     try:
         from src.agents.chat import create_chat_agent
         chat_agent = create_chat_agent(supervisor, config)
-        supervisor.register_agent(chat_agent)
-        print("✅ [1/20] Agente Chat registrado")
+        
+        # Registrar correctamente con todos los argumentos
+        supervisor.register_agent(
+            agent_id=chat_agent.id,
+            name=chat_agent.nombre,
+            agent_type=chat_agent.tipo.value,
+            capabilities=chat_agent.obtener_capacidades() if hasattr(chat_agent, 'obtener_capacidades') else [],
+            metadata={}
+        )
+        print("✅ Chat agent registrado")
     except Exception as e:
-        print(f"❌ [1/20] Error Agente Chat: {e}")
+        print(f"❌ Error registrando Chat agent: {e}")
     
     # 2. AGENTE SISTEMA
     try:
