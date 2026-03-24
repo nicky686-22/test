@@ -545,8 +545,9 @@ def create_chat_agent(supervisor: Supervisor, config: Config) -> ChatAgent:
     Returns:
         Chat agent instance
     """
-    return ChatAgent(supervisor, config)
-
+    agent = ChatAgent(supervisor, config)
+    agent.start()  # Inicializar el agente automáticamente
+    return agent
 
 # ============================================================
 # Example Usage
