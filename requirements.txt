@@ -13,8 +13,8 @@ click==8.1.7
 pyyaml>=6.0.1
 beautifulsoup4 aiohttp
 
-
-
+pip install pydantic
+pip install fastapi uvicorn
 pip install pyyaml
 pip install docker
 pip install requests pip install pymysql
