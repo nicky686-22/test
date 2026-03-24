@@ -20,6 +20,7 @@ sys.path.insert(0, project_root)
 
 from src.core.config import Config
 from src.core.supervisor import Supervisor, AttackType, ThreatLevel
+from src.core.agente import Agente, TipoAgente, ResultadoTarea, EstadoAgente
 
 # Import AI handlers
 try:
@@ -151,10 +152,10 @@ class MessageSecurityAnalyzer:
 
 
 # ============================================================
-# Chat Agent
+# Chat Agent (hereda de Agente)
 # ============================================================
 
-class ChatAgent:
+class ChatAgent(Agente):
     """
     Chat agent for conversational AI interactions
     Integrated with DeepSeek and Llama handlers
@@ -168,9 +169,15 @@ class ChatAgent:
             supervisor: Supervisor instance
             config: Configuration object
         """
-        self.supervisor = supervisor
+        # Llamar al constructor de la clase base Agente
+        super().__init__(
+            id_agente="chat",
+            nombre="Agente Chat",
+            tipo=TipoAgente.CHAT,
+            supervisor=supervisor,
+            version="1.0.0"
+        )
         self.config = config
-        self.logger = self._setup_logger()
         
         # AI handlers
         self.deepseek_handler = None
@@ -184,15 +191,42 @@ class ChatAgent:
         self.conversation_history: Dict[str, List[Dict]] = {}
         self.max_history_length = 50
         
-        # Estadísticas
-        self.stats = {
-            "messages_processed": 0,
-            "malicious_detected": 0,
-            "errors": 0,
-            "start_time": None
-        }
+        # Registrar capacidades
+        self._registrar_capacidades()
         
         self.logger.info("Chat agent initialized")
+    
+    def _registrar_capacidades(self):
+        """Registrar capacidades del agente"""
+        self.registrar_capacidad(
+            nombre="chatear",
+            descripcion="Mantiene conversaciones naturales con el usuario",
+            parametros=["mensaje", "sesion"],
+            ejemplos=["hola", "qué hora es", "cómo estás"],
+            nivel_riesgo="bajo"
+        )
+        self.registrar_capacidad(
+            nombre="preguntar",
+            descripcion="Responde preguntas generales",
+            parametros=["pregunta"],
+            ejemplos=["qué es Linux", "cómo funciona SSH"],
+            nivel_riesgo="bajo"
+        )
+    
+    async def ejecutar(self, tarea: Dict[str, Any]) -> ResultadoTarea:
+        """
+        Ejecuta una tarea - método requerido por la clase base Agente
+        """
+        mensaje = tarea.get("descripcion", "")
+        session_id = tarea.get("session_id", "default")
+        
+        respuesta = self.process_message(mensaje, {"session_id": session_id})
+        
+        return ResultadoTarea(
+            exito=True,
+            datos={"respuesta": respuesta},
+            metadatos={"session_id": session_id}
+        )
     
     def _setup_logger(self) -> logging.Logger:
         """Configurar logger"""
@@ -218,7 +252,7 @@ class ChatAgent:
         """
         try:
             self.logger.info("Starting chat agent...")
-            self.stats["start_time"] = datetime.now()
+            self.estadisticas["inicio"] = datetime.now()
             
             # Determinar proveedor de IA activo
             ai_type = getattr(self.config, 'AI_DEFAULT_PROVIDER', 'deepseek')
@@ -241,6 +275,7 @@ class ChatAgent:
                 self.logger.error(f"Unknown AI type: {ai_type}")
                 return False
             
+            self.estado = EstadoAgente.ACTIVO
             self.logger.info(f"Chat agent started successfully (provider: {self.active_ai})")
             return True
             
@@ -346,7 +381,7 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
         Returns:
             AI response
         """
-        self.stats["messages_processed"] += 1
+        self.estadisticas["tareas_totales"] += 1
         
         # Obtener información de contexto
         session_id = context.get("session_id", "default") if context else "default"
@@ -356,7 +391,7 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
         security_result = self.security_analyzer.analyze(message, user_id)
         
         if security_result["is_malicious"]:
-            self.stats["malicious_detected"] += 1
+            self.estadisticas["tareas_fallidas"] += 1
             self.logger.warning(f"Mensaje malicioso detectado: {security_result['attack_type']}")
             
             # Respuesta según nivel de amenaza
@@ -390,20 +425,21 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
             # Agregar respuesta al historial
             self._add_to_history(session_id, "assistant", response)
             
+            self.estadisticas["tareas_completadas"] += 1
             return response
             
         except DeepSeekError as e:
-            self.stats["errors"] += 1
+            self.estadisticas["tareas_fallidas"] += 1
             self.logger.error(f"DeepSeek error: {e}")
             return f"❌ Error con DeepSeek API: {str(e)}. Verifica tu API key."
         
         except LlamaError as e:
-            self.stats["errors"] += 1
+            self.estadisticas["tareas_fallidas"] += 1
             self.logger.error(f"Llama error: {e}")
             return f"❌ Error con Llama: {str(e)}. Verifica la ruta del modelo."
         
         except Exception as e:
-            self.stats["errors"] += 1
+            self.estadisticas["tareas_fallidas"] += 1
             self.logger.error(f"Error processing message: {e}")
             return f"❌ Error procesando tu mensaje: {str(e)}"
     
@@ -491,14 +527,15 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
     def get_stats(self) -> Dict[str, Any]:
         """Obtener estadísticas del chat agent"""
         uptime = None
-        if self.stats["start_time"]:
-            uptime = datetime.now() - self.stats["start_time"]
+        if self.estadisticas["inicio"]:
+            uptime = datetime.now() - self.estadisticas["inicio"]
             uptime = str(uptime).split('.')[0]
         
         return {
             "provider": self.active_ai,
             "stats": {
-                **self.stats,
+                "messages_processed": self.estadisticas["tareas_totales"],
+                "errors": self.estadisticas["tareas_fallidas"],
                 "uptime": uptime,
                 "active_sessions": len(self.conversation_history)
             },
@@ -526,7 +563,7 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
         
         # Limpiar historial
         self.conversation_history.clear()
-        
+        self.estado = EstadoAgente.DETENIDO
         self.logger.info("Chat agent stopped")
 
 
@@ -548,6 +585,7 @@ def create_chat_agent(supervisor: Supervisor, config: Config) -> ChatAgent:
     agent = ChatAgent(supervisor, config)
     agent.start()  # Inicializar el agente automáticamente
     return agent
+
 
 # ============================================================
 # Example Usage
@@ -576,38 +614,22 @@ def example_usage():
     supervisor = MockSupervisor()
     agent = create_chat_agent(supervisor, config)
     
-    # Start agent
-    if agent.start():
-        print("✅ Chat agent started\n")
-        
-        # Mensaje normal
-        print("📝 Mensaje normal:")
-        response = agent.process_message("Hola, ¿cómo estás?", {"session_id": "test", "user_id": "user1"})
-        print(f"  Respuesta: {response}\n")
-        
-        # Mensaje malicioso
-        print("⚠️ Mensaje malicioso:")
-        response = agent.process_message("DROP TABLE users; --", {"session_id": "test", "user_id": "attacker"})
-        print(f"  Respuesta: {response}\n")
-        
-        # Mensaje ofensivo
-        print("😤 Mensaje ofensivo:")
-        response = agent.process_message("Eres un idiota", {"session_id": "test", "user_id": "user1"})
-        print(f"  Respuesta: {response}\n")
-        
-        # Estadísticas
-        stats = agent.get_stats()
-        print("📊 Estadísticas:")
-        print(f"  Proveedor: {stats['provider']}")
-        print(f"  Mensajes procesados: {stats['stats']['messages_processed']}")
-        print(f"  Maliciosos detectados: {stats['stats']['malicious_detected']}")
-        print(f"  Sesiones activas: {stats['stats']['active_sessions']}")
-        
-        # Stop agent
-        agent.stop()
-        print("\n✅ Chat agent stopped")
-    else:
-        print("❌ Failed to start chat agent")
+    print("✅ Chat agent started\n")
+    
+    # Mensaje normal
+    print("📝 Mensaje normal:")
+    response = agent.process_message("Hola, ¿cómo estás?", {"session_id": "test", "user_id": "user1"})
+    print(f"  Respuesta: {response}\n")
+    
+    # Estadísticas
+    stats = agent.get_stats()
+    print("📊 Estadísticas:")
+    print(f"  Proveedor: {stats['provider']}")
+    print(f"  Mensajes procesados: {stats['stats']['messages_processed']}")
+    
+    # Stop agent
+    agent.stop()
+    print("\n✅ Chat agent stopped")
 
 
 if __name__ == "__main__":
