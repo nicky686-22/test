@@ -13,6 +13,10 @@ click==8.1.7
 pyyaml>=6.0.1
 beautifulsoup4 aiohttp
 
+
+
+pip install pyyaml
+pip install docker
 pip install requests pip install pymysql
 pip install boto3
 pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
