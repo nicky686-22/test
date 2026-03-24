@@ -1,4 +1,4 @@
-    #!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 SwarmIA Configuration Module
 Manejo de configuración centralizada
@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from datetime import timedelta
 import yaml
+from dotenv import load_dotenv  # ← AGREGAR ESTO
 
 
 class Config:
@@ -31,6 +32,16 @@ class Config:
         self.DATA_DIR = self.BASE_DIR / "data"
         self.STATIC_DIR = self.BASE_DIR / "static"
         self.TEMPLATES_DIR = self.BASE_DIR / "templates"
+        
+        # ============================================================
+        # CARGAR ARCHIVO .env - ¡ESTO ES LO IMPORTANTE!
+        # ============================================================
+        env_path = self.BASE_DIR / ".env"
+        if env_path.exists():
+            load_dotenv(env_path)
+            print(f"✅ Configuración cargada desde {env_path}")
+        else:
+            print(f"⚠️ No se encontró archivo .env en {env_path}")
         
         # Crear directorios necesarios
         for d in [self.CONFIG_DIR, self.LOGS_DIR, self.DATA_DIR, 
