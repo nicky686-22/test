@@ -22,6 +22,7 @@ class TipoAgente(Enum):
     SEGURIDAD = "seguridad"
     PENTEST = "pentest"
     AGGRESSIVE = "aggressive"
+    SSH = "ssh"
     MONITOR = "monitor"
     AUTOMATIZACION = "automatizacion"
     PAQUETES = "paquetes"
