@@ -1250,8 +1250,13 @@ async def startup_event():
     try:
         from src.agents.chat import create_chat_agent
         
+        # Crear el agente
         chat_agent = create_chat_agent(supervisor, config)
-        print("✅ Chat agent creado y registrado")
+        print("✅ Chat agent creado")
+        
+        # REGISTRARLO EXPLÍCITAMENTE en el supervisor
+        supervisor.register_agent(chat_agent)
+        print("✅ Chat agent registrado en supervisor")
         
         # Mostrar estadísticas del supervisor
         stats = supervisor.get_stats()
@@ -1259,6 +1264,8 @@ async def startup_event():
         
     except Exception as e:
         print(f"❌ Error registrando agente de chat: {e}")
+        import traceback
+        traceback.print_exc()
     
     asyncio.create_task(cleanup_sessions())
     print(f"✅ Dashboard initialized on port {config.SERVER_PORT}")
