@@ -1158,6 +1158,28 @@ Sistema: {sys_uptime}
                     agent.status = AgentStatus.OFFLINE
     
     # ============================================================
+    # AGENT SELECTION
+    # ============================================================
+    
+    def _find_agent_for_task(self, task_type: str):
+        """Encuentra el agente adecuado para un tipo de tarea"""
+        for agent in self.agents.values():
+            if task_type in agent.capabilities:
+                return agent
+            if hasattr(agent, 'can_handle') and agent.can_handle(task_type):
+                return agent
+        return None
+    
+    # ============================================================
+    # Task Management
+    # ============================================================
+    
+    def register_task_handler(self, task_type: str, handler: Callable):
+        """Registrar handler para tipo de tarea"""
+        self.task_handlers[task_type] = handler
+        self.logger.info(f"Handler registrado para tarea: {task_type}")
+    
+    # ============================================================
     # Task Management
     # ============================================================
     
