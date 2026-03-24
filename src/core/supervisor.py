@@ -952,7 +952,7 @@ Sistema: {sys_uptime}
                 self.logger.error(f"❌ Error en worker: {e}", exc_info=True)
     
     def _process_task(self, task: Task):
-        """Procesar una tarea con handler real"""
+        """Procesar una tarea - asigna al agente adecuado"""
         # Verificar límite concurrente
         with self.lock:
             if self.active_tasks_count >= self.max_concurrent_tasks:
@@ -961,45 +961,115 @@ Sistema: {sys_uptime}
             self.active_tasks_count += 1
         
         try:
-            # Buscar handler para este tipo de tarea
-            handler = self.task_handlers.get(task.type)
-            if not handler:
-                raise Exception(f"No hay handler para tarea tipo: {task.type}")
+            # 1. PRIMERO BUSCAR UN AGENTE QUE PUEDA MANEJAR ESTA TAREA
+            agente = None
+            for agent in self.agents.values():
+                # Verificar por tipo de tarea en capacidades
+                if task.type in agent.capabilities:
+                    agente = agent
+                    break
+                # Verificar si el agente tiene método can_handle
+                if hasattr(agent, 'can_handle') and agent.can_handle(task.type):
+                    agente = agent
+                    break
             
-            # Buscar agente disponible
-            agent = self._assign_agent(task)
-            if not agent:
-                self._requeue_task(task)
-                return
+            # 2. SI HAY AGENTE, ASIGNAR LA TAREA
+            if agente:
+                self.logger.info(f"✅ Tarea {task.id} asignada a agente {agente.name}")
+                
+                with self.lock:
+                    task.status = TaskStatus.RUNNING
+                    task.started_at = datetime.now()
+                    task.assigned_agent = agente.id
+                    if hasattr(agente, 'current_tasks'):
+                        agente.current_tasks.append(task.id)
+                    if hasattr(agente, 'status'):
+                        agente.status = AgentStatus.BUSY
+                
+                try:
+                    # Ejecutar el agente
+                    import asyncio
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    tarea_agente = {
+                        "tipo": task.type,
+                        "descripcion": task.data.get("descripcion", str(task.data)),
+                        "parametros": task.data,
+                        "id": task.id
+                    }
+                    
+                    resultado = loop.run_until_complete(agente.ejecutar(tarea_agente))
+                    loop.close()
+                    
+                    with self.lock:
+                        if resultado.exito:
+                            task.status = TaskStatus.COMPLETED
+                            task.result = resultado.datos
+                            self.logger.info(f"✅ Tarea {task.id} completada por {agente.name}")
+                        else:
+                            task.status = TaskStatus.FAILED
+                            task.error = resultado.error
+                            self.logger.error(f"❌ Tarea {task.id} falló: {resultado.error}")
+                        
+                        task.completed_at = datetime.now()
+                        if hasattr(agente, 'current_tasks') and task.id in agente.current_tasks:
+                            agente.current_tasks.remove(task.id)
+                        if hasattr(agente, 'status') and not agente.current_tasks:
+                            agente.status = AgentStatus.IDLE
+                    
+                    self.stats["tasks_completed" if resultado.exito else "tasks_failed"] += 1
+                    
+                except Exception as e:
+                    self._handle_task_failure(task, e)
             
-            # Marcar como running
-            with self.lock:
-                task.status = TaskStatus.RUNNING
-                task.started_at = datetime.now()
-                task.assigned_agent = agent.id
-                agent.current_tasks.append(task.id)
-                agent.status = AgentStatus.BUSY
-            
-            self.logger.info(f"Tarea {task.id} asignada a agente {agent.name}")
-            
-            # Ejecutar con timeout
-            import concurrent.futures
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                future = executor.submit(handler, task.data, agent, self._notify_progress)
-                result = future.result(timeout=task.timeout)
-            
-            # Marcar como completada
-            with self.lock:
-                task.status = TaskStatus.COMPLETED
-                task.completed_at = datetime.now()
-                task.result = result
-                agent.current_tasks.remove(task.id)
-                if not agent.current_tasks:
-                    agent.status = AgentStatus.IDLE
-            
-            self.stats["tasks_completed"] += 1
-            self.logger.info(f"Tarea {task.id} completada")
-            
+            # 3. SI NO HAY AGENTE, BUSCAR HANDLER
+            else:
+                handler = self.task_handlers.get(task.type)
+                if handler:
+                    self.logger.info(f"📦 Tarea {task.id} usando handler directo")
+                    
+                    # Buscar agente disponible (para el handler)
+                    agent = self._assign_agent(task)
+                    if not agent:
+                        self._requeue_task(task)
+                        return
+                    
+                    with self.lock:
+                        task.status = TaskStatus.RUNNING
+                        task.started_at = datetime.now()
+                        task.assigned_agent = agent.id
+                        agent.current_tasks.append(task.id)
+                        agent.status = AgentStatus.BUSY
+                    
+                    self.logger.info(f"Tarea {task.id} asignada a agente {agent.name} para handler")
+                    
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as executor:
+                        future = executor.submit(handler, task.data, agent, self._notify_progress)
+                        result = future.result(timeout=task.timeout)
+                    
+                    with self.lock:
+                        if result.get("success"):
+                            task.status = TaskStatus.COMPLETED
+                            task.result = result
+                        else:
+                            task.status = TaskStatus.FAILED
+                            task.error = result.get("error", "Error desconocido")
+                        task.completed_at = datetime.now()
+                        agent.current_tasks.remove(task.id)
+                        if not agent.current_tasks:
+                            agent.status = AgentStatus.IDLE
+                    
+                    self.stats["tasks_completed" if result.get("success") else "tasks_failed"] += 1
+                else:
+                    self.logger.error(f"❌ No hay handler ni agente para tarea tipo: {task.type}")
+                    with self.lock:
+                        task.status = TaskStatus.FAILED
+                        task.error = f"No hay agente disponible para: {task.type}"
+                        task.completed_at = datetime.now()
+                    self.stats["tasks_failed"] += 1
+        
         except concurrent.futures.TimeoutError:
             self.logger.error(f"Tarea {task.id} timeout")
             self._handle_task_failure(task, Exception("Timeout"))
