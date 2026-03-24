@@ -1218,6 +1218,29 @@ async def clear_chat_history(request: Request):
     
     return {"success": True, "message": "Chat history cleared", "session": session_id}
 
+def registrar_agente(agente):
+    """Helper para registrar agentes correctamente"""
+    try:
+        # Obtener capacidades del agente
+        if hasattr(agente, 'obtener_capacidades'):
+            capacidades = agente.obtener_capacidades()
+        elif hasattr(agente, 'capacidades'):
+            capacidades = [c.nombre for c in agente.capacidades]
+        else:
+            capacidades = []
+        
+        # Registrar en supervisor
+        return supervisor.register_agent(
+            agent_id=agente.id,
+            name=agente.nombre,
+            agent_type=agente.tipo.value if hasattr(agente.tipo, 'value') else str(agente.tipo),
+            capabilities=capacidades,
+            metadata={}
+        )
+    except Exception as e:
+        print(f"Error registrando {agente.nombre}: {e}")
+        return False
+
 # ============================================================
 # Startup/Shutdown Events
 # ============================================================
@@ -1254,28 +1277,19 @@ async def startup_event():
     print("="*60)
     
     # 1. AGENTE CHAT
-    # Registrar agente de chat
     try:
         from src.agents.chat import create_chat_agent
         chat_agent = create_chat_agent(supervisor, config)
-        
-        # Registrar correctamente con todos los argumentos
-        supervisor.register_agent(
-            agent_id=chat_agent.id,
-            name=chat_agent.nombre,
-            agent_type=chat_agent.tipo.value,
-            capabilities=chat_agent.obtener_capacidades() if hasattr(chat_agent, 'obtener_capacidades') else [],
-            metadata={}
-        )
-        print("✅ Chat agent registrado")
+        registrar_agente(chat_agent)
+        print("✅ [1/20] Agente Chat registrado")
     except Exception as e:
-        print(f"❌ Error registrando Chat agent: {e}")
+        print(f"❌ [1/20] Error Agente Chat: {e}")
     
     # 2. AGENTE SISTEMA
     try:
         from src.agents.sistema import crear_agente_sistema
         sistema_agent = crear_agente_sistema(supervisor, config)
-        supervisor.register_agent(sistema_agent)
+        registrar_agente(sistema_agent)
         print("✅ [2/20] Agente Sistema registrado")
     except Exception as e:
         print(f"⚠️ [2/20] Agente Sistema no disponible: {e}")
@@ -1284,7 +1298,7 @@ async def startup_event():
     try:
         from src.agents.archivos import crear_agente_archivos
         archivos_agent = crear_agente_archivos(supervisor, config)
-        supervisor.register_agent(archivos_agent)
+        registrar_agente(archivos_agent)
         print("✅ [3/20] Agente Archivos registrado")
     except Exception as e:
         print(f"⚠️ [3/20] Agente Archivos no disponible: {e}")
@@ -1293,7 +1307,7 @@ async def startup_event():
     try:
         from src.agents.red import crear_agente_red
         red_agent = crear_agente_red(supervisor, config)
-        supervisor.register_agent(red_agent)
+        registrar_agente(red_agent)
         print("✅ [4/20] Agente Red registrado")
     except Exception as e:
         print(f"⚠️ [4/20] Agente Red no disponible: {e}")
@@ -1302,7 +1316,7 @@ async def startup_event():
     try:
         from src.agents.seguridad import crear_agente_seguridad
         seguridad_agent = crear_agente_seguridad(supervisor, config)
-        supervisor.register_agent(seguridad_agent)
+        registrar_agente(seguridad_agent)
         print("✅ [5/20] Agente Seguridad registrado")
     except Exception as e:
         print(f"⚠️ [5/20] Agente Seguridad no disponible: {e}")
@@ -1311,7 +1325,7 @@ async def startup_event():
     try:
         from src.agents.aggressive import create_aggressive_agent
         aggressive_agent = create_aggressive_agent(supervisor, config)
-        supervisor.register_agent(aggressive_agent)
+        registrar_agente(aggressive_agent)
         aggressive_agent.start()
         print("✅ [6/20] Agente Aggressive registrado")
     except Exception as e:
@@ -1321,7 +1335,7 @@ async def startup_event():
     try:
         from src.agents.ssh import crear_agente_ssh
         ssh_agent = crear_agente_ssh(supervisor, config)
-        supervisor.register_agent(ssh_agent)
+        registrar_agente(ssh_agent)
         print("✅ [7/20] Agente SSH registrado")
     except Exception as e:
         print(f"⚠️ [7/20] Agente SSH no disponible: {e}")
@@ -1330,7 +1344,7 @@ async def startup_event():
     try:
         from src.agents.monitor import crear_agente_monitor
         monitor_agent = crear_agente_monitor(supervisor, config)
-        supervisor.register_agent(monitor_agent)
+        registrar_agente(monitor_agent)
         print("✅ [8/20] Agente Monitor registrado")
     except Exception as e:
         print(f"⚠️ [8/20] Agente Monitor no disponible: {e}")
@@ -1339,7 +1353,7 @@ async def startup_event():
     try:
         from src.agents.paquetes import crear_agente_paquetes
         paquetes_agent = crear_agente_paquetes(supervisor, config)
-        supervisor.register_agent(paquetes_agent)
+        registrar_agente(paquetes_agent)
         print("✅ [9/20] Agente Paquetes registrado")
     except Exception as e:
         print(f"⚠️ [9/20] Agente Paquetes no disponible: {e}")
@@ -1348,7 +1362,7 @@ async def startup_event():
     try:
         from src.agents.automatizacion import crear_agente_automatizacion
         automatizacion_agent = crear_agente_automatizacion(supervisor, config)
-        supervisor.register_agent(automatizacion_agent)
+        registrar_agente(automatizacion_agent)
         print("✅ [10/20] Agente Automatización registrado")
     except Exception as e:
         print(f"⚠️ [10/20] Agente Automatización no disponible: {e}")
@@ -1357,7 +1371,7 @@ async def startup_event():
     try:
         from src.agents.workflows import crear_agente_workflows
         workflows_agent = crear_agente_workflows(supervisor, config)
-        supervisor.register_agent(workflows_agent)
+        registrar_agente(workflows_agent)
         print("✅ [11/20] Agente Workflows registrado")
     except Exception as e:
         print(f"⚠️ [11/20] Agente Workflows no disponible: {e}")
@@ -1366,7 +1380,7 @@ async def startup_event():
     try:
         from src.agents.web import crear_agente_web
         web_agent = crear_agente_web(supervisor, config)
-        supervisor.register_agent(web_agent)
+        registrar_agente(web_agent)
         print("✅ [12/20] Agente Web registrado")
     except Exception as e:
         print(f"⚠️ [12/20] Agente Web no disponible: {e}")
@@ -1375,7 +1389,7 @@ async def startup_event():
     try:
         from src.agents.base_datos import crear_agente_base_datos
         bd_agent = crear_agente_base_datos(supervisor, config)
-        supervisor.register_agent(bd_agent)
+        registrar_agente(bd_agent)
         print("✅ [13/20] Agente Base de Datos registrado")
     except Exception as e:
         print(f"⚠️ [13/20] Agente Base de Datos no disponible: {e}")
@@ -1384,7 +1398,7 @@ async def startup_event():
     try:
         from src.agents.notificaciones import crear_agente_notificaciones
         notificaciones_agent = crear_agente_notificaciones(supervisor, config)
-        supervisor.register_agent(notificaciones_agent)
+        registrar_agente(notificaciones_agent)
         print("✅ [14/20] Agente Notificaciones registrado")
     except Exception as e:
         print(f"⚠️ [14/20] Agente Notificaciones no disponible: {e}")
@@ -1393,7 +1407,7 @@ async def startup_event():
     try:
         from src.agents.cloud import crear_agente_cloud
         cloud_agent = crear_agente_cloud(supervisor, config)
-        supervisor.register_agent(cloud_agent)
+        registrar_agente(cloud_agent)
         print("✅ [15/20] Agente Cloud registrado")
     except Exception as e:
         print(f"⚠️ [15/20] Agente Cloud no disponible: {e}")
@@ -1402,7 +1416,7 @@ async def startup_event():
     try:
         from src.agents.docker import crear_agente_docker
         docker_agent = crear_agente_docker(supervisor, config)
-        supervisor.register_agent(docker_agent)
+        registrar_agente(docker_agent)
         print("✅ [16/20] Agente Docker registrado")
     except Exception as e:
         print(f"⚠️ [16/20] Agente Docker no disponible: {e}")
@@ -1411,7 +1425,7 @@ async def startup_event():
     try:
         from src.agents.ci_cd import crear_agente_ci_cd
         cicd_agent = crear_agente_ci_cd(supervisor, config)
-        supervisor.register_agent(cicd_agent)
+        registrar_agente(cicd_agent)
         print("✅ [17/20] Agente CI/CD registrado")
     except Exception as e:
         print(f"⚠️ [17/20] Agente CI/CD no disponible: {e}")
@@ -1420,7 +1434,7 @@ async def startup_event():
     try:
         from src.agents.api import crear_agente_api
         api_agent = crear_agente_api(supervisor, config)
-        supervisor.register_agent(api_agent)
+        registrar_agente(api_agent)
         print("✅ [18/20] Agente API registrado")
     except Exception as e:
         print(f"⚠️ [18/20] Agente API no disponible: {e}")
@@ -1429,7 +1443,7 @@ async def startup_event():
     try:
         from src.agents.rag import crear_agente_rag
         rag_agent = crear_agente_rag(supervisor, config)
-        supervisor.register_agent(rag_agent)
+        registrar_agente(rag_agent)
         print("✅ [19/20] Agente RAG registrado")
     except Exception as e:
         print(f"⚠️ [19/20] Agente RAG no disponible: {e}")
@@ -1438,7 +1452,7 @@ async def startup_event():
     try:
         from src.agents.voz import crear_agente_voz
         voz_agent = crear_agente_voz(supervisor, config)
-        supervisor.register_agent(voz_agent)
+        registrar_agente(voz_agent)
         print("✅ [20/20] Agente Voz registrado")
     except Exception as e:
         print(f"⚠️ [20/20] Agente Voz no disponible: {e}")
