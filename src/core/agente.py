@@ -106,6 +106,11 @@ class Agente(ABC):
         self.logger = logging.getLogger(f"swarmia.agentes.{id_agente}")
         self.logger.info(f"Agente {nombre} v{version} inicializado")
     
+    @property
+    def capabilities(self) -> List[str]:
+        """Devuelve lista de nombres de capacidades para el supervisor"""
+        return [c.nombre for c in self.capacidades]
+    
     def registrar_capacidad(self, nombre: str, descripcion: str, **kwargs):
         """Registra una capacidad del agente"""
         capacidad = Capacidad(nombre=nombre, descripcion=descripcion, **kwargs)
