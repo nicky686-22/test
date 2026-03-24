@@ -728,26 +728,57 @@ async def update_ai_config(request: Request):  # Eliminar session: Dict = Depend
         
 @app.post("/api/config/ai/test")
 async def test_ai_connection(request: Request):
-    """Test AI connection - accessible without auth"""
-    api_key = config.DEEPSEEK_API_KEY
+    """Test AI connection - recibe API key del body"""
+    import requests
+    
+    # Leer el body de la petición
+    try:
+        body = await request.json()
+        print(f"🔵 Recibida petición de prueba con body: {body}")  # Debug
+        api_key = body.get("api_key") if body else None
+    except Exception as e:
+        print(f"🔴 Error leyendo body: {e}")
+        api_key = None
+    
+    # Si no vino en el body, intentar leer del archivo .env
+    if not api_key:
+        env_path = Path("/opt/swarmia/.env")
+        if env_path.exists():
+            with open(env_path, 'r') as f:
+                for line in f:
+                    if line.startswith("DEEPSEEK_API_KEY="):
+                        api_key = line.split("=", 1)[1].strip()
+                        break
+    
+    print(f"📡 API Key obtenida: {api_key[:20]}..." if api_key else "❌ No hay API key")
     
     if not api_key:
         return {"success": False, "message": "Clave API de DeepSeek no configurada"}
     
     try:
-        import requests
         response = requests.post(
             "https://api.deepseek.com/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={"model": "deepseek-chat", "messages": [{"role": "user", "content": "OK"}], "max_tokens": 5},
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": "responde solo OK"}],
+                "max_tokens": 5
+            },
             timeout=10
         )
+        
+        print(f"📡 DeepSeek respondió: {response.status_code}")
+        
         if response.status_code == 200:
-            return {"success": True, "message": "Conexión exitosa con DeepSeek"}
+            return {"success": True, "message": "✅ Conexión exitosa con DeepSeek"}
         else:
-            return {"success": False, "message": f"Error: {response.status_code}"}
+            return {"success": False, "message": f"❌ Error {response.status_code}: {response.text[:100]}"}
     except Exception as e:
-        return {"success": False, "message": f"Error de conexión: {str(e)}"}
+        print(f"🔴 Error en petición: {e}")
+        return {"success": False, "message": f"❌ Error de conexión: {str(e)}"}
 
 # ============================================================
 # Aggressive Agent Endpoints
