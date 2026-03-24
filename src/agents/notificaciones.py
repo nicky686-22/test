@@ -14,6 +14,7 @@ from email.mime.multipart import MIMEMultipart
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from pathlib import Path
+from src.utils.env_manager import EnvManager
 
 # Importaciones opcionales
 try:
@@ -71,6 +72,12 @@ class AgenteNotificaciones(Agente):
     
     def _cargar_configuracion(self):
         """Cargar configuración de canales desde variables de entorno"""
+        import os
+        from dotenv import load_dotenv
+        
+        # Recargar .env
+        load_dotenv()
+        
         # Telegram
         self.telegram_token = os.getenv("TELEGRAM_BOT_TOKEN", "")
         self.telegram_chat_ids = os.getenv("TELEGRAM_CHAT_IDS", "").split(",")
@@ -94,7 +101,7 @@ class AgenteNotificaciones(Agente):
         # Email
         self.email_host = os.getenv("EMAIL_HOST", "")
         self.email_port = int(os.getenv("EMAIL_PORT", "587"))
-        self_email_user = os.getenv("EMAIL_USER", "")
+        self.email_user = os.getenv("EMAIL_USER", "")
         self.email_password = os.getenv("EMAIL_PASSWORD", "")
         self.email_from = os.getenv("EMAIL_FROM", "")
         self.email_to = os.getenv("EMAIL_TO", "").split(",")
@@ -173,6 +180,9 @@ class AgenteNotificaciones(Agente):
         
         if "notificar_telegram" in tipo or "telegram" in desc:
             return await self._notificar_telegram(desc, parametros)
+
+        if "configurar_telegram" in tipo or "configurar telegram" in desc:
+            return await self._configurar_telegram(desc, parametros)
         
         elif "notificar_whatsapp" in tipo or "whatsapp" in desc:
             return await self._notificar_whatsapp(desc, parametros)
@@ -511,6 +521,53 @@ class AgenteNotificaciones(Agente):
         import re
         match = re.search(r'https?://[^\s]+', desc)
         return match.group(0) if match else None
+
+    # ============================================================
+    # CONFIGURACIÓN DINÁMICA
+    # ============================================================
+    
+    async def _configurar_telegram(self, desc: str, parametros: Dict) -> ResultadoTarea:
+        """Configurar Telegram con token proporcionado por el usuario"""
+        token = parametros.get("token") or self._extraer_token(desc)
+        
+        if not token:
+            return ResultadoTarea(
+                exito=False,
+                error="Necesito el token de Telegram. Ejemplo: configurar telegram con token 123456:ABC-DEF"
+            )
+        
+        try:
+            import requests
+            response = requests.get(f"https://api.telegram.org/bot{token}/getMe", timeout=10)
+            if response.status_code != 200:
+                return ResultadoTarea(exito=False, error="❌ Token inválido")
+            
+            bot_info = response.json()
+            bot_username = bot_info.get("result", {}).get("username", "desconocido")
+            
+            # Guardar en .env usando EnvManager
+            env = EnvManager()
+            env.set("TELEGRAM_BOT_TOKEN", token)
+            env.set("TELEGRAM_ENABLED", "true")
+            
+            # Recargar configuración
+            self._cargar_configuracion()
+            
+            return ResultadoTarea(
+                exito=True,
+                datos={
+                    "bot": bot_username,
+                    "mensaje": f"✅ Telegram configurado correctamente. Bot: @{bot_username}"
+                }
+            )
+        except Exception as e:
+            return ResultadoTarea(exito=False, error=str(e))
+    
+    def _extraer_token(self, desc: str) -> Optional[str]:
+        """Extraer token de Telegram de la descripción"""
+        import re
+        match = re.search(r'(\d+:[A-Za-z0-9_-]+)', desc)
+        return match.group(1) if match else None
 
 
 # ============================================================
