@@ -26,6 +26,21 @@ class TipoAgente(Enum):
     MONITOR = "monitor"
     AUTOMATIZACION = "automatizacion"
     PAQUETES = "paquetes"
+    WORKFLOWS = "workflows"
+    WEB = "web"
+    BASE_DATOS = "base_datos"
+    NOTIFICACIONES = "notificaciones"
+    CLOUD = "cloud"
+    DOCKER = "docker"
+    CI_CD = "ci_cd"
+    API = "api"
+    RAG = "rag"
+    VOZ = "voz"
+    CALENDARIO = "calendario"
+    TAREAS = "tareas"
+    DNS = "dns"
+    FIREWALL = "firewall"
+    VPN = "vpn"
 
 
 class EstadoAgente(Enum):
