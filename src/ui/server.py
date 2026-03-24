@@ -680,11 +680,12 @@ async def get_full_config(request: Request):
     }
 
 @app.post("/api/config/ai")
-async def update_ai_config(request: Request):
+async def update_ai_config(request: Request):  # Eliminar session: Dict = Depends(verify_session_token)
     """Update AI configuration - accessible without auth"""
     data = await request.json()
     
     try:
+        # Guardar en .env
         env_path = Path("/opt/swarmia/.env")
         if env_path.exists():
             with open(env_path, 'r') as f:
@@ -703,6 +704,7 @@ async def update_ai_config(request: Request):
             with open(env_path, 'w') as f:
                 f.writelines(lines)
         
+        # Guardar en config.yaml
         config_path = Path("/opt/swarmia/config/config.yaml")
         if config_path.exists():
             import yaml
@@ -723,7 +725,7 @@ async def update_ai_config(request: Request):
         return {"success": True, "message": "Configuración IA guardada"}
     except Exception as e:
         return {"success": False, "message": str(e)}
-
+        
 @app.post("/api/config/ai/test")
 async def test_ai_connection(request: Request):
     """Test AI connection - accessible without auth"""
