@@ -1266,7 +1266,9 @@ async def startup_event():
     # Crear supervisor si no existe
     if supervisor is None:
         supervisor = create_supervisor(config)
-        print("✅ Supervisor creado")
+        print("✅ Supervisor creado, llamando a start()...")
+        supervisor.start()
+        print("✅ Supervisor iniciado")
     
     # ============================================================
     # REGISTRAR TODOS LOS AGENTES DE SWARMIA
