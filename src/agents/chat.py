@@ -370,78 +370,166 @@ Nunca compartas información sensible ni ejecutes comandos peligrosos sin confir
         import random
         return random.choice(responses)
     
-    def process_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """
-        Process a chat message with security analysis
-        
-        Args:
-            message: User message
-            context: Optional context dictionary (session_id, user_id, etc.)
-        
-        Returns:
-            AI response
-        """
-        self.estadisticas["tareas_totales"] += 1
-        
-        # Obtener información de contexto
-        session_id = context.get("session_id", "default") if context else "default"
-        user_id = context.get("user_id", "unknown") if context else "unknown"
-        
-        # Análisis de seguridad del mensaje
-        security_result = self.security_analyzer.analyze(message, user_id)
-        
-        if security_result["is_malicious"]:
-            self.estadisticas["tareas_fallidas"] += 1
-            self.logger.warning(f"Mensaje malicioso detectado: {security_result['attack_type']}")
-            
-            # Respuesta según nivel de amenaza
-            if security_result["threat_level"] in [ThreatLevel.HIGH, ThreatLevel.CRITICAL]:
-                return "⚠️ *ADVERTENCIA DE SEGURIDAD* ⚠️\n\n" \
-                       "Tu mensaje ha sido identificado como potencialmente malicioso.\n" \
-                       "Este incidente ha sido registrado y reportado.\n\n" \
-                       "Si crees que es un error, contacta al administrador."
-            else:
-                return "⚠️ He detectado contenido potencialmente peligroso en tu mensaje.\n" \
-                       "Por favor, reformula tu pregunta de manera segura."
-        
-        # Detectar lenguaje ofensivo
-        if self._detect_offensive_language(message):
-            return "Por favor, mantén un lenguaje respetuoso. Estoy aquí para ayudarte de manera profesional."
-        
-        # Agregar mensaje al historial
-        self._add_to_history(session_id, "user", message)
+def process_message(self, message: str, context: Optional[Dict[str, Any]] = None) -> str:
+    """
+    Process a chat message with security analysis
+    
+    Args:
+        message: User message
+        context: Optional context dictionary (session_id, user_id, etc.)
+    
+    Returns:
+        AI response
+    """
+    self.estadisticas["tareas_totales"] += 1
+    
+    # Obtener información de contexto
+    session_id = context.get("session_id", "default") if context else "default"
+    user_id = context.get("user_id", "unknown") if context else "unknown"
+    
+    # ============================================================
+    # DETECTAR ACCIONES Y CREAR TAREAS (ANTES DE SEGURIDAD)
+    # ============================================================
+    
+    mensaje_lower = message.lower()
+    
+    # Detectar creación de carpeta
+    if "crear carpeta" in mensaje_lower or "mkdir" in mensaje_lower:
+        import re
+        match = re.search(r"(?:crear carpeta|mkdir)\s+([^\s]+)", mensaje_lower)
+        nombre_carpeta = match.group(1) if match else "nueva_carpeta"
         
         try:
-            # Generar respuesta según el proveedor activo
-            if self.active_ai == "deepseek" and self.deepseek_handler:
-                response = self._process_with_deepseek(message, context, session_id)
-            elif self.active_ai == "llama" and self.llama_handler:
-                response = self._process_with_llama(message, context, session_id)
-            elif self.active_ai == "mock":
-                response = self._generate_mock_response(message, context)
-            else:
-                response = "Error: No hay un proveedor de IA disponible. Verifica la configuración."
-            
-            # Agregar respuesta al historial
-            self._add_to_history(session_id, "assistant", response)
-            
-            self.estadisticas["tareas_completadas"] += 1
-            return response
-            
-        except DeepSeekError as e:
-            self.estadisticas["tareas_fallidas"] += 1
-            self.logger.error(f"DeepSeek error: {e}")
-            return f"❌ Error con DeepSeek API: {str(e)}. Verifica tu API key."
-        
-        except LlamaError as e:
-            self.estadisticas["tareas_fallidas"] += 1
-            self.logger.error(f"Llama error: {e}")
-            return f"❌ Error con Llama: {str(e)}. Verifica la ruta del modelo."
-        
+            task_id = self.supervisor.create_task(
+                task_type="crear_carpeta",
+                data={
+                    "nombre": nombre_carpeta,
+                    "ruta": ".",
+                    "user_id": user_id
+                },
+                priority=2,
+                source="chat"
+            )
+            return f"🔄 Tarea creada (ID: {task_id}) para crear la carpeta '{nombre_carpeta}'. El agente archivos la procesará."
         except Exception as e:
-            self.estadisticas["tareas_fallidas"] += 1
-            self.logger.error(f"Error processing message: {e}")
-            return f"❌ Error procesando tu mensaje: {str(e)}"
+            return f"❌ Error creando tarea: {e}"
+    
+    # Detectar script de información del sistema
+    if ("script" in mensaje_lower and ("información" in mensaje_lower or "info" in mensaje_lower)) or \
+       ("información del sistema" in mensaje_lower) or \
+       ("info sistema" in mensaje_lower):
+        try:
+            task_id = self.supervisor.create_task(
+                task_type="ejecutar_comando",
+                data={
+                    "comando": "uname -a && echo '---' && free -h && echo '---' && df -h",
+                    "description": "Obtener información del sistema",
+                    "user_id": user_id
+                },
+                priority=1,
+                source="chat"
+            )
+            return f"🔄 Tarea creada (ID: {task_id}) para obtener información del sistema. Espera el resultado..."
+        except Exception as e:
+            return f"❌ Error creando tarea: {e}"
+    
+    # Detectar listar archivos
+    if "listar archivos" in mensaje_lower or "ls" in mensaje_lower.split():
+        try:
+            task_id = self.supervisor.create_task(
+                task_type="listar_archivos",
+                data={
+                    "ruta": ".",
+                    "user_id": user_id
+                },
+                priority=2,
+                source="chat"
+            )
+            return f"🔄 Tarea creada (ID: {task_id}) para listar archivos en el directorio actual."
+        except Exception as e:
+            return f"❌ Error creando tarea: {e}"
+    
+    # Detectar ejecutar comando genérico
+    if "ejecutar" in mensaje_lower and "comando" in mensaje_lower:
+        import re
+        match = re.search(r"ejecutar comando\s+(.+)", mensaje_lower)
+        comando = match.group(1) if match else None
+        
+        if comando:
+            try:
+                task_id = self.supervisor.create_task(
+                    task_type="ejecutar_comando",
+                    data={
+                        "comando": comando,
+                        "description": message,
+                        "user_id": user_id
+                    },
+                    priority=2,
+                    source="chat"
+                )
+                return f"🔄 Tarea creada (ID: {task_id}) para ejecutar: {comando}"
+            except Exception as e:
+                return f"❌ Error creando tarea: {e}"
+    
+    # ============================================================
+    # ANÁLISIS DE SEGURIDAD (para mensajes que no son acciones)
+    # ============================================================
+    
+    # Análisis de seguridad del mensaje
+    security_result = self.security_analyzer.analyze(message, user_id)
+    
+    if security_result["is_malicious"]:
+        self.estadisticas["tareas_fallidas"] += 1
+        self.logger.warning(f"Mensaje malicioso detectado: {security_result['attack_type']}")
+        
+        # Respuesta según nivel de amenaza
+        if security_result["threat_level"] in [ThreatLevel.HIGH, ThreatLevel.CRITICAL]:
+            return "⚠️ *ADVERTENCIA DE SEGURIDAD* ⚠️\n\n" \
+                   "Tu mensaje ha sido identificado como potencialmente malicioso.\n" \
+                   "Este incidente ha sido registrado y reportado.\n\n" \
+                   "Si crees que es un error, contacta al administrador."
+        else:
+            return "⚠️ He detectado contenido potencialmente peligroso en tu mensaje.\n" \
+                   "Por favor, reformula tu pregunta de manera segura."
+    
+    # Detectar lenguaje ofensivo
+    if self._detect_offensive_language(message):
+        return "Por favor, mantén un lenguaje respetuoso. Estoy aquí para ayudarte de manera profesional."
+    
+    # Agregar mensaje al historial
+    self._add_to_history(session_id, "user", message)
+    
+    try:
+        # Generar respuesta según el proveedor activo
+        if self.active_ai == "deepseek" and self.deepseek_handler:
+            response = self._process_with_deepseek(message, context, session_id)
+        elif self.active_ai == "llama" and self.llama_handler:
+            response = self._process_with_llama(message, context, session_id)
+        elif self.active_ai == "mock":
+            response = self._generate_mock_response(message, context)
+        else:
+            response = "Error: No hay un proveedor de IA disponible. Verifica la configuración."
+        
+        # Agregar respuesta al historial
+        self._add_to_history(session_id, "assistant", response)
+        
+        self.estadisticas["tareas_completadas"] += 1
+        return response
+        
+    except DeepSeekError as e:
+        self.estadisticas["tareas_fallidas"] += 1
+        self.logger.error(f"DeepSeek error: {e}")
+        return f"❌ Error con DeepSeek API: {str(e)}. Verifica tu API key."
+    
+    except LlamaError as e:
+        self.estadisticas["tareas_fallidas"] += 1
+        self.logger.error(f"Llama error: {e}")
+        return f"❌ Error con Llama: {str(e)}. Verifica la ruta del modelo."
+    
+    except Exception as e:
+        self.estadisticas["tareas_fallidas"] += 1
+        self.logger.error(f"Error processing message: {e}")
+        return f"❌ Error procesando tu mensaje: {str(e)}"
     
     def _process_with_deepseek(self, message: str, context: Dict, session_id: str) -> str:
         """Procesar mensaje con DeepSeek API"""
